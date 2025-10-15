@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.kotlin.prueba"
+    namespace = "com.kotlin.u_park"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.kotlin.prueba"
+        applicationId = "com.kotlin.u_park"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -58,6 +58,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.navigation.compose)
 
     // Testing
     testImplementation(libs.junit)

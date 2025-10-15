@@ -56,3 +56,12 @@ fun UparkTheme(
         content = content
     )
 }
+
+@Composable
+fun UParkTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = LightColorScheme, // o DarkColorScheme
+        typography = Typography,
+        content = content
+    )
+}

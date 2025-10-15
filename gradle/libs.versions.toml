@@ -12,6 +12,8 @@ foundation = "1.9.3"
 bom = "3.2.4"
 ui = "1.9.3"
 uiGraphics = "1.9.3"
+navigationRuntimeKtx = "2.9.5"
+navigationCompose = "2.9.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -35,6 +37,8 @@ postgrest-kt = { module = "io.github.jan-tennert.supabase:postgrest-kt" }
 gotrue-kt = { module = "io.github.jan-tennert.supabase:gotrue-kt" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
