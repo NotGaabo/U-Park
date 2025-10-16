@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.kotlin.u_park.ui.screens.splash.SplashScreen
 import com.kotlin.u_park.ui.screens.register.RegisterScreen
+import com.kotlin.u_park.ui.screens.home.HomeScreen
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -23,9 +24,9 @@ fun NavGraph(navController: NavHostController) {
         composable(Routes.Register.route) {
             RegisterScreen(navController)
 //        }
-//        composable(Routes.Home.route) {
-//            HomeScreen(navController)
-//        }
+        composable(Routes.Home.route) {
+            HomeScreen(navController)
+        }
 //        composable(Routes.Profile.route) {
 //            ProfileScreen(navController)
 //        }
