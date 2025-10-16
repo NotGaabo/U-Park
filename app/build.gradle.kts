@@ -75,11 +75,14 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
     implementation("io.ktor:ktor-client-android:3.3.0")
 
+    // Coil
     implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // Material Icons
     implementation("androidx.compose.material3:material3:1.2.0")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
 
-    // ----------------- Kotlin Serialization -----------------
+    // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 }
 

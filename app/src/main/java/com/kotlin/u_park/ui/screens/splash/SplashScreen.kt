@@ -19,7 +19,7 @@ fun SplashScreen(navController: NavController) {
     // Espera unos segundos y luego navega al login
     LaunchedEffect(Unit) {
         delay(2000)
-        navController.navigate("login") {
+        navController.navigate("register") {
             popUpTo("splash") { inclusive = true }
         }
     }
