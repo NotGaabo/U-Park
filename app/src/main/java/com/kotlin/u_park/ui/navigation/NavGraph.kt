@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.ui.screens.splash.SplashScreen
 import com.kotlin.u_park.ui.screens.register.RegisterScreen
 import com.kotlin.u_park.ui.screens.home.HomeScreen
@@ -22,8 +23,9 @@ fun NavGraph(navController: NavHostController) {
 //            LoginScreen(navController)
 //        }
         composable(Routes.Register.route) {
-            RegisterScreen(navController)
-//        }
+            RegisterScreen(navController = navController,
+                supabase = supabase)
+        }
         composable(Routes.Home.route) {
             HomeScreen(navController)
         }
@@ -31,5 +33,4 @@ fun NavGraph(navController: NavHostController) {
 //            ProfileScreen(navController)
 //        }
         }
-    }
 }
