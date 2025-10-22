@@ -28,7 +28,7 @@ fun LoginScreen(
     supabase: SupabaseClient
 ) {
     val context = LocalContext.current
-    val sessionManager = remember { SessionManager(context, supabase) } // Crear SessionManager
+    val sessionManager = remember { SessionManager.getInstance(context, supabase) } // Crear SessionManager
     val authRepository = remember { AuthRepository(supabase) }
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(authRepository, sessionManager)

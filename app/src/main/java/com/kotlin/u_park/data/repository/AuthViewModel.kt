@@ -21,7 +21,7 @@ class AuthViewModel(
         }
     }
 
-    fun signUp(user: User, sessionManager: SessionManager) {
+    fun signUp(user: User) {
         viewModelScope.launch {
             authRepository.signUp(user, sessionManager)
         }

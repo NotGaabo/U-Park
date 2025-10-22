@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.kotlin.u_park.data.remote.SessionManager
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.AuthRepository
 import com.kotlin.u_park.domain.model.Garage
@@ -20,7 +21,9 @@ import com.kotlin.u_park.ui.screens.login.LoginScreen
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    authRepository: AuthRepository // pasa el repo desde la Activity o Hilt
+    sessionManager: SessionManager,
+    authRepository: AuthRepository,
+    startDestination: String = "login"// pasa el repo desde la Activity o Hilt
 ) {
     val scope = rememberCoroutineScope() // para coroutines dentro de Composables
 
@@ -28,7 +31,9 @@ fun NavGraph(
         navController = navController,
         startDestination = Routes.Splash.route
     ) {
-        composable(Routes.Splash.route) { SplashScreen(navController) }
+        composable(Routes.Splash.route) { SplashScreen( navController = navController,
+            sessionManager = sessionManager,
+            supabase = supabase) }
 
         composable(Routes.Register.route) {
             RegisterScreen(navController = navController, supabase = supabase)
@@ -50,9 +55,10 @@ fun NavGraph(
 
             currentUser?.let { user ->
                 SettingsScreen(
+                    navController = navController,
                     currentUser = user,
                     userRoles = user.roles,
-                    allRoles = listOf("user", "admin"),
+                    allRoles = listOf("user", "employee"),
                     onSaveRoles = { /* TODO: implementar guardado de roles */ }
                 )
             }

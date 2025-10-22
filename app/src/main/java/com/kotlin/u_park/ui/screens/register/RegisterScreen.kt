@@ -29,7 +29,7 @@ fun RegisterScreen(
     supabase: SupabaseClient
 ) {
     val context = LocalContext.current
-    val sessionManager = remember { SessionManager(context, supabase) } // Creamos SessionManager
+    val sessionManager = remember { SessionManager.getInstance(context, supabase) } // Creamos SessionManager
     val authRepository = remember { AuthRepository(supabase) }
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(authRepository, sessionManager) // Lo pasamos aquí
@@ -51,7 +51,7 @@ fun RegisterScreen(
             is AuthState.Loading -> mensaje = "Registrando..."
             is AuthState.Success -> {
                 mensaje = "Registro exitoso"
-                navController.navigate("home") {
+                navController.navigate("login") {
                     popUpTo("register") { inclusive = true }
                 }
             }
@@ -163,7 +163,7 @@ fun RegisterScreen(
                             // id queda null aquí
                         )
                         scope.launch {
-                            authViewModel.signUp(user, sessionManager)
+                            authViewModel.signUp(user)
                         }
                     },
                     modifier = Modifier

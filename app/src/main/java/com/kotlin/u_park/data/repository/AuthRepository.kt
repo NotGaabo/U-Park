@@ -23,26 +23,20 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
-    // -------------------------
-    // Registro de usuario
-    // -------------------------
     suspend fun signUp(user: User, sessionManager: SessionManager) {
         _authState.value = AuthState.Loading
         try {
-            // Crear cuenta en Supabase Auth
             supabase.auth.signUpWith(Email) {
                 email = user.correo
                 password = user.contrasena
             }
 
-            // Obtener el ID del usuario desde Auth
             val userId = supabase.auth.currentUserOrNull()?.id
             if (userId.isNullOrBlank()) {
-                _authState.value = AuthState.Error("No se pudo crear el usuario, revisa el correo")
+                _authState.value = AuthState.Error("No se pudo crear el usuario")
                 return
             }
 
-            // Insertar datos en tabla "users" usando DTO
             val userInsert = UserInsert(
                 id = userId,
                 nombre = user.nombre,
@@ -53,11 +47,9 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
                 roles = listOf("user")
             )
 
-            supabase.from("users")
-                .insert(userInsert) // No decodificar
-
-            // Guardar sesión y actualizar estado
+            supabase.from("users").insert(userInsert)
             sessionManager.saveSession()
+
             _currentUser.value = user.copy(id = userId, roles = listOf("user"))
             _authState.value = AuthState.Success
             Log.d("AuthRepository", "=== Usuario registrado correctamente ===")
@@ -68,14 +60,35 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
         }
     }
 
-    // -------------------------
-    // Inicio de sesión
-    // -------------------------
+    suspend fun updateUserRoles(userId: String, newRoles: List<String>) {
+        try {
+            // Traemos todos los usuarios
+            val usersList: List<UserDto> = supabase.from("users").select().decodeList<UserDto>()
+
+            // Buscamos el usuario que queremos actualizar
+            val userToUpdate = usersList.firstOrNull { it.id == userId } ?: return
+
+            // Creamos un nuevo objeto con los roles actualizados
+            val updatedUser = userToUpdate.copy(roles = newRoles)
+
+            // Hacemos la actualización enviando directamente el objeto
+            supabase.from("users").update(updatedUser)
+
+            // Actualizamos el flujo interno si el usuario actual es el mismo
+            if (_currentUser.value?.id == userId) {
+                _currentUser.value = _currentUser.value?.copy(roles = newRoles)
+            }
+
+            Log.d("AuthRepository", "=== Roles actualizados correctamente ===")
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error al actualizar roles", e)
+        }
+    }
+
     fun signIn(correo: String, contrasena: String, sessionManager: SessionManager) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             try {
-                // Autenticación con Supabase
                 supabase.auth.signInWith(Email) {
                     email = correo
                     password = contrasena
@@ -89,13 +102,8 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
 
                 sessionManager.saveSession()
 
-                // Obtener datos del usuario desde tabla "users" usando DTO
-                val usersList: List<UserDto> = supabase.from("users")
-                    .select()
-                    .decodeList<UserDto>()
-
-                // Filtrar por ID de Auth y mapear a User
-                val userData: User? = usersList.firstOrNull { it.id == userAuth.id }?.let { dto ->
+                val usersList: List<UserDto> = supabase.from("users").select().decodeList<UserDto>()
+                val userData = usersList.firstOrNull { it.id == userAuth.id }?.let { dto ->
                     User(
                         id = dto.id,
                         nombre = dto.nombre,
@@ -103,7 +111,7 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
                         cedula = dto.cedula,
                         telefono = dto.telefono,
                         correo = dto.correo,
-                        contrasena = "", // no se guarda contraseña en la tabla
+                        contrasena = "",
                         roles = dto.roles
                     )
                 }
@@ -113,7 +121,7 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
                     _authState.value = AuthState.Success
                     Log.d("AuthRepository", "=== Inicio de sesión exitoso ===")
                 } else {
-                    _authState.value = AuthState.Error("Usuario no encontrado en la tabla")
+                    _authState.value = AuthState.Error("Usuario no encontrado")
                 }
 
             } catch (e: Exception) {
@@ -123,9 +131,6 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
         }
     }
 
-    // -------------------------
-    // Cerrar sesión
-    // -------------------------
     fun signOut(sessionManager: SessionManager? = null) {
         viewModelScope.launch {
             try {
@@ -140,9 +145,6 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
     }
 }
 
-// -------------------------
-// DTO para insertar usuario en Supabase
-// -------------------------
 @Serializable
 data class UserInsert(
     val id: String,
@@ -154,9 +156,6 @@ data class UserInsert(
     val roles: List<String> = listOf("user")
 )
 
-// -------------------------
-// DTO para leer usuario desde Supabase
-// -------------------------
 @Serializable
 data class UserDto(
     val id: String,
@@ -168,9 +167,6 @@ data class UserDto(
     val roles: List<String> = listOf("user")
 )
 
-// -------------------------
-// Estado de autenticación
-// -------------------------
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
