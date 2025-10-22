@@ -1,4 +1,5 @@
 package com.kotlin.u_park.ui.screens.home
+
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -64,7 +65,7 @@ fun HomeScreen(
                 NavigationBarItem(icon = { Icon(Icons.Default.DirectionsCar, null) }, label = { Text("Home") }, selected = true, onClick = { })
                 NavigationBarItem(icon = { Icon(Icons.Default.AddCircle, null) }, label = { Text("Agregar") }, selected = false, onClick = { })
                 NavigationBarItem(icon = { Icon(Icons.Default.History, null) }, label = { Text("Historial") }, selected = false, onClick = { })
-                NavigationBarItem(icon = { Icon(Icons.Default.Person, null) }, label = { Text("Perfil") }, selected = false, onClick = { })
+                NavigationBarItem(icon = { Icon(Icons.Default.Person, null) }, label = { Text("Perfil") }, selected = false, onClick = { navController.navigate("settings") })
             }
         }
     ) { padding ->
@@ -140,7 +141,7 @@ fun HomeScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Button(onClick = { }, modifier = Modifier.weight(1f)) { Text("Detalles") }
+                                    Button(onClick = {  navController.navigate("detalles") }, modifier = Modifier.weight(1f)) { Text("Detalles") }
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Button(onClick = { }, modifier = Modifier.weight(1f)) { Text("Reservar") }
                                 }
