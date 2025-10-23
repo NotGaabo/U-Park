@@ -32,4 +32,10 @@ class AuthViewModel(
             authRepository.signOut(sessionManager)
         }
     }
+
+    fun restoreCurrentUser() {
+        viewModelScope.launch {
+            authRepository.restoreCurrentUser(sessionManager)
+        }
+    }
 }

@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.androidx.compose.ui.geometry)
 
     // Testing
     testImplementation(libs.junit)

@@ -9,6 +9,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +24,42 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
+    // Restaurar usuario con roles reales desde la BD
+    suspend fun restoreCurrentUser(sessionManager: SessionManager) {
+        try {
+            val restored = sessionManager.refreshSessionFromDataStore()
+            if (!restored) {
+                _currentUser.value = null
+                return
+            }
+
+            val userAuth = supabase.auth.currentUserOrNull()
+            if (userAuth != null) {
+                val usersList: List<UserDto> = supabase.from("users").select().decodeList<UserDto>()
+                val userData = usersList.firstOrNull { it.id == userAuth.id }?.let { dto ->
+                    val roles = getUserRoles(dto.id)
+                    User(
+                        id = dto.id,
+                        nombre = dto.nombre,
+                        usuario = dto.usuario,
+                        cedula = dto.cedula,
+                        telefono = dto.telefono,
+                        correo = dto.correo,
+                        contrasena = "",
+                        roles = roles
+                    )
+                }
+                _currentUser.value = userData
+            } else {
+                _currentUser.value = null
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "No se pudo restaurar usuario: ${e.message}")
+            _currentUser.value = null
+        }
+    }
+
+    // Registro con asignación automática de rol "user"
     suspend fun signUp(user: User, sessionManager: SessionManager) {
         _authState.value = AuthState.Loading
         try {
@@ -31,60 +68,51 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
                 password = user.contrasena
             }
 
-            val userId = supabase.auth.currentUserOrNull()?.id
+            val userAuth = supabase.auth.currentUserOrNull()
+            val userId = userAuth?.id
             if (userId.isNullOrBlank()) {
                 _authState.value = AuthState.Error("No se pudo crear el usuario")
                 return
             }
 
-            val userInsert = UserInsert(
+            val userInsert = UserInsertDTO(
                 id = userId,
                 nombre = user.nombre,
                 usuario = user.usuario,
                 cedula = user.cedula,
                 telefono = user.telefono,
-                correo = user.correo,
-                roles = listOf("user")
+                correo = user.correo
             )
-
             supabase.from("users").insert(userInsert)
-            sessionManager.saveSession()
 
-            _currentUser.value = user.copy(id = userId, roles = listOf("user"))
-            _authState.value = AuthState.Success
-            Log.d("AuthRepository", "=== Usuario registrado correctamente ===")
+            val rolesList = supabase.from("roles")
+                .select(columns = Columns.list("id", "nombre"))
+                .decodeList<RoleRow>()
 
-        } catch (e: Exception) {
-            _authState.value = AuthState.Error(e.message ?: "Error desconocido")
-            Log.e("AuthRepository", "Error en signUp", e)
-        }
-    }
+            val roleUser = rolesList.firstOrNull { it.nombre == "user" }
 
-    suspend fun updateUserRoles(userId: String, newRoles: List<String>) {
-        try {
-            // Traemos todos los usuarios
-            val usersList: List<UserDto> = supabase.from("users").select().decodeList<UserDto>()
-
-            // Buscamos el usuario que queremos actualizar
-            val userToUpdate = usersList.firstOrNull { it.id == userId } ?: return
-
-            // Creamos un nuevo objeto con los roles actualizados
-            val updatedUser = userToUpdate.copy(roles = newRoles)
-
-            // Hacemos la actualización enviando directamente el objeto
-            supabase.from("users").update(updatedUser)
-
-            // Actualizamos el flujo interno si el usuario actual es el mismo
-            if (_currentUser.value?.id == userId) {
-                _currentUser.value = _currentUser.value?.copy(roles = newRoles)
+            if (roleUser != null) {
+                val userRoleInsert = UserRoleInsertDTO(
+                    user_id = userId,
+                    role_id = roleUser.id
+                )
+                supabase.from("user_roles").insert(userRoleInsert)
+                Log.d("AuthRepository", "✅ Rol 'user' asignado correctamente a $userId")
+            } else {
+                Log.e("AuthRepository", "⚠️ No se encontró el rol 'user'")
             }
 
-            Log.d("AuthRepository", "=== Roles actualizados correctamente ===")
+            sessionManager.saveSession()
+            _currentUser.value = user.copy(id = userId, roles = listOf("user"))
+            _authState.value = AuthState.Success
+
         } catch (e: Exception) {
-            Log.e("AuthRepository", "Error al actualizar roles", e)
+            Log.e("AuthRepository", "Error en signUp: ${e.message}", e)
+            _authState.value = AuthState.Error(e.message ?: "Error desconocido")
         }
     }
 
+    // Inicio de sesión con carga de roles reales
     fun signIn(correo: String, contrasena: String, sessionManager: SessionManager) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
@@ -104,6 +132,7 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
 
                 val usersList: List<UserDto> = supabase.from("users").select().decodeList<UserDto>()
                 val userData = usersList.firstOrNull { it.id == userAuth.id }?.let { dto ->
+                    val roles = getUserRoles(dto.id)
                     User(
                         id = dto.id,
                         nombre = dto.nombre,
@@ -112,14 +141,14 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
                         telefono = dto.telefono,
                         correo = dto.correo,
                         contrasena = "",
-                        roles = dto.roles
+                        roles = roles
                     )
                 }
 
                 if (userData != null) {
                     _currentUser.value = userData
                     _authState.value = AuthState.Success
-                    Log.d("AuthRepository", "=== Inicio de sesión exitoso ===")
+                    Log.d("AuthRepository", "=== Inicio de sesión exitoso === Roles: ${userData.roles}")
                 } else {
                     _authState.value = AuthState.Error("Usuario no encontrado")
                 }
@@ -131,6 +160,7 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
         }
     }
 
+    // Cerrar sesión
     fun signOut(sessionManager: SessionManager? = null) {
         viewModelScope.launch {
             try {
@@ -143,19 +173,49 @@ class AuthRepository(private val supabase: SupabaseClient) : ViewModel() {
             }
         }
     }
+
+    // Obtener roles reales del usuario desde la BD
+    suspend fun getUserRoles(userId: String): List<String> {
+        return try {
+            val result = supabase.from("user_roles")
+                .select(
+                    Columns.raw("""
+                        role_id,
+                        roles!fk_user_roles_role(id,nombre)
+                    """.trimIndent())
+                ) {
+                    filter { eq("user_id", userId) }
+                }
+                .decodeList<UserRoleWithName>()
+
+            val roles = result.map { it.roles.nombre }
+            Log.d("AuthRepository", "✅ Roles obtenidos para $userId: $roles")
+            roles
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error al obtener roles del usuario: ${e.message}")
+            emptyList()
+        }
+    }
 }
 
+// DTOs para inserts
 @Serializable
-data class UserInsert(
+data class UserInsertDTO(
     val id: String,
     val nombre: String,
     val usuario: String,
     val cedula: String,
     val telefono: String,
-    val correo: String,
-    val roles: List<String> = listOf("user")
+    val correo: String
 )
 
+@Serializable
+data class UserRoleInsertDTO(
+    val user_id: String,
+    val role_id: Int
+)
+
+// DTOs para lectura
 @Serializable
 data class UserDto(
     val id: String,
@@ -167,6 +227,19 @@ data class UserDto(
     val roles: List<String> = listOf("user")
 )
 
+@Serializable
+data class RoleRow(
+    val id: Int,
+    val nombre: String
+)
+
+@Serializable
+data class UserRoleWithName(
+    val role_id: Int,
+    val roles: RoleRow
+)
+
+// Estados del Auth
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()

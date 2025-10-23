@@ -24,6 +24,7 @@ class SessionManager private constructor(
     private val TOKEN_KEY = stringPreferencesKey("accessToken")
     private val REFRESH_KEY = stringPreferencesKey("refreshToken")
 
+    // Guarda la sesión actual
     suspend fun saveSession() {
         val session = supabase.auth.currentSessionOrNull()
         session?.let {
@@ -34,12 +35,14 @@ class SessionManager private constructor(
         }
     }
 
+    // Flujo de sesión
     val sessionFlow: Flow<Pair<String, String>?> = dataStore.data.map { prefs ->
         val access = prefs[TOKEN_KEY]
         val refresh = prefs[REFRESH_KEY]
         if (access != null && refresh != null) access to refresh else null
     }
 
+    // Restaurar sesión
     suspend fun restoreSession() {
         val session = sessionFlow.firstOrNull()
         session?.let { (_, refresh) ->
@@ -54,6 +57,21 @@ class SessionManager private constructor(
                 Log.e("SessionManager", "No se pudo restaurar sesión: ${e.message}")
                 clearSession()
             }
+        }
+    }
+
+    // Refrescar sesión directamente desde DataStore
+    suspend fun refreshSessionFromDataStore(): Boolean {
+        val session = sessionFlow.firstOrNull() ?: return false
+        return try {
+            val (_, refresh) = session
+            val newSession = supabase.auth.refreshSession(refresh)
+            saveSession() // guarda los nuevos tokens
+            true
+        } catch (e: Exception) {
+            Log.e("SessionManager", "No se pudo refrescar sesión: ${e.message}")
+            clearSession()
+            false
         }
     }
 

@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.kotlin.u_park.data.remote.SessionManager
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.AuthRepository
+import com.kotlin.u_park.data.repository.AuthViewModel
 import com.kotlin.u_park.ui.navigation.NavGraph
 import com.kotlin.u_park.ui.theme.UParkTheme
 import io.github.jan.supabase.auth.auth
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
 
         val sessionManager = SessionManager.getInstance(this, supabase)
         val authRepository = AuthRepository(supabase)
+        val authViewModel = AuthViewModel(authRepository, sessionManager)
 
         setContent {
             UParkTheme {
@@ -37,9 +39,8 @@ class MainActivity : ComponentActivity() {
                     startDestination = if (user != null) "home" else "login"
                 }
 
-                // Renderiza NavGraph solo si startDestination está definido
                 startDestination?.let { destination ->
-                    App(authRepository, sessionManager, destination)
+                    App(authViewModel, sessionManager, destination)
                 }
             }
         }
@@ -48,14 +49,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun App(
-    authRepository: AuthRepository,
+    authViewModel: AuthViewModel,
     sessionManager: SessionManager,
     startDestination: String
 ) {
     val navController = rememberNavController()
     NavGraph(
         navController = navController,
-        authRepository = authRepository,
+        authViewModel = authViewModel,
         sessionManager = sessionManager,
         startDestination = startDestination
     )

@@ -1,7 +1,6 @@
 package com.kotlin.u_park.ui.screens.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,18 +16,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.data.remote.supabase
+import com.kotlin.u_park.data.repository.AuthViewModel
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.launch
 
-private val RedSoft = Color(0xFFFF4D4D)
-private val BackgroundColor = Color.White
+// Colores principales
+private val RedSoft = Color(0xFFE60023)
+private val BackgroundColor = Color(0xFFF5F5F5)
+private val LightGray = Color(0xFFE8E8E8)
 
+// Función de carga de garajes (mantiene tu lógica original)
 suspend fun fetchGarages(): List<Garage> {
     return try {
         val response = supabase.postgrest["garages"].select()
@@ -41,161 +47,174 @@ suspend fun fetchGarages(): List<Garage> {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(
+    navController: NavController,
+    authViewModel: AuthViewModel
+) {
     var garages by remember { mutableStateOf<List<Garage>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        garages = fetchGarages()
+        authViewModel.restoreCurrentUser()
+        coroutineScope.launch {
+            garages = fetchGarages()
+        }
     }
 
     Scaffold(
+        containerColor = BackgroundColor,
         topBar = {
             TopAppBar(
-                title = { Text("U-Park", fontWeight = FontWeight.Bold, color = RedSoft) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BackgroundColor,
-                    titleContentColor = RedSoft,
-                    actionIconContentColor = RedSoft
-                ),
+                title = {
+                    Text(
+                        "U-Park",
+                        fontWeight = FontWeight.Bold,
+                        color = RedSoft
+                    )
+                },
                 actions = {
                     IconButton(onClick = { /* notificaciones */ }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notificaciones")
+                        Icon(Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.Black)
                     }
                     IconButton(onClick = { navController.navigate("settings") }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(Icons.Default.Settings, contentDescription = "Configuración", tint = Color.Black)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundColor)
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = BackgroundColor) {
+            NavigationBar(containerColor = Color.White) {
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.DirectionsCar, contentDescription = "Home", tint = RedSoft) },
-                    label = { Text("Home", color = RedSoft) },
                     selected = true,
-                    onClick = { }
+                    onClick = { },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Home", tint = RedSoft) },
+                    label = { Text("Home", color = RedSoft) }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.AddCircle, contentDescription = "Agregar", tint = RedSoft) },
-                    label = { Text("Agregar", color = RedSoft) },
                     selected = false,
-                    onClick = { }
+                    onClick = { /* agregar */ },
+                    icon = { Icon(Icons.Default.AddCircle, contentDescription = "Agregar") },
+                    label = { Text("Agregar") }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.History, contentDescription = "Historial", tint = RedSoft) },
-                    label = { Text("Historial", color = RedSoft) },
                     selected = false,
-                    onClick = { }
+                    onClick = { /* historial */ },
+                    icon = { Icon(Icons.Default.History, contentDescription = "Historial") },
+                    label = { Text("Historial") }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil", tint = RedSoft) },
-                    label = { Text("Perfil", color = RedSoft) },
                     selected = false,
-                    onClick = { navController.navigate("settings") }
+                    onClick = { navController.navigate("settings") },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
+                    label = { Text("Perfil") }
                 )
             }
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(BackgroundColor)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
-            Column(
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally,
+            // 🔍 Buscador estilo UI de la imagen
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Buscar un garaje", color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.Gray) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Color.White,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedBorderColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "Garages disponibles",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.Black,
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                // SEARCH FIELD
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(RedSoft.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
-                    label = { Text("Buscar garage", color = Color.Black) },
-                    leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = RedSoft)
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                )
+                items(garages) { garage ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp)),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(garage.image_url)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = garage.nombre,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(160.dp)
+                                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                                contentScale = ContentScale.Crop
+                            )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Garages disponibles",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = RedSoft,
-                    modifier = Modifier.align(Alignment.Start)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(garages) { garage ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .border(
-                                    width = 1.dp,
-                                    color = RedSoft.copy(alpha = 0.3f),
-                                    shape = RoundedCornerShape(12.dp)
-                                ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                        ) {
-                            Column(modifier = Modifier.background(BackgroundColor).padding(16.dp)) {
-                                val imageUrl = garage.image_url?.trim()?.replace("\n", "")
-                                AsyncImage(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(imageUrl)
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = garage.nombre,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(180.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                )
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
+                            Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
                                     text = garage.nombre,
-                                    fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
                                     color = Color.Black
                                 )
-                                Text(garage.direccion, color = Color.DarkGray)
-                                Text("Capacidad: ${garage.capacidad_total} vehículos", color = Color.DarkGray)
-                                Text("Horario: ${garage.horario}", color = Color.DarkGray)
+                                Text(garage.direccion, color = Color.Gray, fontSize = 13.sp)
+                                Text(
+                                    "Capacidad: ${garage.capacidad_total} | ${garage.horario}",
+                                    color = Color.Gray,
+                                    fontSize = 13.sp
+                                )
 
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Button(
-                                        onClick = { navController.navigate("detalles") },
+                                        onClick = { /* Detalles */ },
+                                        colors = ButtonDefaults.buttonColors(containerColor = RedSoft),
                                         modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(containerColor = RedSoft)
-                                    ) { Text("Detalles", color = Color.White) }
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text("Detalles", color = Color.White)
+                                    }
 
                                     Button(
                                         onClick = { /* Reservar */ },
+                                        colors = ButtonDefaults.buttonColors(containerColor = LightGray),
                                         modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
-                                    ) { Text("Reservar", color = Color.White) }
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text("Reservar", color = Color.Black)
+                                    }
                                 }
                             }
                         }
