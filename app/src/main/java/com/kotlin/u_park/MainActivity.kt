@@ -11,10 +11,12 @@ import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.AuthRepository
 import com.kotlin.u_park.data.repository.AuthViewModel
 import com.kotlin.u_park.ui.navigation.NavGraph
+import com.kotlin.u_park.ui.navigation.Routes
 import com.kotlin.u_park.ui.theme.UParkTheme
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
 
 class MainActivity : ComponentActivity() {
 
@@ -28,20 +30,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             UParkTheme {
-                var startDestination by remember { mutableStateOf<String?>(null) }
-
-                // Restaurar sesión
-                LaunchedEffect(Unit) {
-                    withContext(Dispatchers.IO) {
-                        sessionManager.restoreSession()
-                    }
-                    val user = supabase.auth.currentUserOrNull()
-                    startDestination = if (user != null) "home" else "login"
-                }
-
-                startDestination?.let { destination ->
-                    App(authViewModel, sessionManager, destination)
-                }
+                // startDestination siempre splash
+                App(authViewModel, sessionManager, startDestination = Routes.Splash.route)
             }
         }
     }

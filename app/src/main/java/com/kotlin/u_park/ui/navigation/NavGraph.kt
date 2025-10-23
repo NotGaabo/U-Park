@@ -22,7 +22,7 @@ fun NavGraph(
     navController: NavHostController,
     sessionManager: SessionManager,
     authViewModel: AuthViewModel,
-    startDestination: String = "login"
+    startDestination: String = Routes.Splash.route
 ) {
     NavHost(
         navController = navController,
