@@ -13,6 +13,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.kotlin.u_park.R
 import com.kotlin.u_park.data.remote.SessionManager
+import com.kotlin.u_park.data.repository.AuthViewModel
+import com.kotlin.u_park.utils.LocationHelper
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
@@ -23,24 +29,64 @@ import kotlinx.coroutines.withContext
 fun SplashScreen(
     navController: NavController,
     sessionManager: SessionManager,
-    supabase: SupabaseClient
+    supabase: SupabaseClient,
+    authViewModel: AuthViewModel // 🔥 agrega este parámetro
 ) {
-    // Decide a dónde ir según la sesión
-    LaunchedEffect(Unit) {
-        delay(2000)
+    val context = LocalContext.current
 
+    var locationGranted by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        locationGranted = isGranted
+    }
+
+    LaunchedEffect(Unit) {
+        // Pide permiso de ubicación
+        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+    LaunchedEffect(locationGranted) {
+        if (locationGranted) {
+            val location = LocationHelper.getCurrentLocation(context)
+            location?.let {
+                authViewModel.updateLocation(it.first, it.second)
+            }
+        }
+
+        delay(2000)
         val hasSession = withContext(Dispatchers.IO) {
             sessionManager.refreshSessionFromDataStore()
         }
 
         val user = if (hasSession) supabase.auth.currentUserOrNull() else null
-        val destination = if (user != null) "home" else "login"
 
-        navController.navigate(destination) {
-            popUpTo("splash") { inclusive = true }
+        if (user != null) {
+            val activeRole = withContext(Dispatchers.IO) {
+                sessionManager.getActiveRole()
+            }
+
+            val destination = when (activeRole?.lowercase()) {
+                "dueno-garage" -> "duenogarage"
+                "employee" -> "employeeHome"
+                "user" -> "home"
+                else -> "home"
+            }
+
+            navController.navigate(destination) {
+                popUpTo("splash") { inclusive = true }
+            }
+        } else {
+            navController.navigate("login") {
+                popUpTo("splash") { inclusive = true }
+            }
         }
     }
 
+    // -----------------------------
+    // UI del Splash Screen
+    // -----------------------------
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color.White
@@ -59,7 +105,7 @@ fun SplashScreen(
                     modifier = Modifier.size(120.dp)
                 )
 
-                Spacer(modifier = Modifier.height(48.dp)) // Separación entre logo y loading
+                Spacer(modifier = Modifier.height(48.dp)) // espacio entre logo y carga
 
                 // Círculo de carga
                 CircularProgressIndicator(
