@@ -15,7 +15,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -43,7 +42,19 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // -----------------------------
+    // 🔹 Solución 16 KB page size
+    // -----------------------------
+    packaging {
+        resources {
+            excludes += setOf(
+                "dump_syms/linux/dump_syms.bin" // archivo problemático
+            )
+        }
+    }
 }
+
 
 dependencies {
     // ----------------- AndroidX -----------------
@@ -60,6 +71,9 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.foundation.layout)
+    implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.androidx.compose.ui.geometry)
 
     // Testing
     testImplementation(libs.junit)
@@ -73,15 +87,13 @@ dependencies {
     // ----------------- Supabase -----------------
     implementation(platform("io.github.jan-tennert.supabase:bom:3.2.4"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
-    implementation("io.ktor:ktor-client-android:3.3.0")
-
+    implementation("io.ktor:ktor-client-android:3.3.1")
     // Coil
     implementation("io.coil-kt:coil-compose:2.4.0")
-
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
     // Material Icons
     implementation("androidx.compose.material3:material3:1.2.0")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
-
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 }
