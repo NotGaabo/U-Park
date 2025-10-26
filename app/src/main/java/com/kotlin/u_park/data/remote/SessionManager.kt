@@ -18,67 +18,88 @@ class SessionManager private constructor(
     private val supabase: SupabaseClient
 ) {
 
+    // Configuración de DataStore
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth")
     private val dataStore = context.dataStore
 
     private val TOKEN_KEY = stringPreferencesKey("accessToken")
     private val REFRESH_KEY = stringPreferencesKey("refreshToken")
 
-    // Guarda la sesión actual
+    // ✅ Guarda la sesión actual (sin usar tipo Session)
     suspend fun saveSession() {
-        val session = supabase.auth.currentSessionOrNull()
-        session?.let {
-            dataStore.edit { prefs ->
-                prefs[TOKEN_KEY] = it.accessToken
-                prefs[REFRESH_KEY] = it.refreshToken
-            }
+        val s = supabase.auth.currentSessionOrNull() ?: return
+        dataStore.edit { prefs ->
+            prefs[TOKEN_KEY] = s.accessToken
+            prefs[REFRESH_KEY] = s.refreshToken
         }
+        Log.d("SessionManager", "✅ Sesión guardada en DataStore.")
     }
 
-    // Flujo de sesión
+    // ✅ Flujo reactivo con tokens
     val sessionFlow: Flow<Pair<String, String>?> = dataStore.data.map { prefs ->
         val access = prefs[TOKEN_KEY]
         val refresh = prefs[REFRESH_KEY]
         if (access != null && refresh != null) access to refresh else null
     }
 
-    // Restaurar sesión
+    // ✅ Restaurar sesión desde DataStore
     suspend fun restoreSession() {
         val session = sessionFlow.firstOrNull()
         session?.let { (_, refresh) ->
             try {
                 val newSession = supabase.auth.refreshSession(refresh)
-                Log.d("SessionManager", "AccessToken renovado: ${newSession.accessToken}")
+                // guarda nuevos tokens
                 dataStore.edit { prefs ->
                     prefs[TOKEN_KEY] = newSession.accessToken
                     prefs[REFRESH_KEY] = newSession.refreshToken
                 }
+                Log.d("SessionManager", "✅ Sesión restaurada correctamente.")
             } catch (e: Exception) {
-                Log.e("SessionManager", "No se pudo restaurar sesión: ${e.message}")
+                if (e.message?.contains("already_used") == true) {
+                    Log.w("SessionManager", "⚠️ Refresh token ya usado, sesión aún válida.")
+                    return
+                }
+                Log.e("SessionManager", "❌ Error al restaurar sesión: ${e.message}")
                 clearSession()
             }
-        }
+        } ?: Log.d("SessionManager", "ℹ️ No había sesión almacenada.")
     }
 
-    // Refrescar sesión directamente desde DataStore
+    // ✅ Refrescar sesión de forma segura
     suspend fun refreshSessionFromDataStore(): Boolean {
+        // No refrescar si ya hay sesión activa
+        supabase.auth.currentSessionOrNull()?.let {
+            Log.d("SessionManager", "✅ Ya hay sesión activa, no se refresca.")
+            return true
+        }
+
         val session = sessionFlow.firstOrNull() ?: return false
         return try {
             val (_, refresh) = session
             val newSession = supabase.auth.refreshSession(refresh)
-            saveSession() // guarda los nuevos tokens
+            dataStore.edit { prefs ->
+                prefs[TOKEN_KEY] = newSession.accessToken
+                prefs[REFRESH_KEY] = newSession.refreshToken
+            }
+            Log.d("SessionManager", "✅ Sesión refrescada correctamente.")
             true
         } catch (e: Exception) {
-            Log.e("SessionManager", "No se pudo refrescar sesión: ${e.message}")
+            if (e.message?.contains("already_used") == true) {
+                Log.w("SessionManager", "⚠️ Refresh token ya usado, ignorando sin limpiar sesión.")
+                return true
+            }
+            Log.e("SessionManager", "❌ Error al refrescar sesión: ${e.message}")
             clearSession()
             false
         }
     }
 
+    // ✅ Limpieza completa
     suspend fun clearSession() {
         dataStore.edit { it.clear() }
         try {
             supabase.auth.signOut()
+            Log.d("SessionManager", "🧹 Sesión limpiada correctamente.")
         } catch (_: Exception) {}
     }
 

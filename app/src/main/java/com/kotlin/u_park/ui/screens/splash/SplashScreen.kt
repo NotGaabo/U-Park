@@ -2,21 +2,22 @@ package com.kotlin.u_park.ui.screens.splash
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.kotlin.u_park.R
 import com.kotlin.u_park.data.remote.SessionManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.delay
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SplashScreen(
@@ -24,17 +25,15 @@ fun SplashScreen(
     sessionManager: SessionManager,
     supabase: SupabaseClient
 ) {
-    // Decide a dónde ir según sesión
+    // Decide a dónde ir según la sesión
     LaunchedEffect(Unit) {
-        // Simula animación o delay
-        delay(1500)
+        delay(2000)
 
-        // Restaurar sesión si existe
-        withContext(Dispatchers.IO) {
-            sessionManager.restoreSession()
+        val hasSession = withContext(Dispatchers.IO) {
+            sessionManager.refreshSessionFromDataStore()
         }
 
-        val user = supabase.auth.currentUserOrNull()
+        val user = if (hasSession) supabase.auth.currentUserOrNull() else null
         val destination = if (user != null) "home" else "login"
 
         navController.navigate(destination) {
@@ -44,17 +43,31 @@ fun SplashScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.primary
+        color = Color.White
     ) {
         Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                contentDescription = "Logo",
-                modifier = Modifier.size(120.dp)
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Logo de la app
+                Image(
+                    painter = painterResource(id = R.drawable.up),
+                    contentDescription = "App Logo",
+                    modifier = Modifier.size(120.dp)
+                )
+
+                Spacer(modifier = Modifier.height(48.dp)) // Separación entre logo y loading
+
+                // Círculo de carga
+                CircularProgressIndicator(
+                    color = Color(0xFFE60023),
+                    strokeWidth = 4.dp,
+                    modifier = Modifier.size(50.dp)
+                )
+            }
         }
     }
 }
