@@ -1,4 +1,4 @@
-package com.kotlin.u_park.ui.screens.login
+package com.kotlin.u_park.presentation.screens.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,15 +22,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.kotlin.u_park.R
 import com.kotlin.u_park.data.remote.SessionManager
-import com.kotlin.u_park.data.repository.*
+import com.kotlin.u_park.data.repository.AuthRepositoryImpl
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.launch
 
@@ -38,34 +36,32 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     navController: NavController,
-    supabase: SupabaseClient,
-    authViewModel: AuthViewModel
+    supabase: SupabaseClient
 ) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager.getInstance(context, supabase) }
-    val authRepository = remember { AuthRepository(supabase) }
+    val authRepository = remember { AuthRepositoryImpl(supabase) }
+
+    // ✅ Instancia única del ViewModel con Factory
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(authRepository, sessionManager)
     )
 
-    val authState by authViewModel.authState.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(authState) {
-        when (authState) {
-            is AuthState.Loading -> mensaje = "Iniciando sesión..."
-            is AuthState.Success -> {
-                mensaje = "Inicio de sesión exitoso"
-                navController.navigate("home") {
-                    popUpTo("login") { inclusive = true }
-                }
+    // 🎯 Detectar login exitoso
+    LaunchedEffect(currentUser) {
+        currentUser?.let {
+            mensaje = "Inicio de sesión exitoso"
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
             }
-            is AuthState.Error -> mensaje = (authState as AuthState.Error).message
-            else -> {}
         }
     }
 
@@ -116,11 +112,7 @@ fun LoginScreen(
                     onValueChange = { email = it },
                     label = { Text("Correo electrónico") },
                     leadingIcon = {
-                        Icon(
-                            Icons.Default.Email,
-                            contentDescription = null,
-                            tint = iconGray
-                        )
+                        Icon(Icons.Default.Email, contentDescription = null, tint = iconGray)
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -142,13 +134,10 @@ fun LoginScreen(
                     onValueChange = { password = it },
                     label = { Text("Contraseña") },
                     leadingIcon = {
-                        Icon(
-                            Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = iconGray
-                        )
+                        Icon(Icons.Default.Lock, contentDescription = null, tint = iconGray)
                     },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible)
+                        VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
@@ -179,7 +168,10 @@ fun LoginScreen(
                             mensaje = "Por favor completa todos los campos"
                             return@Button
                         }
-                        scope.launch { authViewModel.signIn(email, password) }
+                        scope.launch {
+                            authViewModel.signIn(email, password)
+                            mensaje = "Iniciando sesión..."
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -191,15 +183,7 @@ fun LoginScreen(
                         contentColor = white
                     )
                 ) {
-                    if (authState is AuthState.Loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(22.dp),
-                            color = white,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text("Iniciar sesión", fontSize = 16.sp)
-                    }
+                    Text("Iniciar sesión", fontSize = 16.sp)
                 }
 
                 // 🔁 Olvidar contraseña
@@ -235,3 +219,5 @@ fun LoginScreen(
         }
     }
 }
+
+

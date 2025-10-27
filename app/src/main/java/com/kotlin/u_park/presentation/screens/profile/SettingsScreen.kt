@@ -1,5 +1,6 @@
-package com.kotlin.u_park.ui.screens.profile
+package com.kotlin.u_park.presentation.screens.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,47 +13,52 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.User
+import com.kotlin.u_park.data.remote.SessionManager
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
     currentUser: User?,
+    sessionManager: SessionManager,
     onSignOut: () -> Unit
 ) {
     val background = Color(0xFFF9F9F9)
     val textGray = Color(0xFF6B6B6B)
     val dividerGray = Color(0xFFEAEAEA)
     val redSoft = Color(0xFFE60023)
+    val redLight = Color(0xFFFFE5E5)
+
+    var showRoleSheet by remember { mutableStateOf(false) }
+    var activeRole by remember { mutableStateOf<String?>(null) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+
+    // ✅ Cargar rol activo guardado o del usuario
+    LaunchedEffect(currentUser) {
+        val savedRole = sessionManager.getActiveRole()
+        activeRole = savedRole ?: currentUser?.roles?.firstOrNull()
+    }
 
     Scaffold(
         containerColor = background,
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Profile",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = background,
-                    titleContentColor = Color.Black
-                )
+                title = { Text("Profile", fontWeight = FontWeight.Bold, color = Color.Black) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = background)
             )
         },
         bottomBar = {
@@ -77,7 +83,7 @@ fun SettingsScreen(
                 )
                 NavigationBarItem(
                     selected = true,
-                    onClick = { },
+                    onClick = {},
                     icon = { Icon(Icons.Default.Person, contentDescription = "Perfil", tint = redSoft) },
                     label = { Text("Perfil", color = redSoft) }
                 )
@@ -101,7 +107,7 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { /* Navegar al perfil detallado si se desea */ }
+                    .clickable { /* Ir al perfil detallado si se desea */ }
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -175,7 +181,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             // ------------------------
-            // USER INFO SUMMARY
+            // ACCOUNT DETAILS
             // ------------------------
             Text(
                 text = "Account details",
@@ -201,7 +207,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             // ------------------------
-            // SETTINGS SECTION
+            // SETTINGS
             // ------------------------
             Text(
                 text = "Settings",
@@ -225,14 +231,10 @@ fun SettingsScreen(
                 Divider(color = dividerGray, thickness = 1.dp)
                 SettingsItemLine(Icons.Filled.Info, "Acerca de U-Park", textGray) { }
 
-                // ✅ Mostrar solo si tiene más de un rol
                 if ((currentUser?.roles?.size ?: 0) > 1) {
-                    SettingsItemLine(
-                        icon = Icons.Filled.SwapHoriz,
-                        title = "Cambiar de rol",
-                        iconColor = textGray
-                    ) {
-                        navController.navigate("admin")
+                    Divider(color = dividerGray, thickness = 1.dp)
+                    SettingsItemLine(Icons.Filled.SwapHoriz, "Cambiar de rol", textGray) {
+                        showRoleSheet = true
                     }
                 }
 
@@ -243,75 +245,66 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(80.dp))
         }
     }
-}
 
-// -------------------------
-// COMPONENTES REUTILIZABLES
-// -------------------------
-@Composable
-fun SettingsItemLine(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    iconColor: Color,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = null, tint = iconColor)
-        Spacer(modifier = Modifier.width(18.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge.copy(color = Color.Black)
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = Color.Gray
-        )
+    // ------------------------
+    // ROLE SELECTION SHEET
+    // ------------------------
+    if (showRoleSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showRoleSheet = false },
+            sheetState = sheetState
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Selecciona un rol",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                currentUser?.roles?.forEach { rol ->
+                    val (label, icon) = when (rol.lowercase()) {
+                        "dueno-garage" -> "Dueño de garaje" to Icons.Default.Business
+                        "employee" -> "Empleado" to Icons.Default.Badge
+                        "user" -> "Usuario" to Icons.Default.Person
+                        else -> rol to Icons.Default.Help
+                    }
+
+                    val isActive = rol == activeRole
+
+                    OutlinedButton(
+                        onClick = {
+                            activeRole = rol
+                            showRoleSheet = false
+                            scope.launch { sessionManager.saveActiveRole(rol) }
+
+                            when (rol.lowercase()) {
+                                "dueno-garage" -> navController.navigate("duenogarage")
+                                "employee" -> navController.navigate("employeeHome")
+                                "user" -> navController.navigate("home")
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (isActive) redLight else Color.White
+                        )
+                    ) {
+                        Icon(icon, contentDescription = null, tint = if (isActive) redSoft else Color.Black)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(label, color = if (isActive) redSoft else Color.Black)
+                    }
+                }
+            }
+        }
     }
 }
 
-@Composable
-fun UserInfoLine(label: String, value: String) {
-    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                color = Color.Black,
-                fontWeight = FontWeight.Medium
-            )
-        )
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewSettingsScreen() {
-    val dummyUser = User(
-        id = "1",
-        nombre = "Judy",
-        usuario = "judy123",
-        cedula = "123456789",
-        telefono = "+1 (809) 555-5555",
-        correo = "judy@example.com",
-        contrasena = "password123",
-        roles = listOf("user", "admin")
-    )
-
-    SettingsScreen(
-        navController = rememberNavController(),
-        currentUser = dummyUser,
-        onSignOut = {}
-    )
-}

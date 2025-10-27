@@ -2,7 +2,7 @@
 // File: GarageDetailBottomSheet.kt
 // Package: com.clay.componentes
 
-package com.kotlin.u_park.ui.components
+package com.kotlin.u_park.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 fun GarageDetailBottomSheet(
     garage: Garage,
     onDismiss: () -> Unit,
+    locationLine: String,
     onReserve: () -> Unit,
     onDetails: () -> Unit
 ) {
@@ -66,13 +67,7 @@ fun GarageDetailBottomSheet(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = garage.direccion,
-            fontSize = 14.sp,
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
+        Text(text = locationLine, color = Color.Gray, fontSize = 13.sp)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -131,6 +126,7 @@ fun GarageDetailSheetPreview() {
         GarageDetailBottomSheet(
             garage = g,
             onDismiss = {},
+            locationLine = "Ubicación",
             onReserve = {},
             onDetails = {}
         )

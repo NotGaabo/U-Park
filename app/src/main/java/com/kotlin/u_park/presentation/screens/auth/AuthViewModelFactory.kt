@@ -1,8 +1,9 @@
-package com.kotlin.u_park.data.repository
+package com.kotlin.u_park.presentation.screens.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.kotlin.u_park.data.remote.SessionManager
+import com.kotlin.u_park.domain.repository.AuthRepository
 
 class AuthViewModelFactory(
     private val authRepository: AuthRepository,

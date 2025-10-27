@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.androidx.compose.ui.geometry)
+    implementation(libs.androidx.compose.runtime.livedata)
 
     // Testing
     testImplementation(libs.junit)
@@ -91,7 +92,13 @@ dependencies {
     // Coil
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // -------- UBICACION ---------
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     // Material Icons
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.compose.material3:material3:1.2.0")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
     // Kotlin Serialization

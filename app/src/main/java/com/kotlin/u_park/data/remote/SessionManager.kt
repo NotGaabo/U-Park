@@ -24,6 +24,7 @@ class SessionManager private constructor(
 
     private val TOKEN_KEY = stringPreferencesKey("accessToken")
     private val REFRESH_KEY = stringPreferencesKey("refreshToken")
+    private val ACTIVE_ROLE_KEY = stringPreferencesKey("activeRole") // ✅ nuevo campo para el rol activo
 
     // ✅ Guarda la sesión actual (sin usar tipo Session)
     suspend fun saveSession() {
@@ -94,13 +95,29 @@ class SessionManager private constructor(
         }
     }
 
-    // ✅ Limpieza completa
+    // ✅ Guarda el rol activo en DataStore
+    suspend fun saveActiveRole(role: String) {
+        dataStore.edit { prefs ->
+            prefs[ACTIVE_ROLE_KEY] = role
+        }
+        Log.d("SessionManager", "🎯 Rol activo guardado: $role")
+    }
+
+    // ✅ Obtiene el rol activo (si existe)
+    suspend fun getActiveRole(): String? {
+        return dataStore.data.map { prefs ->
+            prefs[ACTIVE_ROLE_KEY]
+        }.firstOrNull()
+    }
+
+    // ✅ Limpieza completa (tokens + rol)
     suspend fun clearSession() {
         dataStore.edit { it.clear() }
         try {
             supabase.auth.signOut()
             Log.d("SessionManager", "🧹 Sesión limpiada correctamente.")
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 
     companion object {
@@ -109,7 +126,9 @@ class SessionManager private constructor(
 
         fun getInstance(context: Context, supabase: SupabaseClient): SessionManager {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: SessionManager(context.applicationContext, supabase).also { INSTANCE = it }
+                INSTANCE ?: SessionManager(context.applicationContext, supabase).also {
+                    INSTANCE = it
+                }
             }
         }
     }

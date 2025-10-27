@@ -8,14 +8,11 @@ import androidx.compose.runtime.*
 import androidx.navigation.compose.rememberNavController
 import com.kotlin.u_park.data.remote.SessionManager
 import com.kotlin.u_park.data.remote.supabase
-import com.kotlin.u_park.data.repository.AuthRepository
-import com.kotlin.u_park.data.repository.AuthViewModel
-import com.kotlin.u_park.ui.navigation.NavGraph
-import com.kotlin.u_park.ui.navigation.Routes
+import com.kotlin.u_park.data.repository.AuthRepositoryImpl
+import com.kotlin.u_park.presentation.navigation.NavGraph
+import com.kotlin.u_park.presentation.navigation.Routes
+import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
 import com.kotlin.u_park.ui.theme.UParkTheme
-import io.github.jan.supabase.auth.auth
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 
 class MainActivity : ComponentActivity() {
@@ -25,7 +22,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val sessionManager = SessionManager.getInstance(this, supabase)
-        val authRepository = AuthRepository(supabase)
+        val authRepository = AuthRepositoryImpl(supabase)
         val authViewModel = AuthViewModel(authRepository, sessionManager)
 
         setContent {
