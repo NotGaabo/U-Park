@@ -1,6 +1,3 @@
-// File: HomeViewModelFactory.kt
-// Package: com.kotlin.u_park.presentation.screens.home
-
 package com.kotlin.u_park.presentation.screens.home
 
 import androidx.lifecycle.ViewModel

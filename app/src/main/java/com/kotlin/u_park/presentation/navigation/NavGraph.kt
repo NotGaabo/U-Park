@@ -1,24 +1,29 @@
 package com.kotlin.u_park.presentation.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.kotlin.u_park.data.remote.SessionManager
-import com.kotlin.u_park.domain.model.Garage
-import com.kotlin.u_park.presentation.screens.detalles.DetallesScreen
-import com.kotlin.u_park.presentation.screens.home.HomeScreen
-import com.kotlin.u_park.presentation.screens.auth.RegisterScreen
-import com.kotlin.u_park.presentation.screens.splash.SplashScreen
-import com.kotlin.u_park.presentation.screens.auth.LoginScreen
 import com.kotlin.u_park.data.remote.supabase
+import com.kotlin.u_park.data.repository.GarageRepositoryImpl
+import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
+import com.kotlin.u_park.presentation.screens.auth.LoginScreen
+import com.kotlin.u_park.presentation.screens.auth.RegisterScreen
+import com.kotlin.u_park.presentation.screens.detalles.DetallesScreen
+import com.kotlin.u_park.presentation.screens.garage.GarageAddScreen
 import com.kotlin.u_park.presentation.screens.home.DuenoGarageScreen
+import com.kotlin.u_park.presentation.screens.home.HomeScreen
 import com.kotlin.u_park.presentation.screens.profile.SettingsScreen
 import com.kotlin.u_park.presentation.screens.profile.SettingsScreenDueno
+import com.kotlin.u_park.presentation.screens.splash.SplashScreen
+import com.kotlin.u_park.presentation.screens.garage.GarageViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavGraph(
     navController: NavHostController,
@@ -59,15 +64,12 @@ fun NavGraph(
         }
 
         composable(Routes.Settings.route) {
-            val currentUser by authViewModel.currentUser.collectAsState()
             SettingsScreen(
                 navController = navController,
-                currentUser = currentUser,
-                sessionManager = sessionManager,
+                supabase = supabase,
                 onSignOut = {
-                    authViewModel.signOut()
-                    navController.navigate(Routes.Login.route) {
-                        popUpTo(Routes.Home.route) { inclusive = true }
+                    navController.navigate("login") {
+                        popUpTo("settings") { inclusive = true }
                     }
                 }
             )
@@ -88,25 +90,36 @@ fun NavGraph(
             )
         }
 
-        // Pantalla de dueño de garage
+        // 🟢 Pantalla de dueño de garage
         composable(Routes.DuenoGarage.route) {
-            DuenoGarageScreen(navController = navController)
+            val currentUser by authViewModel.currentUser.collectAsState()
+            val userId = currentUser?.id ?: ""
+
+            // Crear el repositorio y el ViewModel manualmente (sin Hilt)
+            val garageRepository = remember { GarageRepositoryImpl(supabase) }
+            val garageViewModel = remember { GarageViewModel(garageRepository) }
+
+            DuenoGarageScreen(
+                onSave = { navController.popBackStack() },
+                viewModel = garageViewModel,
+                userId = userId
+            )
         }
 
-//        // Pantalla de empleado
-//        composable(Routes.EmployeeHome.route) {
-//            EmployeeHomeScreen(navController = navController, authViewModel = authViewModel)
-//        }
-//
-//        // Pantalla para agregar garaje
-//        composable(Routes.AddGarage.route) {
-//            AddGarageScreen(navController = navController)
-//        }
-//
-//        // Pantalla de historial
-//        composable(Routes.History.route) {
-//            HistoryScreen(navController = navController)
-//        }
+
+        composable(Routes.GarageAdd.route) {
+            val currentUser by authViewModel.currentUser.collectAsState()
+
+            currentUser?.let { user ->
+                val garageRepository = remember { com.kotlin.u_park.data.repository.GarageRepositoryImpl(supabase) }
+                val garageViewModel = remember { com.kotlin.u_park.presentation.screens.garage.GarageViewModel(garageRepository) }
+
+                com.kotlin.u_park.presentation.screens.garage.GarageAddScreen(
+                    navController = navController,
+                    userId = user.id,
+                    viewModel = garageViewModel
+                )
+            }
+        }
     }
 }
-

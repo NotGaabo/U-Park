@@ -1,14 +1,10 @@
 package com.kotlin.u_park.presentation.screens.profile
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import android.app.Application
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
@@ -18,40 +14,41 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kotlin.u_park.R
-import com.kotlin.u_park.domain.model.User
-import com.kotlin.u_park.data.remote.SessionManager
+import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    currentUser: User?,
-    sessionManager: SessionManager,
+    supabase: SupabaseClient,
     onSignOut: () -> Unit
 ) {
+    // ✅ Crear ViewModel con contexto y Supabase
+    val context = LocalContext.current.applicationContext as Application
+    val viewModel: SettingsViewModel = viewModel(
+        factory = SettingsViewModelFactory(context, supabase)
+    )
+
     val background = Color(0xFFF9F9F9)
     val textGray = Color(0xFF6B6B6B)
     val dividerGray = Color(0xFFEAEAEA)
     val redSoft = Color(0xFFE60023)
     val redLight = Color(0xFFFFE5E5)
 
+    val currentUser by viewModel.currentUser.collectAsState()
+    val activeRole by viewModel.activeRole.collectAsState()
+
     var showRoleSheet by remember { mutableStateOf(false) }
-    var activeRole by remember { mutableStateOf<String?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-
-    // ✅ Cargar rol activo guardado o del usuario
-    LaunchedEffect(currentUser) {
-        val savedRole = sessionManager.getActiveRole()
-        activeRole = savedRole ?: currentUser?.roles?.firstOrNull()
-    }
 
     Scaffold(
         containerColor = background,
@@ -98,7 +95,6 @@ fun SettingsScreen(
                 .background(background)
                 .padding(horizontal = 20.dp)
         ) {
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // ------------------------
@@ -107,7 +103,7 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { /* Ir al perfil detallado si se desea */ }
+                    .clickable { }
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -128,7 +124,7 @@ fun SettingsScreen(
                         )
                     )
                     Text(
-                        text = "Show profile",
+                        text = currentUser?.usuario ?: "Ver perfil",
                         style = MaterialTheme.typography.bodyMedium.copy(color = textGray)
                     )
                 }
@@ -141,44 +137,6 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(36.dp))
-
-            // ------------------------
-            // PROMOTIONAL CARD
-            // ------------------------
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_parking_placeholder),
-                        contentDescription = "Ilustración parqueo",
-                        modifier = Modifier.size(90.dp)
-                    )
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Column {
-                        Text(
-                            text = "Administra tu parqueo",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.Black
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Optimiza tus espacios y gana dinero fácilmente.",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = textGray)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(40.dp))
 
             // ------------------------
             // ACCOUNT DETAILS
@@ -239,7 +197,9 @@ fun SettingsScreen(
                 }
 
                 Divider(color = dividerGray, thickness = 1.dp)
-                SettingsItemLine(Icons.Filled.ExitToApp, "Cerrar sesión", redSoft, onClick = onSignOut)
+                SettingsItemLine(Icons.Filled.ExitToApp, "Cerrar sesión", redSoft) {
+                    viewModel.signOut(onSignOut)
+                }
             }
 
             Spacer(modifier = Modifier.height(80.dp))
@@ -247,7 +207,7 @@ fun SettingsScreen(
     }
 
     // ------------------------
-    // ROLE SELECTION SHEET
+    // ROLE SHEET
     // ------------------------
     if (showRoleSheet) {
         ModalBottomSheet(
@@ -260,33 +220,17 @@ fun SettingsScreen(
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    "Selecciona un rol",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                Text("Selecciona un rol", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(16.dp))
 
                 currentUser?.roles?.forEach { rol ->
-                    val (label, icon) = when (rol.lowercase()) {
-                        "dueno-garage" -> "Dueño de garaje" to Icons.Default.Business
-                        "employee" -> "Empleado" to Icons.Default.Badge
-                        "user" -> "Usuario" to Icons.Default.Person
-                        else -> rol to Icons.Default.Help
-                    }
-
                     val isActive = rol == activeRole
-
                     OutlinedButton(
                         onClick = {
-                            activeRole = rol
-                            showRoleSheet = false
-                            scope.launch { sessionManager.saveActiveRole(rol) }
-
-                            when (rol.lowercase()) {
-                                "dueno-garage" -> navController.navigate("duenogarage")
-                                "employee" -> navController.navigate("employeeHome")
-                                "user" -> navController.navigate("home")
+                            scope.launch {
+                                viewModel.getSessionManager().saveActiveRole(rol)
                             }
+                            showRoleSheet = false
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -297,14 +241,16 @@ fun SettingsScreen(
                             containerColor = if (isActive) redLight else Color.White
                         )
                     ) {
-                        Icon(icon, contentDescription = null, tint = if (isActive) redSoft else Color.Black)
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            tint = if (isActive) redSoft else Color.Black
+                        )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(label, color = if (isActive) redSoft else Color.Black)
+                        Text(rol, color = if (isActive) redSoft else Color.Black)
                     }
                 }
             }
         }
     }
 }
-
-

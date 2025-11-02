@@ -45,7 +45,7 @@ fun GarageDetailBottomSheet(
         // Image header
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(garage.image_url)
+                .data(garage.imageUrl)
                 .crossfade(true)
                 .build(),
             contentDescription = garage.nombre,
@@ -78,7 +78,7 @@ fun GarageDetailBottomSheet(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text = garage.horario ?: "-", color = Color.Gray, fontSize = 13.sp)
-            Text(text = "Capacidad: ${garage.capacidad_total}", color = Color.Gray, fontSize = 13.sp)
+            Text(text = "Capacidad: ${garage.capacidadTotal}", color = Color.Gray, fontSize = 13.sp)
         }
 
         Spacer(modifier = Modifier.height(18.dp))
@@ -118,8 +118,8 @@ fun GarageDetailSheetPreview() {
         nombre = "Garage Central",
         direccion = "Av. Principal 123",
         horario = "08:00 - 22:00",
-        capacidad_total = 120,
-        image_url = "https://picsum.photos/800/600?random=2"
+        capacidadTotal = 120,
+        imageUrl = "https://picsum.photos/800/600?random=2"
     )
 
     Surface {

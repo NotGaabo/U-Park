@@ -1,204 +1,202 @@
 package com.kotlin.u_park.presentation.screens.home
 
-import androidx.compose.foundation.background
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.location.Location
+import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.core.content.ContextCompat
+import coil.compose.rememberAsyncImagePainter
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.kotlin.u_park.domain.model.Garage
+import com.kotlin.u_park.presentation.screens.garage.GarageViewModel
+import java.io.File
+import kotlinx.coroutines.launch
+import java.util.UUID
 
-private val background = Color(0xFFF9F9F9)
-private val textGray = Color(0xFF5C5C5C)
-private val redSoft = Color(0xFFE60023)
-private val redLight = Color(0xFFFFEBEE)
-private val cardGradient = Brush.verticalGradient(
-    colors = listOf(Color.White, Color(0xFFFDFDFD))
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
+@SuppressLint("MissingPermission")
 @Composable
-fun DuenoGarageScreen(navController: NavController) {
-
-    Scaffold(
-        bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate("empleados") },
-                    icon = { Icon(Icons.Default.Group, contentDescription = "Empleados") },
-                    label = { Text("Empleados") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate("tarifas") },
-                    icon = { Icon(Icons.Default.AttachMoney, contentDescription = "Tarifas") },
-                    label = { Text("Tarifas") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { },
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard", tint = redSoft) },
-                    label = { Text("Dashboard", color = redSoft) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate("reservas") },
-                    icon = { Icon(Icons.Default.Book, contentDescription = "Reservas") },
-                    label = { Text("Reservas") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate("settingsdueno") },
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                    label = { Text("Perfil") }
-                )
-            }
-        }
-    ) { padding ->
-
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .background(background)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
-        ) {
-
-            Text(
-                text = "Panel de Control",
-                fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-                color = Color.Black
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Resumen general del garaje",
-                color = textGray,
-                fontSize = 15.sp
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Gráficos principales ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                DashboardCard(
-                    title = "Ingresos",
-                    subtitle = "$12,430",
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.BarChart, contentDescription = null, tint = redSoft, modifier = Modifier.size(30.dp))
-                }
-                DashboardCard(
-                    title = "Ocupación",
-                    subtitle = "78%",
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.PieChart, contentDescription = null, tint = redSoft, modifier = Modifier.size(30.dp))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // --- Tarifa ---
-            LargeCard(title = "Tarifas actuales", value = "₱50 / hora")
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // --- Estadísticas ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                DashboardCard(
-                    title = "Reservas",
-                    subtitle = "124",
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.List, contentDescription = null, tint = redSoft, modifier = Modifier.size(30.dp))
-                }
-                DashboardCard(
-                    title = "Carros activos",
-                    subtitle = "47",
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = redSoft, modifier = Modifier.size(30.dp))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(40.dp))
-        }
-    }
-}
-
-@Composable
-fun DashboardCard(
-    title: String,
-    subtitle: String = "",
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+fun DuenoGarageScreen(
+    onSave: () -> Unit,
+    viewModel: GarageViewModel,
+    userId: String
 ) {
-    Card(
-        modifier = modifier
-            .height(130.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(cardGradient)
-                .padding(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly
-        ) {
-            content()
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(title, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = textGray)
-                if (subtitle.isNotEmpty()) {
-                    Text(subtitle, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = redSoft)
+    val context = LocalContext.current
+    val fusedLocationClient: FusedLocationProviderClient =
+        LocationServices.getFusedLocationProviderClient(context)
+
+    var nombre by remember { mutableStateOf("") }
+    var capacidad by remember { mutableStateOf("") }
+    var latitud by remember { mutableStateOf("") }
+    var longitud by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var imageFile by remember { mutableStateOf<File?>(null) }
+
+    val scope = rememberCoroutineScope()
+
+    // 🔹 Selector de imagen
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        imageUri = uri
+        uri?.let {
+            val inputStream = context.contentResolver.openInputStream(it)
+            val file = File(context.cacheDir, "garage_image.jpg")
+            inputStream?.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
+            imageFile = file
+        }
+    }
+
+    // 🔹 Permisos de ubicación
+    val locationPermissionGranted = remember { mutableStateOf(false) }
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted -> locationPermissionGranted.value = granted }
+
+    LaunchedEffect(Unit) {
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED -> locationPermissionGranted.value = true
+            else -> launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    // 🔹 Obtener ubicación actual
+    LaunchedEffect(locationPermissionGranted.value) {
+        if (locationPermissionGranted.value) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                location?.let {
+                    latitud = it.latitude.toString()
+                    longitud = it.longitude.toString()
                 }
             }
         }
     }
-}
 
-@Composable
-fun LargeCard(title: String, value: String) {
-    Card(
+    val isSuccess by viewModel.isSuccess.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(110.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
-        shape = MaterialTheme.shapes.medium
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            text = "Agrega un nuevo garage",
+            fontWeight = FontWeight.Bold,
+            fontSize = 22.sp,
+            color = Color.Black
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // 🔹 Imagen seleccionada o placeholder
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(cardGradient)
-                .padding(horizontal = 20.dp),
-            contentAlignment = Alignment.CenterStart
+                .size(width = 220.dp, height = 130.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
+                .clickable { imagePicker.launch("image/*") },
+            contentAlignment = Alignment.Center
         ) {
-            Column {
-                Text(title, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = textGray)
-                Text(value, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = redSoft)
+            if (imageUri != null) {
+                Image(
+                    painter = rememberAsyncImagePainter(imageUri),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text("Seleccionar imagen", color = Color.Gray)
             }
         }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        GarageField("Nombre", nombre) { nombre = it }
+        GarageField("Latitud", latitud) { latitud = it }
+        GarageField("Longitud", longitud) { longitud = it }
+        GarageField("Capacidad", capacidad) { capacidad = it }
+
+        Spacer(modifier = Modifier.height(25.dp))
+
+        Button(
+            onClick = {
+                if (nombre.isNotBlank() && latitud.isNotBlank() && longitud.isNotBlank() && capacidad.isNotBlank()) {
+                    scope.launch {
+                        val newGarage = Garage(
+                            idGarage = UUID.randomUUID().toString(),
+                            nombre = nombre,
+                            direccion = "Dirección no especificada", // puedes agregar un campo editable si quieres
+                            latitud = latitud.toDoubleOrNull() ?: 0.0,
+                            longitud = longitud.toDoubleOrNull() ?: 0.0,
+                            capacidadTotal = capacidad.toIntOrNull() ?: 0,
+                            horario = null, // o agrega un campo de horario en el formulario
+                            fechaCreacion = null,
+                            imageUrl = null,
+                            isActive = true,
+                            userId = userId
+                        )
+                        viewModel.addGarage(newGarage, imageFile)
+                    }
+                }
+            },
+            enabled = !isLoading,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE60023)),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+            } else {
+                Text("Guardar", color = Color.White, fontSize = 16.sp)
+            }
+        }
+
+
+        if (isSuccess == true) {
+            LaunchedEffect(Unit) {
+                viewModel.resetStatus()
+                onSave()
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
     }
+}
+
+@Composable
+fun GarageField(label: String, value: String, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth()
+    )
 }

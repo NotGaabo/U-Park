@@ -54,7 +54,6 @@ fun HomeScreen(
     val garages by homeViewModel.garages.collectAsState()
     val isLoading by homeViewModel.isLoading.collectAsState()
 
-    // 📍 ubicación del usuario
     var userLocation by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var permissionGranted by remember { mutableStateOf(false) }
     var isGettingLocation by remember { mutableStateOf(true) }
@@ -64,23 +63,26 @@ fun HomeScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted -> permissionGranted = granted }
 
-    // 🚀 Solicitar permiso
     LaunchedEffect(Unit) {
         val hasPermission = checkLocationPermission(context)
-        if (!hasPermission) {
-            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        } else permissionGranted = true
+        if (!hasPermission) locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        else permissionGranted = true
     }
 
-    // 🔄 Obtener ubicación
     LaunchedEffect(permissionGranted) {
         if (permissionGranted) {
             getCurrentLocation(context, fusedLocationClient) { loc ->
                 userLocation = loc
                 isGettingLocation = false
-                if (loc != null) homeViewModel.loadGarages(context, loc.first, loc.second)
+                if (loc != null)
+                    homeViewModel.loadGarages(context, loc.first, loc.second)
+                else
+                    homeViewModel.loadGarages(context, null, null)
             }
-        } else isGettingLocation = false
+        } else {
+            isGettingLocation = false
+            homeViewModel.loadGarages(context, null, null)
+        }
     }
 
     var searchQuery by remember { mutableStateOf("") }
@@ -98,10 +100,10 @@ fun HomeScreen(
                 title = { Text("U-Park", fontWeight = FontWeight.Bold, color = RedSoft) },
                 actions = {
                     IconButton(onClick = {}) {
-                        Icon(Icons.Default.Notifications, contentDescription = null, tint = Color.Black)
+                        Icon(Icons.Default.Notifications, null, tint = Color.Black)
                     }
                     IconButton(onClick = { navController.navigate("settings") }) {
-                        Icon(Icons.Default.Settings, contentDescription = null, tint = Color.Black)
+                        Icon(Icons.Default.Settings, null, tint = Color.Black)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundColor)
@@ -118,7 +120,7 @@ fun HomeScreen(
                 NavigationBarItem(
                     selected = false,
                     onClick = {},
-                    icon = { Icon(Icons.Filled.Add, null) },
+                    icon = { Icon(Icons.Default.Add, null) },
                     label = { Text("Agregar") }
                 )
                 NavigationBarItem(
@@ -158,6 +160,23 @@ fun HomeScreen(
                 )
             )
 
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isGettingLocation -> Text("📡 Obteniendo ubicación...", color = Color.Gray)
+                    userLocation != null -> Text(
+                        "📍 Coordenadas: ${userLocation!!.first}, ${userLocation!!.second}",
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Medium
+                    )
+                    else -> Text("⚠️ No se pudo obtener la ubicación", color = Color.Red)
+                }
+            }
+
             LazyColumn(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -166,26 +185,37 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .weight(1f)
             ) {
-                if (isLoading) {
-                    items(4) { GarageSkeleton() }
-                } else {
-                    val filtered = garages.filter {
-                        it.nombre.contains(searchQuery, ignoreCase = true)
+                when {
+                    isLoading -> items(4) { GarageSkeleton() }
+                    garages.isEmpty() -> item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 80.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No hay garajes cerca (1 km)", color = Color.Gray)
+                        }
                     }
-                    items(filtered) { garage ->
-                        GarageCard(
-                            garage = garage,
-                            userLat = userLocation?.first,
-                            userLng = userLocation?.second,
-                            distanceInKm = homeViewModel::distanceInKm,
-                            formatDistanceForUi = homeViewModel::formatDistance,
-                            getAddressFromLocationShort = homeViewModel::getAddressFromLocationShort,
-                            onClick = { selected, location ->
-                                selectedGarage = selected
-                                selectedLocationLine = location
-                                coroutineScope.launch { sheetState.show() }
-                            }
-                        )
+                    else -> {
+                        val filtered = garages.filter {
+                            it.nombre.contains(searchQuery, ignoreCase = true)
+                        }
+                        items(filtered) { garage ->
+                            GarageCard(
+                                garage = garage,
+                                userLat = userLocation?.first,
+                                userLng = userLocation?.second,
+                                distanceInKm = homeViewModel::distanceInKm,
+                                formatDistanceForUi = homeViewModel::formatDistance,
+                                getAddressFromLocationShort = homeViewModel::getAddressFromLocationShort,
+                                onClick = { selected, location ->
+                                    selectedGarage = selected
+                                    selectedLocationLine = location
+                                    coroutineScope.launch { sheetState.show() }
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -225,18 +255,13 @@ fun getCurrentLocation(
             val request = LocationRequest.Builder(
                 Priority.PRIORITY_HIGH_ACCURACY, 1000L
             ).setMaxUpdates(1).build()
-
             fusedLocationClient.requestLocationUpdates(
                 request,
                 object : LocationCallback() {
                     override fun onLocationResult(result: LocationResult) {
                         fusedLocationClient.removeLocationUpdates(this)
                         val loc = result.lastLocation
-                        if (loc != null) {
-                            onLocationReceived(Pair(loc.latitude, loc.longitude))
-                        } else {
-                            onLocationReceived(null)
-                        }
+                        onLocationReceived(loc?.let { Pair(it.latitude, it.longitude) })
                     }
                 },
                 context.mainLooper
