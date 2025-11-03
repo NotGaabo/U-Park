@@ -13,24 +13,26 @@ class GarageRepositoryImpl(
     private val supabase: SupabaseClient
 ) : GarageRepository {
 
-    override suspend fun getGarageByUserId(userId: String): Garage? {
+    // 🔹 Obtener lista de garajes por userId
+    override suspend fun getGaragesByUserId(userId: String): List<Garage> {
         return try {
             supabase.from("garages")
                 .select()
                 .decodeList<Garage>()
-                .firstOrNull { it.userId == userId }
+                .filter { it.userId == userId } // filtramos manualmente
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            emptyList()
         }
     }
 
+    // 🔹 Insertar nuevo garaje (con imagen opcional)
     override suspend fun newGarage(garage: Garage, imageFile: File?): Boolean {
         return try {
             val garageId = garage.idGarage ?: UUID.randomUUID().toString()
             var imageUrl: String? = null
 
-            // 🔹 Subir imagen al bucket
+            // 🖼️ Subir imagen al bucket de Supabase (si existe)
             if (imageFile != null) {
                 val bucket = supabase.storage.from("garages-image")
                 val imagePath = "garage_$garageId.jpg"
@@ -43,7 +45,7 @@ class GarageRepositoryImpl(
                 println("✅ Imagen subida correctamente: $imageUrl")
             }
 
-            // 🔹 Crear objeto serializable
+            // 🔹 Crear objeto listo para insertar
             val garageInsert = GarageInsert(
                 id_garage = garageId,
                 nombre = garage.nombre,
@@ -58,7 +60,7 @@ class GarageRepositoryImpl(
                 user_id = garage.userId
             )
 
-            // 🔹 Insertar en la tabla garages
+            // 🔹 Insertar en la tabla "garages"
             supabase.from("garages").insert(garageInsert)
 
             println("✅ Garage insertado correctamente: ${garage.nombre}")
@@ -71,6 +73,7 @@ class GarageRepositoryImpl(
     }
 }
 
+// 🔸 Modelo serializable para la inserción en Supabase
 @Serializable
 data class GarageInsert(
     val id_garage: String,

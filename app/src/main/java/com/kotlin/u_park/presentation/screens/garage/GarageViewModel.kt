@@ -6,6 +6,7 @@ import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.domain.repository.GarageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -16,15 +17,42 @@ class GarageViewModel(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    private val _isSuccess = MutableStateFlow<Boolean?>(null)
-    val isSuccess: StateFlow<Boolean?> = _isSuccess
+    private val _isSuccess = MutableStateFlow(false)
+    val isSuccess: StateFlow<Boolean> = _isSuccess
 
+    // ✅ Lista de garajes del usuario
+    private val _garages = MutableStateFlow<List<Garage>>(emptyList())
+    val garages: StateFlow<List<Garage>> = _garages.asStateFlow()
+
+    // 🔹 Cargar garajes del usuario
+    fun loadGaragesByUser(userId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val result = repository.getGaragesByUserId(userId)
+                _garages.value = result
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _garages.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // 🔹 Insertar nuevo garage (y recargar lista)
     fun addGarage(garage: Garage, imageFile: File?) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 val result = repository.newGarage(garage, imageFile)
                 _isSuccess.value = result
+
+                // 🔁 Si se insertó con éxito, recargar lista
+                if (result && garage.userId != null) {
+                    loadGaragesByUser(garage.userId)
+                }
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 _isSuccess.value = false
@@ -35,6 +63,6 @@ class GarageViewModel(
     }
 
     fun resetStatus() {
-        _isSuccess.value = null
+        _isSuccess.value = false
     }
 }

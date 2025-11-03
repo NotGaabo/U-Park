@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.kotlin.u_park.R
 import com.kotlin.u_park.data.remote.SessionManager
+import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
 import com.kotlin.u_park.presentation.utils.LocationHelper
 import io.github.jan.supabase.SupabaseClient
@@ -26,6 +27,8 @@ import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+
+
 
 @Composable
 fun SplashScreen(
@@ -41,11 +44,8 @@ fun SplashScreen(
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        locationGranted = granted
-    }
+    ) { granted -> locationGranted = granted }
 
-    // Pedir permiso al inicio
     LaunchedEffect(Unit) {
         val permission = Manifest.permission.ACCESS_FINE_LOCATION
         val granted = ContextCompat.checkSelfPermission(context, permission) ==
@@ -58,7 +58,6 @@ fun SplashScreen(
         }
     }
 
-    // Obtener ubicación cuando se concede
     LaunchedEffect(locationGranted) {
         if (locationGranted) {
             val loc = LocationHelper.getCurrentLocation(context)
@@ -96,17 +95,20 @@ fun SplashScreen(
         val hasSession = withContext(Dispatchers.IO) { sessionManager.refreshSessionFromDataStore() }
         val user = if (hasSession) supabase.auth.currentUserOrNull() else null
 
-        val destination = when (user?.let {
-            withContext(Dispatchers.IO) { sessionManager.getActiveRole() }?.lowercase()
-        }) {
-            "dueno-garage" -> "duenogarage"
+        val activeRole = if (user != null) {
+            withContext(Dispatchers.IO) { sessionManager.getActiveRole() }
+        } else null
+
+        val destination = when (activeRole?.lowercase()) {
+            "duenogarage" -> Routes.DuenoGarage.route
             "employee" -> "employeeHome"
-            "user" -> "home"
-            else -> "home"
+            "user" -> Routes.Home.route
+            else -> Routes.Login.route
         }
 
-        navController.navigate(if (user != null) destination else "login") {
-            popUpTo("splash") { inclusive = true }
+        navController.navigate(destination) {
+            popUpTo(Routes.Splash.route) { inclusive = true }
         }
     }
 }
+

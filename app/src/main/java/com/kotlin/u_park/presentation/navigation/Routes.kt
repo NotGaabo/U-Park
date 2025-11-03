@@ -5,9 +5,8 @@ sealed class Routes(val route: String) {
     object Login : Routes("login")
     object Register : Routes("register")
     object Home : Routes("home")
-    object DuenoGarage : Routes("duenogarage")
+    object DuenoGarage : Routes("dueno_garage")
     object Detalles : Routes("detalles")
     object Settings : Routes("settings")
-    object SettingsDueno : Routes("settingsdueno")
-    object GarageAdd : Routes("newgarage")
+    object GarageAdd : Routes("new_garage")
 }
