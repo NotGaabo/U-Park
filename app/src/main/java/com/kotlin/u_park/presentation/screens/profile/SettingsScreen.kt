@@ -184,59 +184,139 @@ fun SettingsScreen(
         }
     }
 
-    // ✅ Selector de rol corregido
+    // ✅ Selector de rol CORREGIDO para no resetear el estado
     if (showRoleSheet) {
         ModalBottomSheet(
             onDismissRequest = { showRoleSheet = false },
-            sheetState = sheetState
+            sheetState = sheetState,
+            containerColor = Color.White,
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                        .width(50.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color.Gray.copy(alpha = 0.3f))
+                )
+            }
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(24.dp)
             ) {
-                Text("Selecciona un rol", fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(16.dp))
+                Text(
+                    "Cambiar de Rol",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                    color = Color(0xFF2D3436)
+                )
+                Text(
+                    "Selecciona cómo quieres usar U-Park",
+                    fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                    color = Color.Gray
+                )
+                Spacer(Modifier.height(24.dp))
 
                 currentUser?.roles?.forEach { rol ->
                     val isActive = rol.equals(activeRole, ignoreCase = true)
+                    val normalizedRole = rol.lowercase().replace("-", "").replace("_", "")
 
-                    OutlinedButton(
-                        onClick = {
-                            scope.launch {
-                                viewModel.getSessionManager().saveActiveRole(rol)
-                                delay(200)
-                                showRoleSheet = false
+                    val (icon, description) = when (normalizedRole) {
+                        "duenogarage" -> Icons.Default.Business to "Administra tus garages"
+                        "employee" -> Icons.Default.Work to "Gestiona reservas"
+                        "user" -> Icons.Default.Person to "Busca estacionamientos"
+                        else -> Icons.Default.Person to "Acceso estándar"
+                    }
 
-                                val normalizedRole = rol.lowercase().replace("-", "").replace("_", "")
-                                navController.navigate(
-                                    when (normalizedRole) {
-                                        "duenogarage" -> Routes.DuenoGarage.route
-                                        "employee" -> "employeeHome"
-                                        "user" -> Routes.Home.route
-                                        else -> Routes.Login.route
-                                    }
-                                ) {
-                                    popUpTo(0)
-                                    launchSingleTop = true
-                                }
-                            }
-                        },
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp),
+                            .padding(vertical = 6.dp)
+                            .clickable {
+                                if (!isActive) {
+                                    scope.launch {
+                                        // Guardar el nuevo rol
+                                        viewModel.getSessionManager().saveActiveRole(rol)
+                                        delay(300)
+                                        showRoleSheet = false
+
+                                        // Navegar SIN destruir toda la pila
+                                        val route = when (normalizedRole) {
+                                            "duenogarage" -> Routes.DuenoGarage.route
+                                            "employee" -> "employeeHome"
+                                            "user" -> Routes.Home.route
+                                            else -> Routes.Login.route
+                                        }
+
+                                        navController.navigate(route) {
+                                            // Limpiar la pila pero mantener el estado
+                                            popUpTo(route) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                }
+                            },
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = if (isActive) redLight else Color.White
-                        )
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isActive) redLight else Color(0xFFF5F7FA)
+                        ),
+                        border = if (isActive) BorderStroke(2.dp, redSoft) else null
                     ) {
-                        Icon(Icons.Default.Person, contentDescription = null, tint = if (isActive) redSoft else Color.Black)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(text = rol, color = if (isActive) redSoft else Color.Black)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        if (isActive) redSoft.copy(alpha = 0.1f)
+                                        else Color.White,
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    icon,
+                                    contentDescription = null,
+                                    tint = if (isActive) redSoft else Color.Gray,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = rol,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                                    color = if (isActive) redSoft else Color(0xFF2D3436)
+                                )
+                                Text(
+                                    text = description,
+                                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                    color = Color.Gray
+                                )
+                            }
+
+                            if (isActive) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = "Rol activo",
+                                    tint = redSoft,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

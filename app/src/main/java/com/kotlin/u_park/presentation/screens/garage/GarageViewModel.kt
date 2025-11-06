@@ -24,6 +24,10 @@ class GarageViewModel(
     private val _garages = MutableStateFlow<List<Garage>>(emptyList())
     val garages: StateFlow<List<Garage>> = _garages.asStateFlow()
 
+    // ✅ Nuevo estado para controlar la carga inicial
+    private val _hasLoadedInitially = MutableStateFlow(false)
+    val hasLoadedInitially: StateFlow<Boolean> = _hasLoadedInitially.asStateFlow()
+
     // 🔹 Cargar garajes del usuario
     fun loadGaragesByUser(userId: String) {
         viewModelScope.launch {
@@ -31,9 +35,11 @@ class GarageViewModel(
             try {
                 val result = repository.getGaragesByUserId(userId)
                 _garages.value = result
+                _hasLoadedInitially.value = true // ✅ Marcar como cargado
             } catch (e: Exception) {
                 e.printStackTrace()
                 _garages.value = emptyList()
+                _hasLoadedInitially.value = true
             } finally {
                 _isLoading.value = false
             }
@@ -64,5 +70,10 @@ class GarageViewModel(
 
     fun resetStatus() {
         _isSuccess.value = false
+    }
+
+    // ✅ Resetear el estado de carga inicial (útil al cambiar de usuario)
+    fun resetInitialLoadState() {
+        _hasLoadedInitially.value = false
     }
 }

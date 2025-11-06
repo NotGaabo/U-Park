@@ -3,6 +3,7 @@ package com.kotlin.u_park.presentation.navigation
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,6 +17,7 @@ import com.kotlin.u_park.presentation.screens.auth.RegisterScreen
 import com.kotlin.u_park.presentation.screens.detalles.DetallesScreen
 import com.kotlin.u_park.presentation.screens.garage.GarageAddScreen
 import com.kotlin.u_park.presentation.screens.garage.GarageViewModel
+import com.kotlin.u_park.presentation.screens.garage.GarageViewModelFactory
 import com.kotlin.u_park.presentation.screens.home.DuenoGarageScreen
 import com.kotlin.u_park.presentation.screens.home.HomeScreen
 import com.kotlin.u_park.presentation.screens.profile.SettingsScreen
@@ -29,6 +31,9 @@ fun NavGraph(
     authViewModel: AuthViewModel,
     startDestination: String = Routes.Splash.route
 ) {
+    // ✅ Crear el repository una sola vez para toda la navegación
+    val garageRepository = remember { GarageRepositoryImpl(supabase) }
+
     NavHost(navController = navController, startDestination = startDestination) {
 
         // --- SPLASH ---
@@ -68,7 +73,7 @@ fun NavGraph(
                 onSignOut = {
                     authViewModel.signOut()
                     navController.navigate(Routes.Login.route) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }
                 }
@@ -76,11 +81,15 @@ fun NavGraph(
         }
 
         // --- DUEÑO DE GARAGE ---
-        composable(Routes.DuenoGarage.route) {
+        composable(Routes.DuenoGarage.route) { backStackEntry ->
             val currentUser by authViewModel.currentUser.collectAsState()
             val userId = currentUser?.id ?: ""
-            val garageRepository = remember { GarageRepositoryImpl(supabase) }
-            val garageViewModel = remember { GarageViewModel(garageRepository) }
+
+            // ✅ Usar viewModel con el NavBackStackEntry para persistir el estado
+            val garageViewModel: GarageViewModel = viewModel(
+                viewModelStoreOwner = backStackEntry,
+                factory = GarageViewModelFactory(garageRepository)
+            )
 
             DuenoGarageScreen(
                 navController = navController,
@@ -90,11 +99,14 @@ fun NavGraph(
         }
 
         // --- AGREGAR GARAGE ---
-        composable(Routes.GarageAdd.route) {
+        composable(Routes.GarageAdd.route) { backStackEntry ->
             val currentUser by authViewModel.currentUser.collectAsState()
             currentUser?.let { user ->
-                val garageRepository = remember { GarageRepositoryImpl(supabase) }
-                val garageViewModel = remember { GarageViewModel(garageRepository) }
+                // ✅ Usar viewModel para persistir el estado
+                val garageViewModel: GarageViewModel = viewModel(
+                    viewModelStoreOwner = backStackEntry,
+                    factory = GarageViewModelFactory(garageRepository)
+                )
 
                 GarageAddScreen(
                     userId = user.id,
@@ -102,7 +114,7 @@ fun NavGraph(
                     onDismiss = { navController.popBackStack() },
                     onSuccess = {
                         navController.navigate(Routes.DuenoGarage.route) {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            popUpTo(Routes.DuenoGarage.route) { inclusive = true }
                             launchSingleTop = true
                         }
                     }
