@@ -19,7 +19,7 @@ class GarageRepositoryImpl(
             supabase.from("garages")
                 .select()
                 .decodeList<Garage>()
-                .filter { it.userId == userId } // filtramos manualmente
+                .filter { it.userId == userId } // filtro manual
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
@@ -29,24 +29,26 @@ class GarageRepositoryImpl(
     // 🔹 Insertar nuevo garaje (con imagen opcional)
     override suspend fun newGarage(garage: Garage, imageFile: File?): Boolean {
         return try {
+
             val garageId = garage.idGarage ?: UUID.randomUUID().toString()
             var imageUrl: String? = null
 
-            // 🖼️ Subir imagen al bucket de Supabase (si existe)
+            // 📌 Subir imagen si existe
             if (imageFile != null) {
+
                 val bucket = supabase.storage.from("garages-image")
                 val imagePath = "garage_$garageId.jpg"
 
-                bucket.upload(path = imagePath, data = imageFile.readBytes()) {
-                    upsert = true
-                }
+                bucket.upload(
+                    path = imagePath,
+                    data = imageFile.readBytes()
+                ) { upsert = true }
 
-                imageUrl = bucket.publicUrl(path = imagePath)
-                println("✅ Imagen subida correctamente: $imageUrl")
+                imageUrl = bucket.publicUrl(imagePath)
             }
 
-            // 🔹 Crear objeto listo para insertar
-            val garageInsert = GarageInsert(
+            // 📌 Objeto para insertar a Supabase
+            val newData = GarageInsert(
                 id_garage = garageId,
                 nombre = garage.nombre,
                 direccion = garage.direccion,
@@ -60,20 +62,18 @@ class GarageRepositoryImpl(
                 user_id = garage.userId
             )
 
-            // 🔹 Insertar en la tabla "garages"
-            supabase.from("garages").insert(garageInsert)
+            // 📌 Insertar en tabla
+            supabase.from("garages").insert(newData)
 
-            println("✅ Garage insertado correctamente: ${garage.nombre}")
             true
+
         } catch (e: Exception) {
-            println("❌ Error insertando garage: ${e.message}")
             e.printStackTrace()
             false
         }
     }
 }
 
-// 🔸 Modelo serializable para la inserción en Supabase
 @Serializable
 data class GarageInsert(
     val id_garage: String,
@@ -86,5 +86,5 @@ data class GarageInsert(
     val fecha_creacion: String? = null,
     val image_url: String? = null,
     val is_active: Boolean = true,
-    val user_id: String? = null
+    val user_id: String?
 )

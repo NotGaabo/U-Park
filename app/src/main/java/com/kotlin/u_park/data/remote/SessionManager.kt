@@ -117,6 +117,14 @@ class SessionManager private constructor(
         } catch (_: Exception) { }
     }
 
+    suspend fun updateUserRoles(newRoles: List<String>) {
+        val user = getUser() ?: return
+        val updatedUser = user.copy(roles = newRoles)
+        saveUser(updatedUser)
+        Log.d("SessionManager", "✅ Roles del usuario actualizados: $newRoles")
+    }
+
+
     companion object {
         @Volatile
         private var INSTANCE: SessionManager? = null

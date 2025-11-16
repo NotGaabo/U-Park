@@ -36,6 +36,7 @@ import com.kotlin.u_park.presentation.screens.garage.GarageAddScreen
 import com.kotlin.u_park.presentation.screens.garage.GarageViewModel
 import com.kotlin.u_park.data.remote.SessionManager
 import com.kotlin.u_park.data.remote.supabase
+import com.kotlin.u_park.presentation.navigation.Routes
 
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("MissingPermission")
@@ -168,7 +169,7 @@ fun DuenoGarageScreen(
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = { navController.navigate("settings") },
+                        onClick = { navController.navigate("settingsdueno") },
                         icon = { Icon(Icons.Outlined.Person, contentDescription = "Perfil") },
                         label = { Text("Perfil", fontSize = 12.sp) }
                     )
@@ -258,7 +259,9 @@ fun DuenoGarageScreen(
                         ModernGarageCard(
                             garage = garage,
                             redPrimary = redPrimary,
-                            onClick = { /* navegar a detalles */ }
+                            onClick = { navController.navigate(
+                                Routes.Empleados.createRoute(garage.idGarage)
+                            )}
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
