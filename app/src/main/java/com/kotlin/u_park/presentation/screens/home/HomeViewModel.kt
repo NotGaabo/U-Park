@@ -2,6 +2,7 @@ package com.kotlin.u_park.presentation.screens.home
 
 import android.content.Context
 import android.location.Geocoder
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kotlin.u_park.data.remote.supabase
@@ -24,7 +25,7 @@ class HomeViewModel(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    fun loadGarages(context: Context, userLat: Double, userLng: Double) {
+    fun loadGarages(context: Context, userLat: Double?, userLng: Double?) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -32,23 +33,37 @@ class HomeViewModel(
                 val allGarages = response.decodeAs<List<Garage>>()
                     .filter { it.latitud != null && it.longitud != null }
 
-                // 📏 Solo mostrar los garajes dentro de 1 km
-                val nearbyGarages = allGarages.filter {
-                    val distance = distanceInKm(userLat, userLng, it.latitud!!, it.longitud!!)
-                    distance <= 1.0
-                }.sortedBy {
-                    distanceInKm(userLat, userLng, it.latitud!!, it.longitud!!)
+                Log.d("HomeVM", "📦 Garages obtenidos: ${allGarages.size}")
+
+                // ✅ Filtrar solo garages dentro de 1 km si hay ubicación
+                val filteredGarages = if (userLat != null && userLng != null) {
+                    allGarages.filter {
+                        val distance = distanceInKm(userLat, userLng, it.latitud!!, it.longitud!!)
+                        distance <= 1.0
+                    }.sortedBy {
+                        distanceInKm(userLat, userLng, it.latitud!!, it.longitud!!)
+                    }
+                } else {
+                    allGarages // Si no hay ubicación, muestra todos
                 }
 
-                _garages.value = nearbyGarages
+                filteredGarages.forEachIndexed { index, g ->
+                    Log.d(
+                        "HomeVM",
+                        "✅ Garage ${index + 1}: ${g.nombre} (${g.latitud}, ${g.longitud})"
+                    )
+                }
+
+                _garages.value = filteredGarages
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("HomeVM", "❌ Error al cargar garages", e)
                 _garages.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
         }
     }
+
 
     fun distanceInKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val R = 6371.0

@@ -24,7 +24,7 @@ class AuthRepositoryImpl(private val supabase: SupabaseClient) : AuthRepository 
                 val dto = usersList.firstOrNull { it.id == userAuth.id }
                 dto?.let {
                     val roles = getUserRoles(it.id)
-                    User(
+                    val user = User(
                         id = it.id,
                         nombre = it.nombre,
                         usuario = it.usuario,
@@ -34,6 +34,8 @@ class AuthRepositoryImpl(private val supabase: SupabaseClient) : AuthRepository 
                         contrasena = "",
                         roles = roles
                     )
+                    sessionManager.saveUser(user)
+                    user
                 }
             } else null
         } catch (e: Exception) {
@@ -73,7 +75,9 @@ class AuthRepositoryImpl(private val supabase: SupabaseClient) : AuthRepository 
             }
 
             sessionManager.saveSession()
-            Result.success(user.copy(id = userId, roles = listOf("user")))
+            val newUser = user.copy(id = userId, roles = listOf("user"))
+            sessionManager.saveUser(newUser)
+            Result.success(newUser)
         } catch (e: Exception) {
             Log.e("AuthRepositoryImpl", "Error en signUp: ${e.message}")
             Result.failure(e)
@@ -108,6 +112,7 @@ class AuthRepositoryImpl(private val supabase: SupabaseClient) : AuthRepository 
                 roles = roles
             )
 
+            sessionManager.saveUser(user)
             Result.success(user)
         } catch (e: Exception) {
             Log.e("AuthRepositoryImpl", "Error en signIn: ${e.message}")

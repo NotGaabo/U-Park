@@ -73,7 +73,7 @@ fun GarageCard(
         Box(modifier = Modifier.height(220.dp)) {
             AsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(garage.image_url)
+                    .data(garage.imageUrl)
                     .crossfade(true)
                     .build(),
                 contentDescription = garage.nombre,
@@ -113,7 +113,7 @@ fun GarageCard(
                 Surface(color = Color(0x33FFFFFF), shape = RoundedCornerShape(8.dp)) {
                     Text(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                        text = "🅿️ ${garage.capacidad_total ?: 0} espacios",
+                        text = "🅿️ ${garage.capacidadTotal ?: 0} espacios",
                         color = Color.White,
                         fontSize = 13.sp
                     )

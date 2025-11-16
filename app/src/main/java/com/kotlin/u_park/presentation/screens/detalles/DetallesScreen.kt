@@ -23,7 +23,7 @@ fun DetallesScreen(navController: NavController, garage: Garage) {
             .padding(16.dp)
     ) {
         // Imagen principal del garage
-        val imageUrl = garage.image_url?.trim()?.replace("\n", "")
+        val imageUrl = garage.imageUrl?.trim()?.replace("\n", "")
 
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)

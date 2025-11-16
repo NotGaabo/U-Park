@@ -7,26 +7,31 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.kotlin.u_park.domain.model.User
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 class SessionManager private constructor(
     context: Context,
     private val supabase: SupabaseClient
 ) {
-
-    // Configuración de DataStore
+    // DataStore
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth")
     private val dataStore = context.dataStore
 
+    // Claves
     private val TOKEN_KEY = stringPreferencesKey("accessToken")
     private val REFRESH_KEY = stringPreferencesKey("refreshToken")
-    private val ACTIVE_ROLE_KEY = stringPreferencesKey("activeRole") // ✅ nuevo campo para el rol activo
+    private val USER_KEY = stringPreferencesKey("userData")
+    private val ACTIVE_ROLE_KEY = stringPreferencesKey("activeRole")
 
-    // ✅ Guarda la sesión actual (sin usar tipo Session)
+    // Guardar sesión Supabase (tokens)
     suspend fun saveSession() {
         val s = supabase.auth.currentSessionOrNull() ?: return
         dataStore.edit { prefs ->
@@ -36,45 +41,42 @@ class SessionManager private constructor(
         Log.d("SessionManager", "✅ Sesión guardada en DataStore.")
     }
 
-    // ✅ Flujo reactivo con tokens
-    val sessionFlow: Flow<Pair<String, String>?> = dataStore.data.map { prefs ->
+    // Guardar usuario completo
+    suspend fun saveUser(user: User) {
+        val json = Json.encodeToString(user)
+        dataStore.edit { prefs -> prefs[USER_KEY] = json }
+        Log.d("SessionManager", "✅ Usuario guardado: ${user.nombre}")
+    }
+
+    // Obtener usuario almacenado (una sola vez)
+    suspend fun getUser(): User? {
+        return dataStore.data.map { prefs ->
+            prefs[USER_KEY]?.let { Json.decodeFromString<User>(it) }
+        }.firstOrNull()
+    }
+
+    // Flujo observable del usuario (si quieres usarlo con collectAsState)
+    fun getUserFlow(): Flow<User?> = dataStore.data.map { prefs ->
+        prefs[USER_KEY]?.let { Json.decodeFromString<User>(it) }
+    }
+
+    // Flujo de sesión (tokens)
+    private val sessionFlow: Flow<Pair<String, String>?> = dataStore.data.map { prefs ->
         val access = prefs[TOKEN_KEY]
         val refresh = prefs[REFRESH_KEY]
         if (access != null && refresh != null) access to refresh else null
     }
 
-    // ✅ Restaurar sesión desde DataStore
-    suspend fun restoreSession() {
-        val session = sessionFlow.firstOrNull()
-        session?.let { (_, refresh) ->
-            try {
-                val newSession = supabase.auth.refreshSession(refresh)
-                // guarda nuevos tokens
-                dataStore.edit { prefs ->
-                    prefs[TOKEN_KEY] = newSession.accessToken
-                    prefs[REFRESH_KEY] = newSession.refreshToken
-                }
-                Log.d("SessionManager", "✅ Sesión restaurada correctamente.")
-            } catch (e: Exception) {
-                if (e.message?.contains("already_used") == true) {
-                    Log.w("SessionManager", "⚠️ Refresh token ya usado, sesión aún válida.")
-                    return
-                }
-                Log.e("SessionManager", "❌ Error al restaurar sesión: ${e.message}")
-                clearSession()
-            }
-        } ?: Log.d("SessionManager", "ℹ️ No había sesión almacenada.")
-    }
-
-    // ✅ Refrescar sesión de forma segura
+    // Refrescar sesión desde DataStore
     suspend fun refreshSessionFromDataStore(): Boolean {
-        // No refrescar si ya hay sesión activa
+        // Si ya hay sesión activa en Supabase
         supabase.auth.currentSessionOrNull()?.let {
-            Log.d("SessionManager", "✅ Ya hay sesión activa, no se refresca.")
+            Log.d("SessionManager", "✅ Ya hay sesión activa.")
             return true
         }
 
         val session = sessionFlow.firstOrNull() ?: return false
+
         return try {
             val (_, refresh) = session
             val newSession = supabase.auth.refreshSession(refresh)
@@ -86,7 +88,7 @@ class SessionManager private constructor(
             true
         } catch (e: Exception) {
             if (e.message?.contains("already_used") == true) {
-                Log.w("SessionManager", "⚠️ Refresh token ya usado, ignorando sin limpiar sesión.")
+                Log.w("SessionManager", "⚠️ Refresh token ya usado, sesión aún válida.")
                 return true
             }
             Log.e("SessionManager", "❌ Error al refrescar sesión: ${e.message}")
@@ -95,29 +97,24 @@ class SessionManager private constructor(
         }
     }
 
-    // ✅ Guarda el rol activo en DataStore
+    // Guardar rol activo
     suspend fun saveActiveRole(role: String) {
-        dataStore.edit { prefs ->
-            prefs[ACTIVE_ROLE_KEY] = role
-        }
+        dataStore.edit { prefs -> prefs[ACTIVE_ROLE_KEY] = role }
         Log.d("SessionManager", "🎯 Rol activo guardado: $role")
     }
 
-    // ✅ Obtiene el rol activo (si existe)
+    // Obtener rol activo
     suspend fun getActiveRole(): String? {
-        return dataStore.data.map { prefs ->
-            prefs[ACTIVE_ROLE_KEY]
-        }.firstOrNull()
+        return dataStore.data.map { prefs -> prefs[ACTIVE_ROLE_KEY] }.firstOrNull()
     }
 
-    // ✅ Limpieza completa (tokens + rol)
+    // Limpiar sesión y cerrar sesión en Supabase
     suspend fun clearSession() {
         dataStore.edit { it.clear() }
         try {
             supabase.auth.signOut()
             Log.d("SessionManager", "🧹 Sesión limpiada correctamente.")
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) { }
     }
 
     companion object {

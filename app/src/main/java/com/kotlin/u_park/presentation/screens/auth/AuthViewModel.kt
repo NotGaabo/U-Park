@@ -1,15 +1,11 @@
 package com.kotlin.u_park.presentation.screens.auth
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kotlin.u_park.data.remote.SessionManager
-import com.kotlin.u_park.domain.repository.AuthRepository
 import com.kotlin.u_park.domain.model.User
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import com.kotlin.u_park.domain.repository.AuthRepository
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
@@ -18,14 +14,22 @@ class AuthViewModel(
 ) : ViewModel() {
 
     private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: StateFlow<User?> = _currentUser
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
-    // Exponemos ubicación como StateFlow
     private val _userLocation = MutableStateFlow<Pair<Double, Double>?>(null)
-    val userLocation: StateFlow<Pair<Double, Double>?> = _userLocation
+    val userLocation: StateFlow<Pair<Double, Double>?> = _userLocation.asStateFlow()
+
+    init {
+        // 🔄 Escucha DataStore en tiempo real
+        viewModelScope.launch {
+            sessionManager.getUserFlow().collect {
+                _currentUser.value = it
+            }
+        }
+    }
 
     fun updateLocation(lat: Double, lng: Double) {
-        _userLocation.value = Pair(lat, lng)
+        _userLocation.value = lat to lng
     }
 
     fun signIn(email: String, password: String) {
@@ -46,12 +50,6 @@ class AuthViewModel(
         viewModelScope.launch {
             authRepository.signOut(sessionManager)
             _currentUser.value = null
-        }
-    }
-
-    fun restoreCurrentUser() {
-        viewModelScope.launch {
-            _currentUser.value = authRepository.restoreCurrentUser(sessionManager)
         }
     }
 }
