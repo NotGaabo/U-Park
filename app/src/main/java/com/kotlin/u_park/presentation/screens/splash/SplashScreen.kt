@@ -29,7 +29,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 
-
 @Composable
 fun SplashScreen(
     navController: NavController,
@@ -46,6 +45,7 @@ fun SplashScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted -> locationGranted = granted }
 
+    // Solicitud de permisos
     LaunchedEffect(Unit) {
         val permission = Manifest.permission.ACCESS_FINE_LOCATION
         val granted = ContextCompat.checkSelfPermission(context, permission) ==
@@ -58,6 +58,7 @@ fun SplashScreen(
         }
     }
 
+    // Actualización de ubicación
     LaunchedEffect(locationGranted) {
         if (locationGranted) {
             val loc = LocationHelper.getCurrentLocation(context)
@@ -92,23 +93,31 @@ fun SplashScreen(
     // Navegación después del splash
     LaunchedEffect(locationGranted) {
         delay(2000)
-        val hasSession = withContext(Dispatchers.IO) { sessionManager.refreshSessionFromDataStore() }
-        val user = if (hasSession) supabase.auth.currentUserOrNull() else null
 
-        val activeRole = if (user != null) {
-            withContext(Dispatchers.IO) { sessionManager.getActiveRole() }
-        } else null
+        // ✅ Refresca sesión y obtiene usuario completo desde DataStore
+        val hasSession = withContext(Dispatchers.IO) {
+            sessionManager.refreshSessionFromDataStore()
+        }
 
+        val user = withContext(Dispatchers.IO) {
+            if (hasSession) sessionManager.getUser() else null
+        }
+
+        val activeRole = withContext(Dispatchers.IO) {
+            if (user != null) sessionManager.getActiveRole() else null
+        }
+
+        // Si no hay sesión, redirige a login
         val destination = when (activeRole?.lowercase()) {
             "duenogarage" -> Routes.DuenoGarage.route
-            "employee" -> "employeeHome"
+            "employee" -> Routes.EmployeeHome.route
             "user" -> Routes.Home.route
             else -> Routes.Login.route
         }
 
+        // Navegación final
         navController.navigate(destination) {
             popUpTo(Routes.Splash.route) { inclusive = true }
         }
     }
 }
-

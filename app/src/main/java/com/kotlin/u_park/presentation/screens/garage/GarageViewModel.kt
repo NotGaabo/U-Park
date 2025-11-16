@@ -71,9 +71,4 @@ class GarageViewModel(
     fun resetStatus() {
         _isSuccess.value = false
     }
-
-    // ✅ Resetear el estado de carga inicial (útil al cambiar de usuario)
-    fun resetInitialLoadState() {
-        _hasLoadedInitially.value = false
-    }
 }

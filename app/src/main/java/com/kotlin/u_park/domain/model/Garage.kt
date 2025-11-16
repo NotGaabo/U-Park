@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Garage(
     @SerialName("id_garage")
-    val idGarage: String? = null, // UUID autogenerado por la DB
+    val idGarage: String = "", // UUID autogenerado por la DB
 
     val nombre: String = "",
     val direccion: String = "",

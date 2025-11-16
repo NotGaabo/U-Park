@@ -245,7 +245,7 @@ fun SettingsScreen(
                                         // Navegar SIN destruir toda la pila
                                         val route = when (normalizedRole) {
                                             "duenogarage" -> Routes.DuenoGarage.route
-                                            "employee" -> "employeeHome"
+                                            "employee" -> Routes.EmployeeHome.route
                                             "user" -> Routes.Home.route
                                             else -> Routes.Login.route
                                         }
