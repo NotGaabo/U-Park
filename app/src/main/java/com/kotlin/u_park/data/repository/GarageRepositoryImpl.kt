@@ -26,6 +26,22 @@ class GarageRepositoryImpl(
         }
     }
 
+    suspend fun getGarageById(garageId: String): Garage? {
+        return try {
+            supabase.from("garages")
+                .select {
+                    filter {
+                        eq("id_garage", garageId)
+                    }
+                }
+                .decodeSingle<Garage>()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+
     // 🔹 Insertar nuevo garaje (con imagen opcional)
     override suspend fun newGarage(garage: Garage, imageFile: File?): Boolean {
         return try {

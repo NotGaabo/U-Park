@@ -16,7 +16,11 @@ sealed class Routes(val route: String) {
     object Register : Routes("register")
     object Home : Routes("home")
     object DuenoGarage : Routes("dueno_garage")
-    object Detalles : Routes("detalles")
+
+    object Detalles : Routes("garage/{garageId}") {
+        fun createRoute(garageId: String) = "garage/$garageId"
+    }
+
     object Settings : Routes("settings")
     object SettingsDueno : Routes("settingsdueno")
     object GarageAdd : Routes("new_garage")
