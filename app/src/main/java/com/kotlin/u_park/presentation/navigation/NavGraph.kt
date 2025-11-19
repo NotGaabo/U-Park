@@ -10,26 +10,14 @@ import androidx.navigation.compose.composable
 import com.kotlin.u_park.data.remote.SessionManager
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.GarageRepositoryImpl
-import com.kotlin.u_park.domain.model.Garage
-import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
-import com.kotlin.u_park.presentation.screens.auth.LoginScreen
-import com.kotlin.u_park.presentation.screens.auth.RegisterScreen
-import com.kotlin.u_park.presentation.screens.detalles.DetallesScreen
-import com.kotlin.u_park.presentation.screens.garage.GarageAddScreen
-import com.kotlin.u_park.presentation.screens.garage.GarageViewModel
-import com.kotlin.u_park.presentation.screens.garage.GarageViewModelFactory
-import com.kotlin.u_park.presentation.screens.home.DuenoGarageScreen
-import com.kotlin.u_park.presentation.screens.home.HomeScreen
-import com.kotlin.u_park.presentation.screens.profile.SettingsScreen
-import com.kotlin.u_park.presentation.screens.profile.SettingsScreenDueno
-import com.kotlin.u_park.presentation.screens.employee.EmpleadosScreen
-import com.kotlin.u_park.presentation.screens.employee.AgregarEmpleadoScreen
-import com.kotlin.u_park.presentation.screens.employee.EmpleadosViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kotlin.u_park.data.repository.EmpleadoGarageRepositoryImpl
-import com.kotlin.u_park.domain.repository.GarageRepository
-import com.kotlin.u_park.presentation.screens.employee.EmpleadosViewModelFactory
-import com.kotlin.u_park.presentation.screens.employee.EmployeeHomeScreen
+import com.kotlin.u_park.domain.model.Garage
+import com.kotlin.u_park.presentation.screens.auth.*
+import com.kotlin.u_park.presentation.screens.detalles.DetallesScreen
+import com.kotlin.u_park.presentation.screens.employee.*
+import com.kotlin.u_park.presentation.screens.garage.*
+import com.kotlin.u_park.presentation.screens.home.*
+import com.kotlin.u_park.presentation.screens.profile.*
 import com.kotlin.u_park.presentation.screens.splash.SplashScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -40,12 +28,11 @@ fun NavGraph(
     authViewModel: AuthViewModel,
     startDestination: String = Routes.Splash.route
 ) {
-    // ✅ Crear el repository una sola vez para toda la navegación
     val garageRepository = remember { GarageRepositoryImpl(supabase) }
 
     NavHost(navController = navController, startDestination = startDestination) {
 
-        // --- SPLASH ---
+        // -------------------- SPLASH --------------------
         composable(Routes.Splash.route) {
             SplashScreen(
                 navController = navController,
@@ -55,26 +42,34 @@ fun NavGraph(
             )
         }
 
-        // --- AUTH ---
+        // -------------------- AUTH --------------------
         composable(Routes.Register.route) {
-            RegisterScreen(navController = navController, supabase = supabase)
+            RegisterScreen(navController, supabase)
         }
 
         composable(Routes.Login.route) {
-            LoginScreen(navController = navController, supabase = supabase)
+            LoginScreen(navController, supabase)
         }
 
-        // --- HOME (Usuario normal) ---
+        // -------------------- HOME --------------------
         composable(Routes.Home.route) {
-            HomeScreen(navController = navController, authViewModel = authViewModel)
+            HomeScreen(navController, authViewModel)
         }
 
-        // --- DETALLES ---
-        composable(Routes.Detalles.route) {
-            DetallesScreen(navController = navController, garage = Garage())
+        // -------------------- DETALLES --------------------
+        composable(
+            route = Routes.Detalles.route,
+        ) { backStackEntry ->
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+
+            DetallesScreen(
+                navController = navController,
+                garageId = garageId
+            )
         }
 
-        // --- CONFIGURACIÓN / PERFIL ---
+
+        // -------------------- SETTINGS --------------------
         composable(Routes.Settings.route) {
             SettingsScreen(
                 navController = navController,
@@ -83,49 +78,37 @@ fun NavGraph(
                     authViewModel.signOut()
                     navController.navigate(Routes.Login.route) {
                         popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
                     }
                 }
             )
         }
-        composable(
-                route = Routes.AgregarEmpleado.route
-                ) { backStackEntry ->
 
-            // 👇 Recibir el garageId recibido por la navegación
-            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
-
-            val empleadosRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
-
-            val viewModel: EmpleadosViewModel = viewModel(
-                viewModelStoreOwner = backStackEntry,
-                factory = EmpleadosViewModelFactory(empleadosRepo)
-            )
-
-            AgregarEmpleadoScreen(
-                garageId = garageId,   // 👈 ya no se usa firstOrNull()
-                viewModel = viewModel,
-                onClose = { navController.popBackStack() }
+        composable(Routes.SettingsDueno.route) {
+            SettingsScreenDueno(
+                navController,
+                currentUser = authViewModel.currentUser.value,
+                sessionManager = sessionManager,
+                onSignOut = {
+                    authViewModel.signOut()
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
-        composable(
-            route = Routes.Empleados.route
-        ) { backStackEntry ->
 
-            // 👇 Recibir el garageId desde la navegación
+        // -------------------- EMPLEADOS --------------------
+        composable(Routes.Empleados.route) { backStackEntry ->
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
 
-            val empleadosRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
-
+            val repo = remember { EmpleadoGarageRepositoryImpl(supabase) }
             val viewModel: EmpleadosViewModel = viewModel(
-                viewModelStoreOwner = backStackEntry,
-                factory = EmpleadosViewModelFactory(empleadosRepo)
+                backStackEntry,
+                factory = EmpleadosViewModelFactory(repo)
             )
 
-            // 👇 Cargar empleados SOLO del garage tocado
             LaunchedEffect(garageId) {
                 if (garageId.isNotBlank()) {
-                    android.util.Log.d("NAV_EMPLEADOS", "Cargando empleados del garage: $garageId")
                     viewModel.loadEmpleados(garageId)
                 }
             }
@@ -134,100 +117,97 @@ fun NavGraph(
                 garageId = garageId,
                 viewModel = viewModel,
                 onAgregarEmpleado = {
-                    navController.navigate(
-                        Routes.AgregarEmpleado.createRoute(garageId)
-                    )
+                    navController.navigate(Routes.AgregarEmpleado.createRoute(garageId))
                 }
             )
         }
 
+        composable(Routes.AgregarEmpleado.route) { backStackEntry ->
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
 
+            val repo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val viewModel: EmpleadosViewModel = viewModel(
+                backStackEntry,
+                factory = EmpleadosViewModelFactory(repo)
+            )
 
-
-        // --- CONFIGURACIÓN / PERFIL ---
-        composable(Routes.SettingsDueno.route) {
-            SettingsScreenDueno(
-                navController = navController,
-                currentUser = authViewModel.currentUser.value,
-                sessionManager = sessionManager,
-                onSignOut = {
-                    authViewModel.signOut()
-                    navController.navigate(Routes.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
+            AgregarEmpleadoScreen(
+                garageId = garageId,
+                viewModel = viewModel,
+                onClose = { navController.popBackStack() }
             )
         }
 
-
-        // --- DUEÑO DE GARAGE ---
+        // -------------------- DUEÑO DE GARAGE --------------------
         composable(Routes.DuenoGarage.route) { backStackEntry ->
-            val currentUser by authViewModel.currentUser.collectAsState()
-            val userId = currentUser?.id ?: ""
+            val user by authViewModel.currentUser.collectAsState()
+            val userId = user?.id ?: ""
 
-            // ✅ Usar viewModel con el NavBackStackEntry para persistir el estado
-            val garageViewModel: GarageViewModel = viewModel(
-                viewModelStoreOwner = backStackEntry,
+            val viewModel: GarageViewModel = viewModel(
+                backStackEntry,
                 factory = GarageViewModelFactory(garageRepository)
             )
 
             DuenoGarageScreen(
                 navController = navController,
-                viewModel = garageViewModel,
+                viewModel = viewModel,
                 userId = userId
             )
         }
 
-
+        // -------------------- EMPLOYEE HOME --------------------
         composable(Routes.EmployeeHome.route) { backStackEntry ->
             val currentUser by authViewModel.currentUser.collectAsState()
-            val garageRepository = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val repo = remember { EmpleadoGarageRepositoryImpl(supabase) }
 
             var garageId by remember { mutableStateOf("") }
 
-            // 👉 Obtener garageId del usuario logueado
             LaunchedEffect(currentUser) {
-                currentUser?.let { user ->
-                    val id = garageRepository.getGarageByEmpleadoId(user.id!!)
-                    garageId = id ?: ""
+                currentUser?.let {
+                    garageId = repo.getGarageByEmpleadoId(it.id!!) ?: ""
                 }
             }
 
-            // 👉 Solo mostrar la pantalla cuando garageId ya esté disponible
             if (garageId.isNotBlank()) {
                 EmployeeHomeScreen(
                     navController = navController,
                     garageId = garageId,
                     viewModel = viewModel(
-                        viewModelStoreOwner = backStackEntry,
-                        factory = EmpleadosViewModelFactory(EmpleadoGarageRepositoryImpl(supabase))
+                        backStackEntry,
+                        factory = EmpleadosViewModelFactory(repo)
                     )
                 )
             }
         }
 
+        // -------------------- REGISTRAR ENTRADA --------------------
+        composable(Routes.RegistrarEntrada.route) { backStackEntry ->
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+
+            RegistrarEntradaScreen(
+                navController = navController,
+                garageId = garageId
+            )
+        }
 
 
-
-        // --- AGREGAR GARAGE ---
+        // -------------------- AGREGAR GARAGE --------------------
         composable(Routes.GarageAdd.route) { backStackEntry ->
             val currentUser by authViewModel.currentUser.collectAsState()
+
             currentUser?.let { user ->
-                // ✅ Usar viewModel para persistir el estado
-                val garageViewModel: GarageViewModel = viewModel(
+                val vm: GarageViewModel = viewModel(
                     viewModelStoreOwner = backStackEntry,
                     factory = GarageViewModelFactory(garageRepository)
                 )
 
                 GarageAddScreen(
                     userId = user.id,
-                    viewModel = garageViewModel,
+                    viewModel = vm,
                     onDismiss = { navController.popBackStack() },
                     onSuccess = {
                         navController.navigate(Routes.DuenoGarage.route) {
                             popUpTo(Routes.DuenoGarage.route) { inclusive = true }
-                            launchSingleTop = true
                         }
                     }
                 )

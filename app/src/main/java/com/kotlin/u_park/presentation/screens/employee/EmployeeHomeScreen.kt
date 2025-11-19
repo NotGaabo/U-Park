@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kotlin.u_park.presentation.navigation.Routes
 
 private val RedSoft = Color(0xFFE60023)
 private val BackgroundColor = Color(0xFFF5F5F5)
@@ -312,7 +313,7 @@ fun EmployeeHomeScreen(
                                 title = "Registrar Entrada",
                                 color = Color(0xFF4CAF50),
                                 modifier = Modifier.weight(1f),
-                                onClick = { /* TODO: Navegar a registro */ }
+                                onClick = { navController.navigate(Routes.RegistrarEntrada.createRoute(garageId ?: "")) }
                             )
                             QuickActionCard(
                                 icon = Icons.Default.Remove,

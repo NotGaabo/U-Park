@@ -245,14 +245,13 @@ fun SettingsScreen(
                                         // Navegar SIN destruir toda la pila
                                         val route = when (normalizedRole) {
                                             "duenogarage" -> Routes.DuenoGarage.route
-                                            "employee" -> Routes.EmployeeHome.route
+                                            "employee" ->Routes.EmployeeHome.route
                                             "user" -> Routes.Home.route
                                             else -> Routes.Login.route
                                         }
 
                                         navController.navigate(route) {
-                                            // Limpiar la pila pero mantener el estado
-                                            popUpTo(route) { inclusive = true }
+                                            popUpTo(Routes.Settings.route) { inclusive = false }
                                             launchSingleTop = true
                                         }
                                     }

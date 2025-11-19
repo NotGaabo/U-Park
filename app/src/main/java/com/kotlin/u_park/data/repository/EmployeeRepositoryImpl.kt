@@ -159,20 +159,20 @@ class EmpleadoGarageRepositoryImpl(
                 .decodeList<Parking>()
 
             // 🔹 Filtrar por garageId
-            val parkingsGarage = parkingList.filter { it.garage_id == garageId }
+            val parkingsGarage = parkingList.filter { it.garageId == garageId }
 
             // 🔹 Autos activos dentro del garage (hora_salida = null)
-            val autosActivos = parkingsGarage.count { it.hora_salida == null }
+            val autosActivos = parkingsGarage.count { it.horaSalida == null }
 
             // 🔹 Entradas y salidas de hoy
             val hoy = java.time.LocalDate.now().toString() // "yyyy-MM-dd"
 
             val entradasHoy = parkingsGarage.count {
-                it.hora_entrada.toString().startsWith(hoy)
+                it.horaEntrada.toString().startsWith(hoy)
             }
 
             val salidasHoy = parkingsGarage.count {
-                it.hora_salida?.toString()?.startsWith(hoy) == true
+                it.horaSalida?.toString()?.startsWith(hoy) == true
             }
 
             // 🔹 Espacios libres

@@ -12,40 +12,112 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.kotlin.u_park.data.repository.GarageRepositoryImpl
+import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.domain.model.Garage
 
 @Composable
-fun DetallesScreen(navController: NavController, garage: Garage) {
-    // Caja general para el contenido
+fun DetallesScreen(navController: NavController, garageId: String) {
+
+    // Repo para cargar el garage
+    val repo = remember { GarageRepositoryImpl(supabase) }
+
+    // Estado del garage cargado
+    var garage by remember { mutableStateOf<Garage?>(null) }
+    var loading by remember { mutableStateOf(true) }
+
+    // Cargar garage desde Supabase
+    LaunchedEffect(garageId) {
+        loading = true
+        try {
+            garage = repo.getGarageById(garageId)
+        } finally {
+            loading = false
+        }
+    }
+
+    LaunchedEffect(garageId) {
+        loading = true
+        try {
+            garage = repo.getGarageById(garageId)
+        } finally {
+            loading = false
+        }
+    }
+
+    // Mostrar loader mientras carga
+    if (loading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    // Si no existe
+    if (garage == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            Text("Garage no encontrado")
+        }
+        return
+    }
+
+    val g = garage!!
+
+    // ---------------- UI ----------------
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Imagen principal del garage
-        val imageUrl = garage.imageUrl?.trim()?.replace("\n", "")
+
+        val imageUrl = g.imageUrl?.trim()?.replace("\n", "")
 
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(imageUrl)
                 .crossfade(true)
                 .build(),
-            contentDescription = garage.nombre,
+            contentDescription = g.nombre,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(220.dp)
                 .clip(RoundedCornerShape(12.dp))
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Detalles del garage
         Text(
-            text = garage.nombre ?: "Sin nombre",
+            text = g.nombre ?: "Sin nombre",
             style = MaterialTheme.typography.headlineSmall
         )
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = g.direccion ?: "Sin dirección",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Capacidad: ${g.capacidadTotal}",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Horario: ${g.horario ?: "-"}",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
     }
 }

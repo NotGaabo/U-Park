@@ -3,8 +3,10 @@ package com.kotlin.u_park.presentation.screens.home
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -49,6 +51,7 @@ fun HomeScreen(
 ) {
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(authViewModel))
     val context = LocalContext.current
+
     val coroutineScope = rememberCoroutineScope()
     val isConnected by networkViewModel.isConnected.observeAsState(true)
     val garages by homeViewModel.garages.collectAsState()
@@ -63,12 +66,16 @@ fun HomeScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted -> permissionGranted = granted }
 
+    // Solicitud de permiso
     LaunchedEffect(Unit) {
         val hasPermission = checkLocationPermission(context)
-        if (!hasPermission) locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        else permissionGranted = true
+        if (!hasPermission)
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        else
+            permissionGranted = true
     }
 
+    // Obtener ubicación
     LaunchedEffect(permissionGranted) {
         if (permissionGranted) {
             getCurrentLocation(context, fusedLocationClient) { loc ->
@@ -88,6 +95,7 @@ fun HomeScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedGarage by remember { mutableStateOf<Garage?>(null) }
     var selectedLocationLine by remember { mutableStateOf("") }
+
     val listState = rememberLazyListState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val snackbarHostState = remember { SnackbarHostState() }
@@ -97,7 +105,9 @@ fun HomeScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("U-Park", fontWeight = FontWeight.Bold, color = RedSoft) },
+                title = {
+                    Text("U-Park", fontWeight = FontWeight.Bold, color = RedSoft)
+                },
                 actions = {
                     IconButton(onClick = {}) {
                         Icon(Icons.Default.Notifications, null, tint = Color.Black)
@@ -138,12 +148,14 @@ fun HomeScreen(
             }
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(BackgroundColor)
                 .padding(padding)
         ) {
+
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -168,11 +180,13 @@ fun HomeScreen(
             ) {
                 when {
                     isGettingLocation -> Text("📡 Obteniendo ubicación...", color = Color.Gray)
+
                     userLocation != null -> Text(
                         "📍 Coordenadas: ${userLocation!!.first}, ${userLocation!!.second}",
                         color = Color.DarkGray,
                         fontWeight = FontWeight.Medium
                     )
+
                     else -> Text("⚠️ No se pudo obtener la ubicación", color = Color.Red)
                 }
             }
@@ -186,7 +200,10 @@ fun HomeScreen(
                     .weight(1f)
             ) {
                 when {
-                    isLoading -> items(4) { GarageSkeleton() }
+                    isLoading -> items(4) {
+                        GarageSkeleton()
+                    }
+
                     garages.isEmpty() -> item {
                         Box(
                             modifier = Modifier
@@ -197,10 +214,12 @@ fun HomeScreen(
                             Text("No hay garajes cerca (1 km)", color = Color.Gray)
                         }
                     }
+
                     else -> {
                         val filtered = garages.filter {
                             it.nombre.contains(searchQuery, ignoreCase = true)
                         }
+
                         items(filtered) { garage ->
                             GarageCard(
                                 garage = garage,
@@ -222,6 +241,7 @@ fun HomeScreen(
         }
     }
 
+    // 🟥 BottomSheet con el nuevo callback onGoToGarage
     selectedGarage?.let {
         ModalBottomSheet(
             onDismissRequest = { selectedGarage = null },
@@ -232,7 +252,15 @@ fun HomeScreen(
                 onDismiss = { selectedGarage = null },
                 locationLine = selectedLocationLine,
                 onReserve = {},
-                onDetails = {}
+                onDetails = {
+                    navController.navigate("garage/${it.idGarage}")
+                },
+                onGoToGarage = { garage ->
+                    val lat = garage.latitud ?: return@GarageDetailBottomSheet
+                    val lng = garage.longitud ?: return@GarageDetailBottomSheet
+
+                    openGoogleMaps(context, lat, lng)
+                }
             )
         }
     }
@@ -248,20 +276,25 @@ fun getCurrentLocation(
         onLocationReceived(null)
         return
     }
+
     fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
         if (location != null) {
             onLocationReceived(Pair(location.latitude, location.longitude))
         } else {
             val request = LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY, 1000L
+                Priority.PRIORITY_HIGH_ACCURACY,
+                1000L
             ).setMaxUpdates(1).build()
+
             fusedLocationClient.requestLocationUpdates(
                 request,
                 object : LocationCallback() {
                     override fun onLocationResult(result: LocationResult) {
                         fusedLocationClient.removeLocationUpdates(this)
                         val loc = result.lastLocation
-                        onLocationReceived(loc?.let { Pair(it.latitude, it.longitude) })
+                        onLocationReceived(loc?.let {
+                            Pair(it.latitude, it.longitude)
+                        })
                     }
                 },
                 context.mainLooper
@@ -272,8 +305,24 @@ fun getCurrentLocation(
     }
 }
 
+
+fun openGoogleMaps(context: Context, lat: Double, lng: Double) {
+    val uri = "geo:$lat,$lng?q=$lat,$lng"
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+    intent.setPackage("com.google.android.apps.maps")
+    context.startActivity(intent)
+}
+
 fun checkLocationPermission(context: Context): Boolean {
-    val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    val fine = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    val coarse = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
     return fine || coarse
 }

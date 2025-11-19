@@ -1,17 +1,16 @@
-
-// File: GarageDetailBottomSheet.kt
-// Package: com.clay.componentes
-
 package com.kotlin.u_park.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -22,8 +21,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kotlin.u_park.domain.model.Garage
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.ui.graphics.Color
 
 @Composable
 fun GarageDetailBottomSheet(
@@ -31,7 +28,8 @@ fun GarageDetailBottomSheet(
     onDismiss: () -> Unit,
     locationLine: String,
     onReserve: () -> Unit,
-    onDetails: () -> Unit
+    onDetails: () -> Unit,
+    onGoToGarage: (Garage) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -40,9 +38,7 @@ fun GarageDetailBottomSheet(
             .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Drag handle already provided by ModalBottomSheet dragHandle slot
 
-        // Image header
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(garage.imageUrl)
@@ -78,13 +74,19 @@ fun GarageDetailBottomSheet(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text = garage.horario ?: "-", color = Color.Gray, fontSize = 13.sp)
-            Text(text = "Capacidad: ${garage.capacidadTotal}", color = Color.Gray, fontSize = 13.sp)
+            Text(
+                text = "Capacidad: ${garage.capacidadTotal}",
+                color = Color.Gray,
+                fontSize = 13.sp
+            )
         }
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Buttons pill-shaped (Apple-like)
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Button(
                 onClick = onDetails,
                 modifier = Modifier.weight(1f),
@@ -108,6 +110,21 @@ fun GarageDetailBottomSheet(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        Button(
+            onClick = { onGoToGarage(garage) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(50),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+        ) {
+            Icon(Icons.Default.Map, contentDescription = "map", tint = Color.White)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Ir al garage", color = Color.White)
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 
@@ -128,8 +145,8 @@ fun GarageDetailSheetPreview() {
             onDismiss = {},
             locationLine = "Ubicación",
             onReserve = {},
-            onDetails = {}
+            onDetails = {},
+            onGoToGarage = {} // ✅ SE AGREGA ESTO
         )
     }
 }
-
