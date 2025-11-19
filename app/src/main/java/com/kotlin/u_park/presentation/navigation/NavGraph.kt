@@ -213,5 +213,17 @@ fun NavGraph(
                 )
             }
         }
+        composable(Routes.EmployeeSettings.route) {
+            SettingsEmployeeScreen(
+                navController = navController,
+                supabase = supabase,
+                onSignOut = {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
     }
 }

@@ -120,7 +120,7 @@ fun EmployeeHomeScreen(
                     selected = selectedTab == 1,
                     onClick = {
                         selectedTab = 1
-                        // navController.navigate("profile")
+                        navController.navigate(Routes.EmployeeSettings.route)
                     },
                     icon = {
                         Icon(
@@ -176,18 +176,6 @@ fun EmployeeHomeScreen(
                         GreetingCard(
                             empleadoNombre = empleados.firstOrNull()?.users?.nombre ?: "Empleado"
                         )
-                    }
-
-                    // Alerta si no hay empleados
-                    if (empleados.isEmpty()) {
-                        item {
-                            AlertCard(
-                                title = "No hay empleados registrados",
-                                message = "Aún no se han registrado empleados en este garage. Contacta con el administrador para más información.",
-                                icon = Icons.Default.Warning,
-                                color = Color(0xFFFF9800)
-                            )
-                        }
                     }
 
                     // Estadísticas principales
