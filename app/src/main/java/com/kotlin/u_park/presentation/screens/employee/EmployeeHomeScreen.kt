@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kotlin.u_park.presentation.navigation.Routes
 
 private val RedSoft = Color(0xFFE60023)
 private val BackgroundColor = Color(0xFFF5F5F5)
@@ -119,7 +120,7 @@ fun EmployeeHomeScreen(
                     selected = selectedTab == 1,
                     onClick = {
                         selectedTab = 1
-                        // navController.navigate("profile")
+                        navController.navigate(Routes.EmployeeSettings.route)
                     },
                     icon = {
                         Icon(
@@ -175,18 +176,6 @@ fun EmployeeHomeScreen(
                         GreetingCard(
                             empleadoNombre = empleados.firstOrNull()?.users?.nombre ?: "Empleado"
                         )
-                    }
-
-                    // Alerta si no hay empleados
-                    if (empleados.isEmpty()) {
-                        item {
-                            AlertCard(
-                                title = "No hay empleados registrados",
-                                message = "Aún no se han registrado empleados en este garage. Contacta con el administrador para más información.",
-                                icon = Icons.Default.Warning,
-                                color = Color(0xFFFF9800)
-                            )
-                        }
                     }
 
                     // Estadísticas principales
@@ -312,7 +301,7 @@ fun EmployeeHomeScreen(
                                 title = "Registrar Entrada",
                                 color = Color(0xFF4CAF50),
                                 modifier = Modifier.weight(1f),
-                                onClick = { /* TODO: Navegar a registro */ }
+                                onClick = { navController.navigate(Routes.RegistrarEntrada.createRoute(garageId ?: "")) }
                             )
                             QuickActionCard(
                                 icon = Icons.Default.Remove,

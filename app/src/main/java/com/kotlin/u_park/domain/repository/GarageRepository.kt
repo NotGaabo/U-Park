@@ -18,6 +18,8 @@ interface GarageRepository {
 //    suspend fun addRate(rate: Rate): Boolean
 //    suspend fun updateRate(rate: Rate): Boolean
 //
+    suspend fun getGarageById(garageId: String): Garage?
+
 //    // 🅿️ Parkings (ocupaciones activas o históricas)
 //    suspend fun getParkingsByGarage(garageId: String): List<Parking>
 //    suspend fun startParking(parking: Parking): Boolean

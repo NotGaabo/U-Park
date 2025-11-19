@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
+fun SettingsEmployeeScreen(
     navController: NavController,
     supabase: SupabaseClient,
     onSignOut: () -> Unit
@@ -62,21 +62,9 @@ fun SettingsScreen(
             NavigationBar(containerColor = Color.White) {
                 NavigationBarItem(
                     selected = false,
-                    onClick = { navController.navigate(Routes.Home.route) },
+                    onClick = { navController.navigate(Routes.EmployeeHome.route) },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Inicio") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate(Routes.GarageAdd.route) },
-                    icon = { Icon(Icons.Default.AddCircle, contentDescription = "Agregar") },
-                    label = { Text("Agregar") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { },
-                    icon = { Icon(Icons.Default.History, contentDescription = "Historial") },
-                    label = { Text("Historial") }
+                    label = { Text("Home") }
                 )
                 NavigationBarItem(
                     selected = true,

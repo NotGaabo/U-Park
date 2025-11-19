@@ -57,8 +57,11 @@ fun NavGraph(
         }
 
         // -------------------- DETALLES --------------------
-        composable(Routes.Detalles.route) { backStackEntry ->
+        composable(
+            route = Routes.Detalles.route,
+        ) { backStackEntry ->
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+
             DetallesScreen(
                 navController = navController,
                 garageId = garageId
@@ -175,6 +178,16 @@ fun NavGraph(
                 )
             }
         }
+        // -------------------- REGISTRAR ENTRADA --------------------
+        composable(Routes.RegistrarEntrada.route) { backStackEntry ->
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+
+            RegistrarEntradaScreen(
+                navController = navController,
+                garageId = garageId
+            )
+        }
+
 
         // -------------------- AGREGAR GARAGE --------------------
         composable(Routes.GarageAdd.route) { backStackEntry ->
@@ -198,5 +211,17 @@ fun NavGraph(
                 )
             }
         }
+        composable(Routes.EmployeeSettings.route) {
+            SettingsEmployeeScreen(
+                navController = navController,
+                supabase = supabase,
+                onSignOut = {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
     }
 }
