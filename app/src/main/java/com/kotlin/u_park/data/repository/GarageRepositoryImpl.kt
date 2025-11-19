@@ -25,7 +25,6 @@ class GarageRepositoryImpl(
             emptyList()
         }
     }
-
     override suspend fun getGarageById(garageId: String): Garage? {
         return try {
             supabase.from("garages").select {
@@ -38,8 +37,6 @@ class GarageRepositoryImpl(
             null
         }
     }
-
-
 
     // 🔹 Insertar nuevo garaje (con imagen opcional)
     override suspend fun newGarage(garage: Garage, imageFile: File?): Boolean {

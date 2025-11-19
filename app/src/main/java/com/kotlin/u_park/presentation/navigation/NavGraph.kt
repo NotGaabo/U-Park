@@ -68,7 +68,6 @@ fun NavGraph(
             )
         }
 
-
         // -------------------- SETTINGS --------------------
         composable(Routes.Settings.route) {
             SettingsScreen(
@@ -179,7 +178,6 @@ fun NavGraph(
                 )
             }
         }
-
         // -------------------- REGISTRAR ENTRADA --------------------
         composable(Routes.RegistrarEntrada.route) { backStackEntry ->
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
