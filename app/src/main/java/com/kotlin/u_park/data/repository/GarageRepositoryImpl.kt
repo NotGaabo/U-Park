@@ -1,6 +1,7 @@
 package com.kotlin.u_park.data.repository
 
 import com.kotlin.u_park.domain.model.Garage
+import com.kotlin.u_park.domain.model.GarageInsert
 import com.kotlin.u_park.domain.repository.GarageRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
@@ -86,17 +87,3 @@ class GarageRepositoryImpl(
     }
 }
 
-@Serializable
-data class GarageInsert(
-    val id_garage: String,
-    val nombre: String,
-    val direccion: String,
-    val latitud: Double,
-    val longitud: Double,
-    val capacidad_total: Int,
-    val horario: String? = null,
-    val fecha_creacion: String? = null,
-    val image_url: String? = null,
-    val is_active: Boolean = true,
-    val user_id: String?
-)

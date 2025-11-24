@@ -73,8 +73,9 @@ fun EmpleadosScreen(
                 empleados.isEmpty() -> EmptyState(onAgregarEmpleado)
                 else -> EmpleadosList(
                     empleados = empleados,
-                    onDelete = { id -> viewModel.removeEmpleado(garageId, id) }
+                    onDelete = { cedula -> viewModel.removeEmpleado(garageId, cedula) }
                 )
+
             }
         }
     }
@@ -88,7 +89,7 @@ fun EmpleadosScreen(
 @Composable
 private fun EmpleadosList(
     empleados: List<EmpleadoGarage>,
-    onDelete: (String) -> Unit
+    onDelete: (Long) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

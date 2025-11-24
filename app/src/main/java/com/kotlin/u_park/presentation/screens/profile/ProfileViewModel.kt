@@ -29,12 +29,12 @@ class SettingsViewModel(
         loadUserData()
         loadActiveRole()
     }
-
-    suspend fun getGarageIdForCurrentEmployee(): String? {
-        val userId = supabase.auth.currentUserOrNull()?.id ?: return null
-        val repo = EmpleadoGarageRepositoryImpl(supabase)
-        return repo.getGarageByEmpleadoId(userId)
-    }
+//
+//    suspend fun getGarageIdForCurrentEmployee(): String? {
+//        val userId = supabase.auth.currentUserOrNull()?.id ?: return null
+//        val repo = EmpleadoGarageRepositoryImpl(supabase)
+//        return repo.getGarageByEmpleadoId(userId.toLong())
+//    }
 
 
     private fun loadUserData() {

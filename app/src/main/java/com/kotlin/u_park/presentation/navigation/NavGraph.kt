@@ -163,7 +163,7 @@ fun NavGraph(
 
             LaunchedEffect(currentUser) {
                 currentUser?.let {
-                    garageId = repo.getGarageByEmpleadoId(it.id!!) ?: ""
+                    garageId = repo.getGarageByEmpleadoId(it.cedula!!.toLong()) ?: ""
                 }
             }
 

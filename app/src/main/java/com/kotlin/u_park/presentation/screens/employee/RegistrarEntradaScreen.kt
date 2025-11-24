@@ -54,8 +54,6 @@ fun RegistrarEntradaScreen(
         }
     )
 
-    // Si necesitas pedir permiso camera (en la mayoría de casos TakePicturePreview usa la cámara integrada,
-    // pero pedimos permiso por seguridad)
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
         onResult = { granted ->
@@ -143,14 +141,8 @@ fun RegistrarEntradaScreen(
     }
 }
 
-/**
- * Genera un PDF simple (A4-like) con los datos básicos y la foto incrustada.
- * Guarda el PDF en: context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
- * Devuelve el File generado.
- */
 @RequiresApi(Build.VERSION_CODES.O)
 fun generatePdfWithPhoto(context: android.content.Context, placa: String, foto: Bitmap): File {
-    // Carpeta privada/external de la app para documentos (no necesita permiso WRITE_EXTERNAL_STORAGE)
     val docsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         ?: context.filesDir
 
@@ -160,13 +152,11 @@ fun generatePdfWithPhoto(context: android.content.Context, placa: String, foto: 
 
     val pdf = PdfDocument()
 
-    // A4-like in points (595 x 842)
     val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
     val page = pdf.startPage(pageInfo)
     val canvas: Canvas = page.canvas
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    // Dibujar header
     paint.textSize = 20f
     paint.isFakeBoldText = true
     canvas.drawText("U-Park - Ticket de Entrada", 40f, 50f, paint)
@@ -176,13 +166,11 @@ fun generatePdfWithPhoto(context: android.content.Context, placa: String, foto: 
     canvas.drawText("Placa: $placa", 40f, 90f, paint)
     canvas.drawText("Fecha: ${java.time.LocalDateTime.now()}", 40f, 110f, paint)
 
-    // Reservar área para la imagen: desde x=40, y=140 hasta width = pageWidth - 80
     val imageLeft = 40f
     val imageTop = 140f
     val imageMaxWidth = (pageInfo.pageWidth - 80).toFloat()
-    val imageMaxHeight = 400f // límite para no pasarse
+    val imageMaxHeight = 400f
 
-    // Escalar bitmap para que encaje en el área disponible sin deformar
     val scale = minOf(imageMaxWidth / foto.width.toFloat(), imageMaxHeight / foto.height.toFloat(), 1f)
     val matrix = Matrix()
     matrix.postScale(scale, scale)
@@ -190,12 +178,10 @@ fun generatePdfWithPhoto(context: android.content.Context, placa: String, foto: 
     val scaledHeight = (foto.height * scale).toInt()
     val scaledBitmap = Bitmap.createScaledBitmap(foto, scaledWidth, scaledHeight, true)
 
-    // Dibujar la imagen centrada horizontalmente en el área
     val drawX = imageLeft + (imageMaxWidth - scaledWidth) / 2f
     val drawY = imageTop
     canvas.drawBitmap(scaledBitmap, drawX, drawY, paint)
 
-    // Texto adicional debajo de la imagen
     val afterImageY = drawY + scaledHeight + 20f
     paint.textSize = 12f
     canvas.drawText("Observaciones: Foto tomada al entrar", 40f, afterImageY, paint)
@@ -206,7 +192,6 @@ fun generatePdfWithPhoto(context: android.content.Context, placa: String, foto: 
 
     pdf.finishPage(page)
 
-    // Escribir a archivo
     FileOutputStream(outFile).use { out ->
         pdf.writeTo(out)
     }

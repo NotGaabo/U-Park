@@ -165,7 +165,7 @@ fun RegisterScreen(
                             val user = User(
                                 nombre = nombre,
                                 usuario = usuario,
-                                cedula = cedula,
+                                cedula = cedula.toLong(),
                                 telefono = telefono,
                                 correo = correo,
                                 contrasena = contrasena
