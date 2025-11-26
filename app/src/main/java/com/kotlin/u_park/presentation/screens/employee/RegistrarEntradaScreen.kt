@@ -3,12 +3,7 @@ package com.kotlin.u_park.presentation.screens.employee
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.pdf.PdfDocument
 import android.os.Build
-import android.os.Environment
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,27 +26,43 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import java.io.File
-import java.io.FileOutputStream
+import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegistrarEntradaScreen(
     navController: NavController,
-    garageId: String
+    viewModel: ParkingViewModel,
+    garageId: String,
+    empleadoId: String
 ) {
     val ctx = LocalContext.current
+
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var placa by remember { mutableStateOf("") }
-    var savedPath by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
 
-    // Launcher para tomar foto como Bitmap
+    val isLoading by viewModel.isLoading.collectAsState()
+    val ticket by viewModel.ticket.collectAsState()
+    val message by viewModel.message.collectAsState()
+
+    // Cuando ya tengamos un ticket, navegar
+    LaunchedEffect(ticket) {
+        ticket?.let {
+            navController.navigate("ticket/${it.parkingId}")
+        }
+    }
+
+    // Manejar mensajes de error o éxito
+    LaunchedEffect(message) {
+        message?.let {
+            Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ---------- Cámara ----------
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview(),
-        onResult = { result ->
-            bitmap = result
-        }
+        onResult = { result -> bitmap = result }
     )
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -68,6 +79,7 @@ fun RegistrarEntradaScreen(
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Text("Registrar Entrada", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -82,23 +94,22 @@ fun RegistrarEntradaScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+
+            // Botón tomar foto
             Button(onClick = {
                 val permission = Manifest.permission.CAMERA
-                val isGranted = ContextCompat.checkSelfPermission(ctx, permission) == PackageManager.PERMISSION_GRANTED
-                if (!isGranted) {
-                    permissionLauncher.launch(permission)
-                } else {
-                    cameraLauncher.launch(null)
-                }
+                val granted = ContextCompat.checkSelfPermission(ctx, permission) == PackageManager.PERMISSION_GRANTED
+                if (!granted) permissionLauncher.launch(permission)
+                else cameraLauncher.launch(null)
             }) {
                 Icon(Icons.Default.CameraAlt, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Tomar Foto")
             }
 
+            // Botón confirmar entrada
             Button(
                 onClick = {
-                    // Confirmar: generar pdf y (aquí podrías llamar al ViewModel para subir foto y crear registro)
                     if (placa.isBlank()) {
                         Toast.makeText(ctx, "Ingresa la placa", Toast.LENGTH_SHORT).show()
                         return@Button
@@ -108,93 +119,37 @@ fun RegistrarEntradaScreen(
                         return@Button
                     }
 
-                    try {
-                        val file = generatePdfWithPhoto(ctx, placa.trim(), bitmap!!)
-                        savedPath = file.absolutePath
-                        Toast.makeText(ctx, "PDF guardado en: ${file.absolutePath}", Toast.LENGTH_LONG).show()
+                    val fotoBytes = listOf(bitmap!!.toByteArray())
 
-                        // Aquí podrías: subir foto, insertar registro en parking, navegar a pantalla de ticket, etc.
-                        // navController.navigate("ticket/${...}")
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        Toast.makeText(ctx, "Error generando PDF: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
+                    viewModel.registrarEntrada(
+                        garageId = garageId,
+                        vehicleId = placa.trim(),
+                        empleadoId = empleadoId,
+                        fotosBytes = fotoBytes
+                    )
                 }
             ) {
                 Icon(Icons.Default.Check, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Confirmar Entrada")
+                Text(if (isLoading) "Cargando..." else "Confirmar Entrada")
             }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         bitmap?.let {
-            Image(bitmap = it.asImageBitmap(), contentDescription = null, modifier = Modifier.size(280.dp))
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        savedPath?.let { path ->
-            Text("Último PDF: $path", modifier = Modifier.fillMaxWidth())
+            Image(
+                bitmap = it.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.size(260.dp)
+            )
         }
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-fun generatePdfWithPhoto(context: android.content.Context, placa: String, foto: Bitmap): File {
-    val docsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        ?: context.filesDir
-
-    if (!docsDir.exists()) docsDir.mkdirs()
-
-    val outFile = File(docsDir, "factura_${placa}_${System.currentTimeMillis()}.pdf")
-
-    val pdf = PdfDocument()
-
-    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
-    val page = pdf.startPage(pageInfo)
-    val canvas: Canvas = page.canvas
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-
-    paint.textSize = 20f
-    paint.isFakeBoldText = true
-    canvas.drawText("U-Park - Ticket de Entrada", 40f, 50f, paint)
-
-    paint.textSize = 12f
-    paint.isFakeBoldText = false
-    canvas.drawText("Placa: $placa", 40f, 90f, paint)
-    canvas.drawText("Fecha: ${java.time.LocalDateTime.now()}", 40f, 110f, paint)
-
-    val imageLeft = 40f
-    val imageTop = 140f
-    val imageMaxWidth = (pageInfo.pageWidth - 80).toFloat()
-    val imageMaxHeight = 400f
-
-    val scale = minOf(imageMaxWidth / foto.width.toFloat(), imageMaxHeight / foto.height.toFloat(), 1f)
-    val matrix = Matrix()
-    matrix.postScale(scale, scale)
-    val scaledWidth = (foto.width * scale).toInt()
-    val scaledHeight = (foto.height * scale).toInt()
-    val scaledBitmap = Bitmap.createScaledBitmap(foto, scaledWidth, scaledHeight, true)
-
-    val drawX = imageLeft + (imageMaxWidth - scaledWidth) / 2f
-    val drawY = imageTop
-    canvas.drawBitmap(scaledBitmap, drawX, drawY, paint)
-
-    val afterImageY = drawY + scaledHeight + 20f
-    paint.textSize = 12f
-    canvas.drawText("Observaciones: Foto tomada al entrar", 40f, afterImageY, paint)
-
-    // Footer
-    paint.textSize = 10f
-    canvas.drawText("Generado por U-Park", 40f, pageInfo.pageHeight - 40f, paint)
-
-    pdf.finishPage(page)
-
-    FileOutputStream(outFile).use { out ->
-        pdf.writeTo(out)
-    }
-    pdf.close()
-    return outFile
+fun Bitmap.toByteArray(): ByteArray {
+    val stream = java.io.ByteArrayOutputStream()
+    this.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+    return stream.toByteArray()
 }
+

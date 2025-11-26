@@ -30,4 +30,14 @@ sealed class Routes(val route: String) {
     object Settings : Routes("settings")
     object SettingsDueno : Routes("settingsdueno")
     object GarageAdd : Routes("new_garage")
+
+    // Crear una reserva
+    object RegistrarReserva : Routes("registrarReserva/{garageId}") {
+        fun createRoute(garageId: String) = "registrarReserva/$garageId"
+    }
+
+    // Listado de reservas
+    object ListaReservas : Routes("listaReservas/{garageId}") {
+        fun createRoute(garageId: String) = "listaReservas/$garageId"
+    }
 }

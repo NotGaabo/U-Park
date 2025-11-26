@@ -6,12 +6,12 @@ import com.kotlin.u_park.domain.model.EmpleadoGarage
 import com.kotlin.u_park.domain.model.EmpleadoGarageInsert
 import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.domain.repository.EmpleadoGarageRepository
-import com.kotlin.u_park.presentation.screens.employee.Stats
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import com.kotlin.u_park.domain.model.Parking
 import com.kotlin.u_park.domain.model.Role
+import com.kotlin.u_park.domain.model.Stats
 import com.kotlin.u_park.domain.model.UserRole
 import kotlinx.serialization.Serializable
 

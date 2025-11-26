@@ -66,7 +66,7 @@ fun HomeScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted -> permissionGranted = granted }
 
-    // Solicitud de permiso
+    // 📌 Solicitud de permiso
     LaunchedEffect(Unit) {
         val hasPermission = checkLocationPermission(context)
         if (!hasPermission)
@@ -75,12 +75,13 @@ fun HomeScreen(
             permissionGranted = true
     }
 
-    // Obtener ubicación
+    // 📌 Obtener ubicación
     LaunchedEffect(permissionGranted) {
         if (permissionGranted) {
             getCurrentLocation(context, fusedLocationClient) { loc ->
                 userLocation = loc
                 isGettingLocation = false
+
                 if (loc != null)
                     homeViewModel.loadGarages(context, loc.first, loc.second)
                 else
@@ -156,6 +157,7 @@ fun HomeScreen(
                 .padding(padding)
         ) {
 
+            // 🔎 Buscador
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -172,6 +174,7 @@ fun HomeScreen(
                 )
             )
 
+            // 📍 Estado de ubicación
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -180,17 +183,16 @@ fun HomeScreen(
             ) {
                 when {
                     isGettingLocation -> Text("📡 Obteniendo ubicación...", color = Color.Gray)
-
                     userLocation != null -> Text(
                         "📍 Coordenadas: ${userLocation!!.first}, ${userLocation!!.second}",
                         color = Color.DarkGray,
                         fontWeight = FontWeight.Medium
                     )
-
                     else -> Text("⚠️ No se pudo obtener la ubicación", color = Color.Red)
                 }
             }
 
+            // 📋 Listado de garajes
             LazyColumn(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -199,6 +201,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .weight(1f)
             ) {
+
                 when {
                     isLoading -> items(4) {
                         GarageSkeleton()
@@ -241,24 +244,33 @@ fun HomeScreen(
         }
     }
 
-    // 🟥 BottomSheet con el nuevo callback onGoToGarage
-    selectedGarage?.let {
+    // 🟥 BottomSheet — CORREGIDO COMPLETAMENTE
+    selectedGarage?.let { garage ->
         ModalBottomSheet(
             onDismissRequest = { selectedGarage = null },
             sheetState = sheetState
         ) {
             GarageDetailBottomSheet(
-                garage = it,
+                garage = garage,
                 onDismiss = { selectedGarage = null },
                 locationLine = selectedLocationLine,
-                onReserve = {},
-                onDetails = {
-                    navController.navigate("garage/${it.idGarage}")
-                },
-                onGoToGarage = { garage ->
-                    val lat = garage.latitud ?: return@GarageDetailBottomSheet
-                    val lng = garage.longitud ?: return@GarageDetailBottomSheet
 
+                // 🟩 ✔️ Navegación correcta a RegistrarReservaScreen
+                onReserve = { g ->
+                    navController.navigate(
+                        "registrarReserva/${g.idGarage}"
+                    )
+                },
+
+                // 🟦 Navegar a detalles
+                onDetails = { g ->
+                    navController.navigate("garage/${g.idGarage}")
+                },
+
+                // 🟧 Abrir Google Maps
+                onGoToGarage = { g ->
+                    val lat = g.latitud ?: return@GarageDetailBottomSheet
+                    val lng = g.longitud ?: return@GarageDetailBottomSheet
                     openGoogleMaps(context, lat, lng)
                 }
             )
@@ -304,7 +316,6 @@ fun getCurrentLocation(
         onLocationReceived(null)
     }
 }
-
 
 fun openGoogleMaps(context: Context, lat: Double, lng: Double) {
     val uri = "geo:$lat,$lng?q=$lat,$lng"
