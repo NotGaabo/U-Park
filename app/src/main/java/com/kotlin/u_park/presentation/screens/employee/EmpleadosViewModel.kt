@@ -3,14 +3,19 @@ package com.kotlin.u_park.presentation.screens.employee
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kotlin.u_park.domain.model.EmpleadoGarage
+import com.kotlin.u_park.domain.model.Parking
+import com.kotlin.u_park.domain.model.ParkingActividad
 import com.kotlin.u_park.domain.model.Stats
 import com.kotlin.u_park.domain.repository.EmpleadoGarageRepository
+import com.kotlin.u_park.domain.repository.ParkingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class EmpleadosViewModel(
-    private val repository: EmpleadoGarageRepository
+    private val empleadoRepo: EmpleadoGarageRepository,
+    private val parkingRepo: ParkingRepository     // 🔥 SE AGREGA EL REPO DE PARKING
 ) : ViewModel() {
 
     private val _stats = MutableStateFlow<Stats?>(null)
@@ -26,13 +31,32 @@ class EmpleadosViewModel(
     val isSuccess: StateFlow<Boolean?> = _isSuccess
 
 
+    /* ---------------------------------------------------------
+       🔥 BLOQUE AÑADIDO: ACTIVIDAD RECIENTE DEL PARKING
+    --------------------------------------------------------- */
 
-    // 🔹 Cargar estadísticas
+    private val _actividad = MutableStateFlow<List<ParkingActividad>>(emptyList())
+    val actividad = _actividad.asStateFlow()
+
+    fun loadActividad(garageId: String) {
+        viewModelScope.launch {
+            try {
+                _actividad.value = parkingRepo.getActividadReciente(garageId)
+            } catch (e: Exception) {
+                _actividad.value = emptyList()
+            }
+        }
+    }
+
+    /* ---------------------------------------------------------
+       ESTADÍSTICAS
+    --------------------------------------------------------- */
+
     fun loadStats(garageId: String) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                _stats.value = repository.getStats(garageId)
+                _stats.value = empleadoRepo.getStats(garageId)
             } catch (e: Exception) {
                 _stats.value = Stats()
             } finally {
@@ -41,12 +65,15 @@ class EmpleadosViewModel(
         }
     }
 
-    // 🔹 Cargar empleados de un garage
+    /* ---------------------------------------------------------
+       EMPLEADOS
+    --------------------------------------------------------- */
+
     fun loadEmpleados(garageId: String) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                _empleados.value = repository.getEmpleadosByGarage(garageId)
+                _empleados.value = empleadoRepo.getEmpleadosByGarage(garageId)
             } catch (e: Exception) {
                 _empleados.value = emptyList()
             } finally {
@@ -55,23 +82,16 @@ class EmpleadosViewModel(
         }
     }
 
-
-    // 🔹 Agregar empleado por CÉDULA (Long)
     fun addEmpleado(garageId: String, cedula: Long) {
         viewModelScope.launch {
-            android.util.Log.d("VM_ADD", "Agregando empleadoCedula=$cedula a garageId=$garageId")
-
             _isLoading.value = true
             try {
-                val ok = repository.addEmpleadoToGarage(garageId, cedula)
+                val ok = empleadoRepo.addEmpleadoToGarage(garageId, cedula)
 
-                android.util.Log.d("VM_ADD", "Resultado repo=$ok")
                 _isSuccess.value = ok
-
                 if (ok) loadEmpleados(garageId)
 
             } catch (e: Exception) {
-                android.util.Log.e("VM_ADD", "ERROR → ${e.message}")
                 _isSuccess.value = false
             } finally {
                 _isLoading.value = false
@@ -79,21 +99,14 @@ class EmpleadosViewModel(
         }
     }
 
-
-    // 🔹 Eliminar empleado por CÉDULA (Long)
     fun removeEmpleado(garageId: String, cedula: Long) {
         viewModelScope.launch {
-            android.util.Log.d("VM_DELETE", "Eliminar empleadoCedula=$cedula de garageId=$garageId")
-
             _isLoading.value = true
             try {
-                val ok = repository.removeEmpleadoFromGarage(garageId, cedula)
-
-                android.util.Log.d("VM_DELETE", "Resultado repo=$ok")
+                val ok = empleadoRepo.removeEmpleadoFromGarage(garageId, cedula)
                 if (ok) loadEmpleados(garageId)
 
             } catch (e: Exception) {
-                android.util.Log.e("VM_DELETE", "ERROR → ${e.message}")
             } finally {
                 _isLoading.value = false
             }

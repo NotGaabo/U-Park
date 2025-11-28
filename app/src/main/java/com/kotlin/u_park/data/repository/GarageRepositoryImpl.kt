@@ -6,7 +6,6 @@ import com.kotlin.u_park.domain.repository.GarageRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.storage
-import kotlinx.serialization.Serializable
 import java.io.File
 import java.util.UUID
 
@@ -14,54 +13,58 @@ class GarageRepositoryImpl(
     private val supabase: SupabaseClient
 ) : GarageRepository {
 
-    // 🔹 Obtener lista de garajes por userId
-    override suspend fun getGaragesByUserId(userId: String): List<Garage> {
+    // -------------------------
+    // DUEÑO: obtener sus garajes
+    // -------------------------
+    override suspend fun getGaragesByOwner(ownerId: String): List<Garage> {
         return try {
             supabase.from("garages")
-                .select()
-                .decodeList<Garage>()
-                .filter { it.userId == userId } // filtro manual
+                .select {
+                    filter { eq("user_id", ownerId) }
+                }
+                .decodeList()
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
         }
     }
+
+    // alias → por compatibilidad
+    override suspend fun getGaragesByUserId(userId: String): List<Garage> {
+        return getGaragesByOwner(userId)
+    }
+
     override suspend fun getGarageById(garageId: String): Garage? {
         return try {
-            supabase.from("garages").select {
-                filter {
-                    eq("id_garage", garageId)
+            supabase.from("garages")
+                .select {
+                    filter { eq("id_garage", garageId) }
                 }
-            }.decodeSingle<Garage>()
+                .decodeSingle()
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
     }
 
-    // 🔹 Insertar nuevo garaje (con imagen opcional)
     override suspend fun newGarage(garage: Garage, imageFile: File?): Boolean {
         return try {
-
             val garageId = garage.idGarage ?: UUID.randomUUID().toString()
             var imageUrl: String? = null
 
-            // 📌 Subir imagen si existe
             if (imageFile != null) {
-
                 val bucket = supabase.storage.from("garages-image")
-                val imagePath = "garage_$garageId.jpg"
+                val imgPath = "garage_$garageId.jpg"
 
                 bucket.upload(
-                    path = imagePath,
+                    path = imgPath,
                     data = imageFile.readBytes()
                 ) { upsert = true }
 
-                imageUrl = bucket.publicUrl(imagePath)
+                imageUrl = bucket.publicUrl(imgPath)
             }
 
-            // 📌 Objeto para insertar a Supabase
-            val newData = GarageInsert(
+            val insert = GarageInsert(
                 id_garage = garageId,
                 nombre = garage.nombre,
                 direccion = garage.direccion,
@@ -75,8 +78,7 @@ class GarageRepositoryImpl(
                 user_id = garage.userId
             )
 
-            // 📌 Insertar en tabla
-            supabase.from("garages").insert(newData)
+            supabase.from("garages").insert(insert)
 
             true
 
@@ -86,4 +88,3 @@ class GarageRepositoryImpl(
         }
     }
 }
-

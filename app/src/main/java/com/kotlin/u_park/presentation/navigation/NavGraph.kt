@@ -114,17 +114,25 @@ fun NavGraph(
 
         // -------------------- EMPLEADOS --------------------
         composable(Routes.Empleados.route) { backStackEntry ->
+
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
 
-            val repo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val empleadoRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
+
             val viewModel: EmpleadosViewModel = viewModel(
                 backStackEntry,
-                factory = EmpleadosViewModelFactory(repo)
+                factory = EmpleadosViewModelFactory(
+                    empleadoRepo = empleadoRepo,
+                    parkingRepo = parkingRepo
+                )
             )
 
             LaunchedEffect(garageId) {
                 if (garageId.isNotBlank()) {
                     viewModel.loadEmpleados(garageId)
+                    viewModel.loadStats(garageId)
+                    viewModel.loadActividad(garageId)  // si lo agregaste
                 }
             }
 
@@ -140,10 +148,14 @@ fun NavGraph(
         composable(Routes.AgregarEmpleado.route) { backStackEntry ->
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
 
-            val repo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val empleadoRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
             val viewModel: EmpleadosViewModel = viewModel(
                 backStackEntry,
-                factory = EmpleadosViewModelFactory(repo)
+                factory = EmpleadosViewModelFactory(
+                    empleadoRepo = empleadoRepo,
+                    parkingRepo = parkingRepo
+                )
             )
 
             AgregarEmpleadoScreen(
@@ -172,28 +184,48 @@ fun NavGraph(
 
         // -------------------- EMPLOYEE HOME --------------------
         composable(Routes.EmployeeHome.route) { backStackEntry ->
+
             val currentUser by authViewModel.currentUser.collectAsState()
-            val repo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+
+            val empleadoRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
+            val reservasRepo = remember { ReservasRepositoryImpl(supabase) }
 
             var garageId by remember { mutableStateOf("") }
 
             LaunchedEffect(currentUser) {
                 currentUser?.let {
-                    garageId = repo.getGarageByEmpleadoId(it.cedula!!.toLong()) ?: ""
+                    garageId = empleadoRepo.getGarageByEmpleadoId(it.cedula!!.toLong()) ?: ""
                 }
             }
 
             if (garageId.isNotBlank()) {
+
+                val empleadosViewModel: EmpleadosViewModel = viewModel(
+                    backStackEntry,
+                    factory = EmpleadosViewModelFactory(
+                        empleadoRepo = empleadoRepo,
+                        parkingRepo = parkingRepo
+                    )
+                )
+
+                val parkingViewModel: ParkingViewModel = viewModel(
+                    backStackEntry,
+                    factory = ParkingViewModelFactory(
+                        parkingRepository = parkingRepo,
+                        reservasRepository = reservasRepo
+                    )
+                )
+
                 EmployeeHomeScreen(
                     navController = navController,
                     garageId = garageId,
-                    viewModel = viewModel(
-                        backStackEntry,
-                        factory = EmpleadosViewModelFactory(repo)
-                    )
+                    viewModel = empleadosViewModel,
+                    parkingViewModel = parkingViewModel   // 🔥 YA NO FALTA
                 )
             }
         }
+
         // -------------------- REGISTRAR ENTRADA --------------------
         composable(
             route = Routes.RegistrarEntrada.route,
@@ -237,13 +269,16 @@ fun NavGraph(
         ) { backStackEntry ->
 
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+            val currentUser by authViewModel.currentUser.collectAsState()
+            val userId = currentUser?.id ?: ""
 
             ListaReservasScreen(
                 viewModel = parkingViewModel,
-                garageId = garageId
+                garageId = garageId,
+                userId = userId,
+                garageRepository = garageRepository
             )
         }
-
 
         // -------------------- AGREGAR GARAGE --------------------
         composable(Routes.GarageAdd.route) { backStackEntry ->

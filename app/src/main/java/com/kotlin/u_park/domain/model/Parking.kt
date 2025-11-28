@@ -5,17 +5,33 @@ import java.util.UUID
 
 @Serializable
 data class Parking(
-    val id: Int? = null,
-    val garageId: String,
-    val vehicleId: String,
-    val empleadoId: String? = null,       // empleado para ENTRADAS
-    val createdByUserId: String? = null,  // usuario para RESERVAS
-    val horaEntrada: String,
-    val horaSalida: String? = null,
-    val fotos: List<String> = emptyList(),
+    val id: String? = null,
+    val vehicle_id: String? = null,
+    val garage_id: String? = null,
+    val rate_id: String? = null,
+    val hora_entrada: String,
+    val hora_salida: String? = null,
     val total: Double? = null,
-    val tipo: String = "entrada",     // entrada o reserva
-    val estado: String = "activa"
+    val pagado: Boolean = false,
+    val created_at: String? = null,
+    val fotos: List<String> = emptyList(),
+    val tipo: String = "entrada",
+    val estado: String = "pendiente",
+    val created_by_user_id: String? = null
 )
+@Serializable
+data class ParkingActividad(
+    val id: String? = null,
+    val tipo: String? = null,
+    val hora_entrada: String? = null,
+    val hora_salida: String? = null,
+    val vehicles: VehiclePlate? = null
+)
+
+@Serializable
+data class VehiclePlate(
+    val plate: String? = null
+)
+
 
 

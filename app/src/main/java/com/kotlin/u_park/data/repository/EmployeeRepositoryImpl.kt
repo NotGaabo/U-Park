@@ -134,14 +134,14 @@ class EmpleadoGarageRepositoryImpl(
 
             val parkingList = supabase.from("parkings").select().decodeList<Parking>()
 
-            val parkingsGarage = parkingList.filter { it.garageId == garageId }
+            val parkingsGarage = parkingList.filter { it.garage_id == garageId }
 
-            val autosActivos = parkingsGarage.count { it.horaSalida == null }
+            val autosActivos = parkingsGarage.count { it.hora_salida == null }
 
             val hoy = java.time.LocalDate.now().toString()
 
-            val entradasHoy = parkingsGarage.count { it.horaEntrada.toString().startsWith(hoy) }
-            val salidasHoy = parkingsGarage.count { it.horaSalida?.toString()?.startsWith(hoy) == true }
+            val entradasHoy = parkingsGarage.count { it.hora_entrada.toString().startsWith(hoy) }
+            val salidasHoy = parkingsGarage.count { it.hora_salida?.toString()?.startsWith(hoy) == true }
 
             val espaciosLibres = capacidadTotal - autosActivos
 

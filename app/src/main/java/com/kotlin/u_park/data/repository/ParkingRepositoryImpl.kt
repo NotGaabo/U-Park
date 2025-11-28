@@ -3,10 +3,16 @@ package com.kotlin.u_park.data.repository
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.kotlin.u_park.domain.model.Parking
+import com.kotlin.u_park.domain.model.ParkingActividad
+import com.kotlin.u_park.domain.model.ReservaConUsuario
 import com.kotlin.u_park.domain.repository.ParkingRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.query.Columns
+
 import io.github.jan.supabase.storage.storage
+import java.time.OffsetDateTime
 
 class ParkingRepositoryImpl(
     private val client: SupabaseClient
@@ -14,159 +20,183 @@ class ParkingRepositoryImpl(
 
     private val table = client.from("parkings")
 
-    // ----------------------------------------------------
-    // 1. Registrar ENTRADA
-    // ----------------------------------------------------
-    override suspend fun registrarEntrada(
-        parking: Parking,
-        fotosBytes: List<ByteArray>
-    ): Parking {
+    // ------------------------------------------------------------
+    // REGISTRAR ENTRADA
+    // ------------------------------------------------------------
+    override suspend fun registrarEntrada(parking: Parking, fotosBytes: List<ByteArray>): Parking {
 
-        // 1. Subir fotos al bucket "parking_photos"
-        val urls = fotosBytes.mapIndexed { index, foto ->
-            val path = "parking/${parking.vehicleId}_${System.currentTimeMillis()}_$index.jpg"
-
-            client.storage.from("parking_photos").upload(
-                path = path,
-                data = foto
-            )
-
-            // URL pública de la imagen
+        val urls = fotosBytes.mapIndexed { i, foto ->
+            val path = "parking/${parking.vehicle_id}_${System.currentTimeMillis()}_$i.jpg"
+            client.storage.from("parking_photos").upload(path, foto)
             client.storage.from("parking_photos").publicUrl(path)
         }
 
-        // 2. Copiar registro con las urls
-        val registro = parking.copy(fotos = urls)
+        val body = parking.copy(fotos = urls)
 
-        // 3. Insertar en Supabase
-        val res = table.insert(registro) {
-            select() // necesario para decodeSingle
-        }
-
-        return res.decodeSingle()
+        return table.insert(body) { select() }.decodeSingle()
     }
 
-    // ----------------------------------------------------
-    // 2. Registrar SALIDA
-    // ----------------------------------------------------
-    override suspend fun registrarSalida(parkingId: Int, horaSalida: String): Parking {
+    // ------------------------------------------------------------
+    override suspend fun estaVehiculoDentro(vehicleId: String): Boolean {
+        return table.select {
+            filter {
+                eq("vehicle_id", vehicleId)
+                eq("estado", "activa")
+            }
+        }.decodeList<Parking>().isNotEmpty()
+    }
 
+    // ------------------------------------------------------------
+    override suspend fun registrarSalida(parkingId: String, horaSalida: String): Parking {
         val update = mapOf(
             "hora_salida" to horaSalida,
             "estado" to "completada"
         )
 
-        val res = table.update(update) {
-            // Filtro según ID
-            filter {
-                eq("id", parkingId)
-            }
+        return table.update(update) {
+            filter { eq("id", parkingId) }
             select()
-        }
-
-        return res.decodeSingle()
+        }.decodeSingle()
     }
 
-    // ----------------------------------------------------
-    // 3. Obtener Parking por ID
-    // ----------------------------------------------------
-    override suspend fun getParkingById(id: Int): Parking? {
-        val res = table.select {
-            filter {
-                eq("id", id)
-            }
-        }
-
-        return res.decodeSingleOrNull()
+    // ------------------------------------------------------------
+    override suspend fun getParkingById(id: String): Parking? {
+        return table.select {
+            filter { eq("id", id) }
+        }.decodeSingleOrNull()
     }
 
-    // ----------------------------------------------------
-    // 4. Crear RESERVA
-    // ----------------------------------------------------
-    override suspend fun crearReserva(
-        parking: Parking
-    ): Parking {
-
-        val data = parking.copy(
-            tipo = "reserva",
-            estado = "pendiente"
-        )
-
-        val res = table.insert(data) {
-            select()
-        }
-
-        return res.decodeSingle()
+    // ------------------------------------------------------------
+    override suspend fun crearReserva(parking: Parking): Parking {
+        val data = parking.copy(tipo = "reserva", estado = "pendiente")
+        return table.insert(data) { select() }.decodeSingle()
     }
 
-    // ----------------------------------------------------
-    // 5. Vehículos dentro / fuera (desactivado por ahora)
-    // Los dejamos para después, como pediste.
-    // ----------------------------------------------------
+    // ------------------------------------------------------------
     override suspend fun getVehiculosDentro(): List<Parking> {
-        return emptyList() // TEMPORAL
+        return table.select {
+            filter { eq("estado", "activa") }
+        }.decodeList()
     }
 
     override suspend fun getVehiculosFuera(): List<Parking> {
-        return emptyList() // TEMPORAL
+        return table.select {
+            filter { eq("estado", "completada") }
+        }.decodeList()
     }
 
-    // ----------------------------------------------------
-// 6. Reservas por GARAGE
-// ----------------------------------------------------
+    // ------------------------------------------------------------
+    override suspend fun getReservas(): List<Parking> {
+        return table.select {
+            filter { eq("tipo", "reserva") }
+        }.decodeList()
+    }
+
     override suspend fun getReservasByGarage(garageId: String): List<Parking> {
-        val res = table.select {
+        return table.select {
             filter {
                 eq("garage_id", garageId)
                 eq("tipo", "reserva")
-                eq("estado", "pendiente")
             }
-        }
-        return res.decodeList()
+        }.decodeList()
     }
 
-    // ----------------------------------------------------
-// 7. Activar reserva → convertir a entrada real
-// ----------------------------------------------------
-    @RequiresApi(Build.VERSION_CODES.O)
-    override suspend fun activarReserva(reservaId: Int): Parking {
+    // ------------------------------------------------------------
+    override suspend fun getReservasConUsuario(garageId: String): List<ReservaConUsuario> {
 
-        val update = mapOf(
-            "tipo" to "entrada",
-            "estado" to "activa",
-            "hora_entrada" to java.time.OffsetDateTime.now().toString()
+        return client.from("reservas").select(
+            Columns.raw(
+                """
+                *,
+                vehicles (
+                    plate,
+                    users (nombre)
+                )
+                """
+            )
+        ) {
+            filter { eq("garage_id", garageId) }
+        }.decodeList()
+    }
+
+    // ------------------------------------------------------------
+    @RequiresApi(Build.VERSION_CODES.O)
+    override suspend fun registrarEntradaDesdeReserva(
+        reserva: ReservaConUsuario,
+        fotosBytes: List<ByteArray>,
+        empleadoId: String
+    ): Parking {
+
+        val hora = OffsetDateTime.now().toString()
+
+        val parking = Parking(
+            id = null,
+            garage_id = reserva.garage_id,
+            vehicle_id = reserva.vehicle_id!!,
+            created_by_user_id = empleadoId,
+            hora_entrada = hora,
+            tipo = "entrada",
+            estado = "activa"
         )
 
-        val res = table.update(update) {
-            filter { eq("id", reservaId) }
-            select()
+        val creado = registrarEntrada(parking, fotosBytes)
+
+        client.from("reservas").update(
+            mapOf(
+                "estado" to "activa",
+                "hora_llegada" to hora,
+                "empleado_id" to empleadoId
+            )
+        ) {
+            filter { eq("id", reserva.id!!) }
         }
 
-        return res.decodeSingle()
+        return creado
     }
 
-    // ----------------------------------------------------
-// 8. Cancelar reserva
-// ----------------------------------------------------
+    // ------------------------------------------------------------
+    override suspend fun activarReserva(reservaId: Int): Parking {
+        val update = mapOf(
+            "estado" to "activa"
+        )
+
+        return table.update(update) {
+            filter { eq("id", reservaId) }
+            select()
+        }.decodeSingle()
+    }
+
     override suspend fun cancelarReserva(reservaId: Int): Boolean {
-        table.update(
-            mapOf("estado" to "cancelada")
-        ) {
+        table.update(mapOf("estado" to "cancelada")) {
             filter { eq("id", reservaId) }
         }
         return true
     }
 
+    // ------------------------------------------------------------
+    override suspend fun getActividadReciente(garageId: String): List<ParkingActividad> {
+        return client
+            .from("parkings")
+            .select(
+                Columns.raw(
+                    """
+                id,
+                tipo,
+                hora_entrada,
+                hora_salida,
+                vehicles:vehicle_id (plate)
+                """.trimIndent()
+                )
+            ) {
+                filter { eq("garage_id", garageId) }
 
-    // ----------------------------------------------------
-    // 6. Lista de RESERVAS
-    // ----------------------------------------------------
-    override suspend fun getReservas(): List<Parking> {
-        val res = table.select {
-            filter {
-                eq("tipo", "reserva")
+                order(
+                    column = "hora_entrada",
+                    order = Order.DESCENDING
+                )
+
+                limit(20)
             }
-        }
-        return res.decodeList()
+            .decodeList()
     }
 }
