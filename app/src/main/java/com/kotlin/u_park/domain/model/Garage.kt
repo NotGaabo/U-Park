@@ -25,6 +25,13 @@ data class Garage(
 )
 
 @Serializable
+data class GarageSimple(
+    @SerialName("id_garage")
+    val idGarage: String,
+    val nombre: String
+)
+
+@Serializable
 data class GarageInsert(
     val id_garage: String,
     val nombre: String,

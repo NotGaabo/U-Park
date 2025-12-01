@@ -13,3 +13,8 @@ data class Vehicle(
     val type_id: Int? = null,
     val year: Int? = null
 )
+@Serializable
+data class VehicleTypeSimple(
+    val id: Int,
+    val name: String
+)

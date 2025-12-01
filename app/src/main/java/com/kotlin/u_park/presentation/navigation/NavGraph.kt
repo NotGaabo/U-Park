@@ -14,6 +14,7 @@ import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.GarageRepositoryImpl
 import com.kotlin.u_park.data.repository.EmpleadoGarageRepositoryImpl
 import com.kotlin.u_park.data.repository.ParkingRepositoryImpl
+import com.kotlin.u_park.data.repository.RatesRepositoryImpl
 import com.kotlin.u_park.data.repository.ReservasRepositoryImpl
 import com.kotlin.u_park.presentation.screens.auth.*
 import com.kotlin.u_park.presentation.screens.detalles.DetallesScreen
@@ -23,6 +24,10 @@ import com.kotlin.u_park.presentation.screens.home.*
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModelFactory
 import com.kotlin.u_park.presentation.screens.profile.*
+import com.kotlin.u_park.presentation.screens.rates.RateFormScreen
+import com.kotlin.u_park.presentation.screens.rates.RatesScreen
+import com.kotlin.u_park.presentation.screens.rates.RatesViewModel
+import com.kotlin.u_park.presentation.screens.rates.RatesViewModelFactory
 import com.kotlin.u_park.presentation.screens.splash.SplashScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -192,6 +197,7 @@ fun NavGraph(
             val reservasRepo = remember { ReservasRepositoryImpl(supabase) }
 
             var garageId by remember { mutableStateOf("") }
+            var parkingId by remember { mutableStateOf("") }
 
             LaunchedEffect(currentUser) {
                 currentUser?.let {
@@ -220,10 +226,25 @@ fun NavGraph(
                 EmployeeHomeScreen(
                     navController = navController,
                     garageId = garageId,
+                    parkingId = parkingId,
                     viewModel = empleadosViewModel,
                     parkingViewModel = parkingViewModel   // 🔥 YA NO FALTA
                 )
             }
+        }
+
+        composable(
+            route = Routes.VehiculosDentro.route,
+            arguments = listOf(navArgument("garageId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+
+            VehiculosDentroScreen(
+                navController = navController,
+                parkingViewModel = parkingViewModel,
+                garageId = garageId
+            )
         }
 
         // -------------------- REGISTRAR ENTRADA --------------------
@@ -239,6 +260,35 @@ fun NavGraph(
                 viewModel = parkingViewModel,
                 garageId = garageId,
                 empleadoId = empleadoId    // 🟩 ID real desde SessionManager
+            )
+        }
+
+        // -------------------- REGISTRAR SALIDA --------------------
+        composable(
+            route = Routes.RegistrarSalida.route,
+            arguments = listOf(navArgument("parkingId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val parkingId = backStackEntry.arguments?.getString("parkingId") ?: ""
+
+            // RatesViewModel
+            val ratesRepo = remember { RatesRepositoryImpl(supabase) }
+            val ratesViewModel: RatesViewModel = viewModel(
+                factory = RatesViewModelFactory(ratesRepo)
+            )
+
+            // ParkingViewModel  ← NECESARIO AHORA
+            val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
+            val reservasRepo = remember { ReservasRepositoryImpl(supabase) }
+            val parkingViewModel: ParkingViewModel = viewModel(
+                factory = ParkingViewModelFactory(parkingRepo, reservasRepo)
+            )
+
+            RegistrarSalidaScreen(
+                parkingId = parkingId,
+                ratesViewModel = ratesViewModel,
+                parkingViewModel = parkingViewModel,
+                navController = navController
             )
         }
 
@@ -277,6 +327,61 @@ fun NavGraph(
                 garageId = garageId,
                 userId = userId,
                 garageRepository = garageRepository
+            )
+        }
+
+        // -------------------- TARIFAS (ADMIN DUEÑO) --------------------
+        composable(
+            route = Routes.Rates.route,
+            arguments = listOf(navArgument("garageId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+
+            val ratesRepo = remember { RatesRepositoryImpl(supabase) }
+            val ratesViewModel: RatesViewModel = viewModel(
+                factory = RatesViewModelFactory(ratesRepo)
+            )
+
+            RatesScreen(
+                navController = navController,
+                viewModel = ratesViewModel,
+                garageId = garageId,
+                onCreateRate = {
+                    navController.navigate(Routes.RateForm.createRoute(garageId))
+                },
+                onEditRate = { rateId ->
+                    navController.navigate(Routes.RateForm.createRoute(garageId, rateId))
+                }
+            )
+        }
+
+
+// -------------------- FORMULARIO CREAR / EDITAR TARIFA --------------------
+        composable(
+            route = Routes.RateForm.route,
+            arguments = listOf(
+                navArgument("garageId") { type = NavType.StringType },
+                navArgument("rateId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+            val rateId = backStackEntry.arguments?.getString("rateId") ?: "new"
+
+            val ratesRepo = remember { RatesRepositoryImpl(supabase) }
+            val ratesViewModel: RatesViewModel = viewModel(
+                factory = RatesViewModelFactory(ratesRepo)
+            )
+
+            RateFormScreen(
+                navController = navController,
+                viewModel = ratesViewModel,
+                garageId = garageId,
+                rateId = rateId,
+                onSaved = {
+                    navController.popBackStack()
+                }
             )
         }
 

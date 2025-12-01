@@ -14,6 +14,12 @@ sealed class Routes(val route: String) {
     object RegistrarEntrada : Routes("registrarEntrada/{garageId}") {
         fun createRoute(garageId: String) = "registrarEntrada/$garageId"
     }
+    object VehiculosDentro : Routes("vehiculos_dentro/{garageId}") {
+        fun createRoute(garageId: String) = "vehiculos_dentro/$garageId"
+    }
+    object RegistrarSalida : Routes("registrarSalida/{parkingId}") {
+        fun createRoute(parkingId: String) = "registrarSalida/$parkingId"
+    }
 
     object EmployeeSettings : Routes("settings_employee")
 
@@ -26,6 +32,15 @@ sealed class Routes(val route: String) {
     object Detalles : Routes("garage/{garageId}") {
         fun createRoute(garageId: String) = "garage/$garageId"
     }
+    object Rates : Routes("rates/{garageId}") {
+        fun createRoute(garageId: String) = "rates/$garageId"
+    }
+
+    object RateForm : Routes("rate_form/{garageId}/{rateId}") {
+        fun createRoute(garageId: String, rateId: String = "new") =
+            "rate_form/$garageId/$rateId"
+    }
+
 
     object Settings : Routes("settings")
     object SettingsDueno : Routes("settingsdueno")

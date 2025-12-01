@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
@@ -32,7 +36,8 @@ private val BackgroundColor = Color(0xFFF5F5F5)
 @Composable
 fun EmployeeHomeScreen(
     navController: NavController,
-    garageId: String?,
+    garageId: String,
+    parkingId: String?,
     viewModel: EmpleadosViewModel,
     parkingViewModel: ParkingViewModel   // 🔥 SE AGREGA ESTO
 ) {
@@ -40,6 +45,24 @@ fun EmployeeHomeScreen(
 
     val empleados by viewModel.empleados.collectAsState()
     val actividadReciente by parkingViewModel.actividad.collectAsState()
+    // 🔥 Recargar actividad al volver a la pantalla
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                println("🔄 EmployeeHomeScreen ON_RESUME → refrescando actividad...")
+                parkingViewModel.loadActividad(garageId)
+                viewModel.loadStats(garageId)
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val isLoading by viewModel.isLoading.collectAsState()
     val stats by viewModel.stats.collectAsState()
     val totalEmpleados = empleados.size
@@ -58,16 +81,10 @@ fun EmployeeHomeScreen(
 
     // Cargar datos al iniciar
     LaunchedEffect(garageId) {
-        garageId?.let { id ->
-            android.util.Log.d("EMPLOYEE_HOME", "Cargando datos para garageId=$id")
-            viewModel.loadEmpleados(id)
-            viewModel.loadStats(id)
-        } ?: run {
-            android.util.Log.e("EMPLOYEE_HOME", "garageId es nulo, no se pueden cargar datos")
-        }
+        viewModel.loadEmpleados(garageId)
+        viewModel.loadStats(garageId)
+        parkingViewModel.loadActividad(garageId)
     }
-
-
 
     Scaffold(
         topBar = {
@@ -130,6 +147,30 @@ fun EmployeeHomeScreen(
                         )
                     }
                 )
+                NavigationBarItem(
+                    selected = selectedTab == 1,
+                    onClick = {
+                        selectedTab = 1
+                        navController.navigate(
+                            Routes.VehiculosDentro.createRoute(garageId)
+                        )
+                    },
+                    icon = {
+                        Icon(
+                            Icons.Default.DirectionsCar,
+                            null,
+                            tint = if (selectedTab == 1) RedSoft else Color.Gray
+                        )
+                    },
+                    label = {
+                        Text(
+                            "Vehículos",
+                            color = if (selectedTab == 1) RedSoft else Color.Gray
+                        )
+                    }
+                )
+
+
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = {
@@ -264,7 +305,9 @@ fun EmployeeHomeScreen(
                         }
                     }
 
-                    // Actividad reciente (simulada por ahora)
+                    /* =======================================================
+ * 🔥 ACTIVIDAD RECIENTE CORREGIDA Y OPTIMIZADA
+ * ======================================================= */
                     item {
                         Text(
                             "Actividad Reciente",
@@ -275,26 +318,41 @@ fun EmployeeHomeScreen(
                         )
                     }
 
-                    if (actividadReciente.isEmpty()) {
+                    val actividadOrdenada = actividadReciente.sortedByDescending { act ->
+                        act.hora_salida ?: act.hora_entrada ?: ""
+                    }
+
+                    if (actividadOrdenada.isEmpty()) {
+
                         item {
                             EmptyStateCard(
                                 message = "No hay actividad reciente",
                                 icon = Icons.Default.Info
                             )
                         }
+
                     } else {
-                        items(actividadReciente.size) { index ->
-                            val item = actividadReciente[index]
+
+                        items(actividadOrdenada) { item ->
+
+                            val plate = item.vehicles?.plate ?: "Desconocido"
+                            val isEntry = item.tipo == "entrada"
+
+                            // Determinar hora correcta según sea entrada o salida:
+                            val hora = when {
+                                item.hora_salida != null -> formatearHora(item.hora_salida!!)
+                                item.hora_entrada != null -> formatearHora(item.hora_entrada!!)
+                                else -> "--"
+                            }
 
                             ActivityItem(
-                                plate = item.vehicles?.plate ?: "Desconocido",
-                                action = if (item.tipo == "entrada") "Entrada" else "Salida",
-                                time = item.hora_entrada?.let { formatearHora(it) } ?: "--",
-                                isEntry = item.tipo == "entrada"
+                                plate = plate,
+                                action = if (isEntry) "Entrada" else "Salida",
+                                time = hora,
+                                isEntry = isEntry
                             )
                         }
                     }
-
 
                     // Acciones rápidas
                     item {
@@ -318,13 +376,6 @@ fun EmployeeHomeScreen(
                                 color = Color(0xFF4CAF50),
                                 modifier = Modifier.weight(1f),
                                 onClick = { navController.navigate(Routes.RegistrarEntrada.createRoute(garageId ?: "")) }
-                            )
-                            QuickActionCard(
-                                icon = Icons.Default.Remove,
-                                title = "Registrar Salida",
-                                color = RedSoft,
-                                modifier = Modifier.weight(1f),
-                                onClick = { /* TODO: Navegar a registro */ }
                             )
                         }
                     }

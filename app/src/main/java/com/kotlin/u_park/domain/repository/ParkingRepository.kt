@@ -14,7 +14,8 @@ interface ParkingRepository {
 
     suspend fun crearReserva(parking: Parking): Parking
 
-    suspend fun getVehiculosDentro(): List<Parking>
+    suspend fun getVehiculosDentro(): List<ParkingActividad>
+    suspend fun getVehicleIdByPlate(plate: String): String?
 
     suspend fun getVehiculosFuera(): List<Parking>
 
