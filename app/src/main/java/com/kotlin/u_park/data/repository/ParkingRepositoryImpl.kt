@@ -11,7 +11,10 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
+import io.github.jan.supabase.postgrest.rpc
 import kotlinx.serialization.Serializable
+import com.kotlin.u_park.domain.model.HistorialParking
+import io.github.jan.supabase.postgrest.postgrest
 import java.time.OffsetDateTime
 
 class ParkingRepositoryImpl(
@@ -40,6 +43,19 @@ class ParkingRepositoryImpl(
 
         return result.firstOrNull()?.id
     }
+
+    // ------------------------------------------------------------
+    // 🔴 HISTORIAL USUARIO
+    // ------------------------------------------------------------
+
+    override suspend fun getHistorialByUser(userId: String): List<HistorialParking> {
+        return client.postgrest.rpc(
+            "historial_parking_usuario",
+            mapOf("p_user_id" to userId)
+        ).decodeList()
+    }
+
+
 
     // ------------------------------------------------------------
     // 🔴 REGISTRAR ENTRADA NORMAL (ya recibe UUID)

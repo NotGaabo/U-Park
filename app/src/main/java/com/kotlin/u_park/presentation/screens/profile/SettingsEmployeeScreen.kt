@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kotlin.u_park.R
+import com.kotlin.u_park.presentation.components.SettingsItemLine
+import com.kotlin.u_park.presentation.components.UserInfoLine
 import com.kotlin.u_park.presentation.navigation.Routes
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.delay

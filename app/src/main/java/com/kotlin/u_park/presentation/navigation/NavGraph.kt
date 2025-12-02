@@ -21,6 +21,7 @@ import com.kotlin.u_park.presentation.screens.detalles.DetallesScreen
 import com.kotlin.u_park.presentation.screens.employee.*
 import com.kotlin.u_park.presentation.screens.garage.*
 import com.kotlin.u_park.presentation.screens.home.*
+import com.kotlin.u_park.presentation.screens.parking.ParkingHistoryScreen
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModelFactory
 import com.kotlin.u_park.presentation.screens.profile.*
@@ -301,10 +302,25 @@ fun NavGraph(
             RegistrarReservaScreen(
                 viewModel = parkingViewModel,
                 garageId = garageId,
+                navController = navController,
                 userId = userId
             )
         }
 
+        // -------------------- HISTORIAL PARKING --------------------
+        composable(
+            Routes.HistorialParking.route,
+            listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+
+            ParkingHistoryScreen(
+                viewModel = parkingViewModel,
+                navController = navController,
+                userId = userId
+            )
+        }
 
 
         // -------------------- LISTA DE RESERVAS --------------------

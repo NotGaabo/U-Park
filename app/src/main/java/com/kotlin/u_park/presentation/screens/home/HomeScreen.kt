@@ -35,6 +35,7 @@ import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.presentation.components.GarageCard
 import com.kotlin.u_park.presentation.components.GarageDetailBottomSheet
 import com.kotlin.u_park.presentation.components.GarageSkeleton
+import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
 import com.kotlin.u_park.presentation.utils.NetworkViewModel
 import com.kotlin.u_park.presentation.utils.checkLocationPermission
@@ -52,6 +53,8 @@ fun HomeScreen(
     networkViewModel: NetworkViewModel = viewModel()
 ) {
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(authViewModel))
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val userId = currentUser?.id ?: ""
     val context = LocalContext.current
 
     val coroutineScope = rememberCoroutineScope()
@@ -138,7 +141,10 @@ fun HomeScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = {},
+                    onClick = {
+                            navController.navigate(
+                                Routes.HistorialParking.createRoute(userId))
+                    },
                     icon = { Icon(Icons.Default.History, null) },
                     label = { Text("Historial") }
                 )

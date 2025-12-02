@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kotlin.u_park.domain.model.HistorialParking
 import com.kotlin.u_park.domain.model.Parking
 import com.kotlin.u_park.domain.model.ParkingActividad
 import com.kotlin.u_park.domain.model.ParkingTicket
@@ -41,6 +42,31 @@ class ParkingViewModel(
 
     private val _message = MutableStateFlow<String?>(null)
     val message = _message.asStateFlow()
+    private val _historial = MutableStateFlow<List<HistorialParking>>(emptyList())
+    val historial = _historial.asStateFlow()
+
+    private val _parkingActivo = MutableStateFlow<HistorialParking?>(null)
+    val parkingActivo = _parkingActivo.asStateFlow()
+
+    fun cargarHistorial(userId: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+
+                val lista = repository.getHistorialByUser(userId)
+
+                _historial.value = lista
+
+                _parkingActivo.value = lista.firstOrNull { it.estado == "activa" }
+
+            } catch (e: Exception) {
+                _message.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
 
     fun actualizarVehiculosDentro() {
         viewModelScope.launch {

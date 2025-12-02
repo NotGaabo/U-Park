@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,6 +25,8 @@ import androidx.navigation.NavController
 import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.User
 import com.kotlin.u_park.data.remote.SessionManager
+import com.kotlin.u_park.presentation.components.SettingsItemLine
+import com.kotlin.u_park.presentation.components.UserInfoLine
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -245,7 +246,12 @@ fun SettingsScreenDueno(
                 }
 
                 Divider(color = dividerGray, thickness = 1.dp)
-                SettingsItemLine(Icons.Filled.ExitToApp, "Cerrar sesión", redSoft, onClick = onSignOut)
+                SettingsItemLine(
+                    Icons.Filled.ExitToApp,
+                    "Cerrar sesión",
+                    redSoft,
+                    onClick = onSignOut
+                )
             }
 
             Spacer(modifier = Modifier.height(80.dp))

@@ -1,5 +1,6 @@
 package com.kotlin.u_park.domain.repository
 
+import com.kotlin.u_park.domain.model.HistorialParking
 import com.kotlin.u_park.domain.model.Parking
 import com.kotlin.u_park.domain.model.ParkingActividad
 import com.kotlin.u_park.domain.model.ReservaConUsuario
@@ -24,4 +25,5 @@ interface ParkingRepository {
     suspend fun cancelarReserva(reservaId: Int): Boolean
     suspend fun getActividadReciente(garageId: String): List<ParkingActividad>
     suspend fun estaVehiculoDentro(vehicleId: String): Boolean
+    suspend fun getHistorialByUser(userId: String): List<HistorialParking>
 }
