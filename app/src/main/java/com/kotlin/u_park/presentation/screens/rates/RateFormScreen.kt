@@ -1,16 +1,27 @@
 package com.kotlin.u_park.presentation.screens.rates
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+
+private val RedSoft = Color(0xFFE60023)
+private val BackgroundColor = Color(0xFFF5F5F5)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,24 +62,43 @@ fun RateFormScreen(
 
     var selectedGarageId by remember(editing) { mutableStateOf(editing?.garageId ?: garageId) }
 
-    val dias = listOf("lunes","martes","miércoles","jueves","viernes","sábado","domingo")
+    val dias = listOf("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
     var selectedDays by remember(editing) { mutableStateOf(editing?.diasAplicables ?: dias) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (rateId == "new") "Nueva Tarifa" else "Editar Tarifa") },
+                title = {
+                    Column {
+                        Text(
+                            if (rateId == "new") "Nueva Tarifa" else "Editar Tarifa",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
+                        Text(
+                            "Configuración de precios",
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, null)
+                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = RedSoft,
+                    titleContentColor = Color.White
+                )
             )
         }
     ) { padding ->
 
         Column(
             modifier = Modifier
+                .fillMaxSize()
+                .background(BackgroundColor)
                 .padding(padding)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
@@ -76,14 +106,77 @@ fun RateFormScreen(
         ) {
 
             // -------------------------
+            // HEADER CARD
+            // -------------------------
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    RedSoft.copy(alpha = 0.1f),
+                                    Color.White
+                                )
+                            )
+                        )
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(60.dp),
+                        shape = CircleShape,
+                        color = RedSoft.copy(alpha = 0.2f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.AttachMoney,
+                                contentDescription = null,
+                                tint = RedSoft,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.width(16.dp))
+
+                    Column {
+                        Text(
+                            if (rateId == "new") "Crear nueva tarifa" else "Modificar tarifa",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1A1A1A)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Completa la información requerida",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+
+            // -------------------------
             // SECTION: GARAGE
             // -------------------------
-            Text("Información del Garage", style = MaterialTheme.typography.titleMedium)
+            SectionHeader(
+                icon = Icons.Outlined.Warehouse,
+                title = "Información del Garage"
+            )
 
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
                 Column(Modifier.padding(16.dp)) {
-
-                    // GARAGE SELECT
                     ExposedDropdownMenuBox(
                         expanded = expandedGarage,
                         onExpandedChange = { expandedGarage = it }
@@ -97,7 +190,21 @@ fun RateFormScreen(
                                 .fillMaxWidth(),
                             readOnly = true,
                             label = { Text("Garage") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGarage) }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Warehouse,
+                                    contentDescription = null,
+                                    tint = RedSoft
+                                )
+                            },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGarage)
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = RedSoft,
+                                focusedLabelColor = RedSoft
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         )
 
                         ExposedDropdownMenu(
@@ -110,6 +217,13 @@ fun RateFormScreen(
                                     onClick = {
                                         selectedGarageId = id
                                         expandedGarage = false
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.CheckCircle,
+                                            contentDescription = null,
+                                            tint = if (selectedGarageId == id) RedSoft else Color.Transparent
+                                        )
                                     }
                                 )
                             }
@@ -121,12 +235,19 @@ fun RateFormScreen(
             // -------------------------
             // SECTION: TARIFA
             // -------------------------
-            Text("Tarifa", style = MaterialTheme.typography.titleMedium)
+            SectionHeader(
+                icon = Icons.Outlined.PriceChange,
+                title = "Configuración de Tarifa"
+            )
 
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
                 Column(
-                    Modifier
-                        .padding(16.dp),
+                    Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
@@ -135,7 +256,19 @@ fun RateFormScreen(
                         value = baseRateText,
                         onValueChange = { baseRateText = it },
                         label = { Text("Precio Base (RD$)") },
-                        modifier = Modifier.fillMaxWidth()
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.AttachMoney,
+                                contentDescription = null,
+                                tint = RedSoft
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = RedSoft,
+                            focusedLabelColor = RedSoft
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
                     // UNIDAD (SELECT)
@@ -151,7 +284,21 @@ fun RateFormScreen(
                                 .fillMaxWidth(),
                             readOnly = true,
                             label = { Text("Unidad de tiempo") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedUnit) }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Schedule,
+                                    contentDescription = null,
+                                    tint = RedSoft
+                                )
+                            },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedUnit)
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = RedSoft,
+                                focusedLabelColor = RedSoft
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         )
 
                         ExposedDropdownMenu(
@@ -160,10 +307,17 @@ fun RateFormScreen(
                         ) {
                             units.forEach { unit ->
                                 DropdownMenuItem(
-                                    text = { Text(unit) },
+                                    text = { Text(unit.replaceFirstChar { it.uppercase() }) },
                                     onClick = {
                                         selectedUnit = unit
                                         expandedUnit = false
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.CheckCircle,
+                                            contentDescription = null,
+                                            tint = if (selectedUnit == unit) RedSoft else Color.Transparent
+                                        )
                                     }
                                 )
                             }
@@ -184,19 +338,39 @@ fun RateFormScreen(
                                 .fillMaxWidth(),
                             readOnly = true,
                             label = { Text("Tipo de vehículo") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedVehicleType) }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.DirectionsCar,
+                                    contentDescription = null,
+                                    tint = RedSoft
+                                )
+                            },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedVehicleType)
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = RedSoft,
+                                focusedLabelColor = RedSoft
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         )
 
                         ExposedDropdownMenu(
                             expanded = expandedVehicleType,
                             onDismissRequest = { expandedVehicleType = false }
                         ) {
-
                             DropdownMenuItem(
                                 text = { Text("Cualquiera") },
                                 onClick = {
                                     selectedVehicleType = null
                                     expandedVehicleType = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.CheckCircle,
+                                        contentDescription = null,
+                                        tint = if (selectedVehicleType == null) RedSoft else Color.Transparent
+                                    )
                                 }
                             )
 
@@ -206,6 +380,13 @@ fun RateFormScreen(
                                     onClick = {
                                         selectedVehicleType = id
                                         expandedVehicleType = false
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.CheckCircle,
+                                            contentDescription = null,
+                                            tint = if (selectedVehicleType == id) RedSoft else Color.Transparent
+                                        )
                                     }
                                 )
                             }
@@ -217,67 +398,173 @@ fun RateFormScreen(
             // -------------------------
             // SECTION: DÍAS
             // -------------------------
-            Text("Días aplicables", style = MaterialTheme.typography.titleMedium)
+            SectionHeader(
+                icon = Icons.Outlined.CalendarMonth,
+                title = "Días Aplicables"
+            )
 
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth()
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Column(Modifier.padding(16.dp)) {
                     dias.forEach { dia ->
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (selectedDays.contains(dia)) {
+                                RedSoft.copy(alpha = 0.08f)
+                            } else {
+                                Color.Transparent
+                            }
                         ) {
-                            Checkbox(
-                                checked = selectedDays.contains(dia),
-                                onCheckedChange = { checked ->
-                                    selectedDays =
-                                        if (checked) selectedDays + dia else selectedDays - dia
-                                }
-                            )
-                            Text(dia.replaceFirstChar { it.uppercase() })
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = selectedDays.contains(dia),
+                                    onCheckedChange = { checked ->
+                                        selectedDays =
+                                            if (checked) selectedDays + dia else selectedDays - dia
+                                    },
+                                    colors = CheckboxDefaults.colors(
+                                        checkedColor = RedSoft,
+                                        checkmarkColor = Color.White
+                                    )
+                                )
+                                Text(
+                                    dia.replaceFirstChar { it.uppercase() },
+                                    fontSize = 15.sp,
+                                    color = if (selectedDays.contains(dia)) {
+                                        Color(0xFF1A1A1A)
+                                    } else {
+                                        Color.Gray
+                                    },
+                                    fontWeight = if (selectedDays.contains(dia)) {
+                                        FontWeight.Medium
+                                    } else {
+                                        FontWeight.Normal
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
 
             // -------------------------
-            // ➕ AGREGAR TARIFA EXTRA
+            // ACTIONS
             // -------------------------
-            OutlinedButton(
-                onClick = {
-                    // Acción temporaria (la puedes cambiar)
-                    baseRateText = ""
-                    selectedUnit = "hora"
-                    selectedVehicleType = null
-                    selectedDays = dias
-                },
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Agregar otra tarifa")
+                // LIMPIAR FORMULARIO
+                OutlinedButton(
+                    onClick = {
+                        baseRateText = ""
+                        selectedUnit = "hora"
+                        selectedVehicleType = null
+                        selectedDays = dias
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = RedSoft
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        width = 1.5.dp
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.RestartAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Limpiar", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                }
+
+                // GUARDAR
+                Button(
+                    onClick = {
+                        viewModel.saveRate(
+                            garageId = selectedGarageId,
+                            baseRate = baseRateText.toDoubleOrNull() ?: 0.0,
+                            timeUnit = selectedUnit,
+                            vehicleTypeId = selectedVehicleType,
+                            diasAplicables = selectedDays,
+                            specialRate = null
+                        )
+                        onSaved()
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = RedSoft,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 8.dp
+                    )
+                ) {
+                    Icon(
+                        Icons.Outlined.Save,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Guardar", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
-            // -------------------------
-            // GUARDAR
-            // -------------------------
-            Button(
-                onClick = {
-                    viewModel.saveRate(
-                        garageId = selectedGarageId,
-                        baseRate = baseRateText.toDoubleOrNull() ?: 0.0,
-                        timeUnit = selectedUnit,
-                        vehicleTypeId = selectedVehicleType,
-                        diasAplicables = selectedDays,
-                        specialRate = null
-                    )
-                    onSaved()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Guardar Tarifa")
+            // Espacio al final
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+fun SectionHeader(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 4.dp)
+    ) {
+        Surface(
+            modifier = Modifier.size(32.dp),
+            shape = CircleShape,
+            color = RedSoft.copy(alpha = 0.15f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = RedSoft,
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
+
+        Spacer(Modifier.width(12.dp))
+
+        Text(
+            title,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A1A1A)
+        )
     }
 }

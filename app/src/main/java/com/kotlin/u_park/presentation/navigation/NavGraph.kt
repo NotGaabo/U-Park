@@ -103,6 +103,7 @@ fun NavGraph(
             )
         }
 
+        // -------------------- SETTINGS DUENO --------------------
         composable(Routes.SettingsDueno.route) {
             SettingsScreenDueno(
                 navController,
@@ -150,6 +151,7 @@ fun NavGraph(
             )
         }
 
+        // -------------------- AGREGAR EMPLEADOS --------------------
         composable(Routes.AgregarEmpleado.route) { backStackEntry ->
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
 
@@ -233,9 +235,8 @@ fun NavGraph(
             }
         }
 
-        composable(
-            route = Routes.VehiculosDentro.route,
-            arguments = listOf(navArgument("garageId") { type = NavType.StringType })
+        // -------------------- VEHICULOS DENTRO --------------------
+        composable(Routes.VehiculosDentro.route,listOf(navArgument("garageId") { type = NavType.StringType })
         ) { backStackEntry ->
 
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
@@ -248,9 +249,7 @@ fun NavGraph(
         }
 
         // -------------------- REGISTRAR ENTRADA --------------------
-        composable(
-            route = Routes.RegistrarEntrada.route,
-            arguments = listOf(navArgument("garageId") { type = NavType.StringType })
+        composable(Routes.RegistrarEntrada.route,listOf(navArgument("garageId") { type = NavType.StringType })
         ) { backStackEntry ->
 
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
@@ -264,9 +263,7 @@ fun NavGraph(
         }
 
         // -------------------- REGISTRAR SALIDA --------------------
-        composable(
-            route = Routes.RegistrarSalida.route,
-            arguments = listOf(navArgument("parkingId") { type = NavType.StringType })
+        composable(Routes.RegistrarSalida.route, listOf(navArgument("parkingId") { type = NavType.StringType })
         ) { backStackEntry ->
 
             val parkingId = backStackEntry.arguments?.getString("parkingId") ?: ""
@@ -293,9 +290,7 @@ fun NavGraph(
         }
 
         // -------------------- REGISTRAR RESERVA --------------------
-        composable(
-            route = Routes.RegistrarReserva.route,
-            arguments = listOf(navArgument("garageId") { type = NavType.StringType })
+        composable(Routes.RegistrarReserva.route, listOf(navArgument("garageId") { type = NavType.StringType })
         ) { backStackEntry ->
 
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
@@ -313,9 +308,7 @@ fun NavGraph(
 
 
         // -------------------- LISTA DE RESERVAS --------------------
-        composable(
-            route = Routes.ListaReservas.route,
-            arguments = listOf(navArgument("garageId") { type = NavType.StringType })
+        composable(Routes.ListaReservas.route, listOf(navArgument("garageId") { type = NavType.StringType })
         ) { backStackEntry ->
 
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
@@ -331,9 +324,7 @@ fun NavGraph(
         }
 
         // -------------------- TARIFAS (ADMIN DUEÑO) --------------------
-        composable(
-            route = Routes.Rates.route,
-            arguments = listOf(navArgument("garageId") { type = NavType.StringType })
+        composable(Routes.Rates.route, listOf(navArgument("garageId") { type = NavType.StringType })
         ) { backStackEntry ->
 
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
@@ -357,13 +348,8 @@ fun NavGraph(
         }
 
 
-// -------------------- FORMULARIO CREAR / EDITAR TARIFA --------------------
-        composable(
-            route = Routes.RateForm.route,
-            arguments = listOf(
-                navArgument("garageId") { type = NavType.StringType },
-                navArgument("rateId") { type = NavType.StringType }
-            )
+       // -------------------- FORMULARIO CREAR / EDITAR TARIFA --------------------
+        composable(Routes.RateForm.route, listOf(navArgument("garageId") { type = NavType.StringType }, navArgument("rateId") { type = NavType.StringType })
         ) { backStackEntry ->
 
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
@@ -407,6 +393,8 @@ fun NavGraph(
                 )
             }
         }
+
+        // -------------------- SETTINGS EMPLEADOS --------------------
         composable(Routes.EmployeeSettings.route) {
             SettingsEmployeeScreen(
                 navController = navController,

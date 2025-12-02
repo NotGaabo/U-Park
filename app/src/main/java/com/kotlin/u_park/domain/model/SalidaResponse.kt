@@ -1,6 +1,8 @@
 package com.kotlin.u_park.domain.model
 
-@kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class SalidaResponse(
     val parking_id: String,
     val total: Double,

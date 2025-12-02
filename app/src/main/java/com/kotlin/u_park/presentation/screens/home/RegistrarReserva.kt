@@ -1,6 +1,5 @@
 package com.kotlin.u_park.presentation.screens.home
 
-import android.app.TimePickerDialog
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -21,7 +20,6 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -34,9 +32,7 @@ import com.kotlin.u_park.domain.model.Vehicle
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModel
 import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModelFactory
-import java.time.LocalDate
 import java.time.LocalTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.Instant

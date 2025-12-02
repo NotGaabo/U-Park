@@ -1,9 +1,11 @@
 package com.kotlin.u_park.data.repository
 
 import com.kotlin.u_park.domain.model.GarageSimple
+import com.kotlin.u_park.domain.model.GarageNameSimple
 import com.kotlin.u_park.domain.model.Rate
 import com.kotlin.u_park.domain.model.SalidaResponse
 import com.kotlin.u_park.domain.model.VehicleTypeSimple
+import com.kotlin.u_park.domain.model.VehiculoSimple
 import com.kotlin.u_park.domain.repository.RatesRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
@@ -33,6 +35,10 @@ class RatesRepositoryImpl(
             "calcular_salida",
             mapOf("p_parking_id" to parkingId)
         ).decodeAs()
+    }
+
+    suspend fun paymethod(){
+
     }
 
     // ----------------------------------------------------------
@@ -114,25 +120,10 @@ class RatesRepositoryImpl(
             .decodeSingle()
     }
 
+
     // ----------------------------------------------------------
     // Obtener nombre real del vehículo
     // ----------------------------------------------------------
-    @kotlinx.serialization.Serializable
-    data class VehiculoSimple(
-        val id: String,
-        val model: String? = null,
-        val color: String? = null
-    )
-
-    @kotlinx.serialization.Serializable
-    data class GarageNameSimple(
-        val id_garage: String,
-        val nombre: String
-    )
-
-    // ----------------------------------------------------------
-// Obtener nombre real del vehículo
-// ----------------------------------------------------------
     override suspend fun getVehicleNameById(id: String): String {
         val result = supabase.from("vehicles")
             .select {

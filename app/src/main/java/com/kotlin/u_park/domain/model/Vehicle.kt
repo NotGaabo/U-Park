@@ -18,3 +18,10 @@ data class VehicleTypeSimple(
     val id: Int,
     val name: String
 )
+
+@Serializable
+data class VehiculoSimple(
+    val id: String,
+    val model: String? = null,
+    val color: String? = null
+)

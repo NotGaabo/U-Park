@@ -37,6 +37,8 @@ import com.kotlin.u_park.presentation.components.GarageDetailBottomSheet
 import com.kotlin.u_park.presentation.components.GarageSkeleton
 import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
 import com.kotlin.u_park.presentation.utils.NetworkViewModel
+import com.kotlin.u_park.presentation.utils.checkLocationPermission
+import com.kotlin.u_park.presentation.utils.getCurrentLocation
 import kotlinx.coroutines.launch
 
 private val RedSoft = Color(0xFFE60023)
@@ -278,62 +280,9 @@ fun HomeScreen(
     }
 }
 
-@SuppressLint("MissingPermission")
-fun getCurrentLocation(
-    context: Context,
-    fusedLocationClient: FusedLocationProviderClient,
-    onLocationReceived: (Pair<Double, Double>?) -> Unit
-) {
-    if (!checkLocationPermission(context)) {
-        onLocationReceived(null)
-        return
-    }
-
-    fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-        if (location != null) {
-            onLocationReceived(Pair(location.latitude, location.longitude))
-        } else {
-            val request = LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                1000L
-            ).setMaxUpdates(1).build()
-
-            fusedLocationClient.requestLocationUpdates(
-                request,
-                object : LocationCallback() {
-                    override fun onLocationResult(result: LocationResult) {
-                        fusedLocationClient.removeLocationUpdates(this)
-                        val loc = result.lastLocation
-                        onLocationReceived(loc?.let {
-                            Pair(it.latitude, it.longitude)
-                        })
-                    }
-                },
-                context.mainLooper
-            )
-        }
-    }.addOnFailureListener {
-        onLocationReceived(null)
-    }
-}
-
 fun openGoogleMaps(context: Context, lat: Double, lng: Double) {
     val uri = "geo:$lat,$lng?q=$lat,$lng"
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
     intent.setPackage("com.google.android.apps.maps")
     context.startActivity(intent)
-}
-
-fun checkLocationPermission(context: Context): Boolean {
-    val fine = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_FINE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-
-    val coarse = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_COARSE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-
-    return fine || coarse
 }

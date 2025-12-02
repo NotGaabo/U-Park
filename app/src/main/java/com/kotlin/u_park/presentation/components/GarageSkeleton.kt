@@ -1,7 +1,5 @@
 package com.kotlin.u_park.presentation.components
 
-// GARAGESKELETON-COMPONENT
-
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -19,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+
+// GARAGESKELETON-COMPONENT
 
 @Composable
 fun GarageSkeleton() {

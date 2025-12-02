@@ -16,7 +16,6 @@ import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
 import com.kotlin.u_park.ui.theme.UParkTheme
 
-
 class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -30,7 +29,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             UParkTheme {
-                // startDestination siempre splash
                 App(authViewModel, sessionManager, startDestination = Routes.Splash.route)
             }
         }
