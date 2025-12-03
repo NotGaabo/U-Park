@@ -28,6 +28,7 @@ private val BackgroundColor = Color(0xFFF5F5F5)
 fun RateFormScreen(
     navController: NavController,
     viewModel: RatesViewModel,
+    userId: String, // 🔥 NUEVO: necesitamos el userId
     garageId: String,
     rateId: String,
     onSaved: () -> Unit
@@ -35,16 +36,32 @@ fun RateFormScreen(
     val editing by viewModel.editingRate
     val vehicleTypes by viewModel.vehicleTypes
     val garages by viewModel.garages
+    val saving by viewModel.saving
+    val saveSuccess by viewModel.saveSuccess
+
+    // 🔥 NUEVO: Observar cuando termine de guardar exitosamente
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            viewModel.saveSuccess.value = false // Reset
+            onSaved()
+        }
+    }
 
     // Load needed data
-    LaunchedEffect(true) {
+    LaunchedEffect(userId) {
         viewModel.loadVehicleTypes()
-        viewModel.loadGarages()
+        viewModel.loadGarages(userId) // 🔥 Cargar con userId
     }
 
     LaunchedEffect(rateId) {
-        val found = viewModel.rates.value.firstOrNull { it.id == rateId }
-        viewModel.setEditing(found)
+        if (rateId != "new") {
+            // 🔥 Buscar en groupedRates
+            val allRates = viewModel.groupedRates.value.values.flatten()
+            val found = allRates.firstOrNull { it.id == rateId }
+            viewModel.setEditing(found)
+        } else {
+            viewModel.setEditing(null)
+        }
     }
 
     // Dropdown expands
@@ -64,6 +81,9 @@ fun RateFormScreen(
 
     val dias = listOf("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
     var selectedDays by remember(editing) { mutableStateOf(editing?.diasAplicables ?: dias) }
+
+    // 🔥 NUEVO: Validación
+    var showError by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -162,6 +182,33 @@ fun RateFormScreen(
                 }
             }
 
+            // 🔥 NUEVO: Mostrar errores
+            if (showError) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFEBEE)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Warning,
+                            null,
+                            tint = Color(0xFFD32F2F)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "Por favor completa todos los campos requeridos",
+                            color = Color(0xFFD32F2F)
+                        )
+                    }
+                }
+            }
+
             // -------------------------
             // SECTION: GARAGE
             // -------------------------
@@ -204,7 +251,8 @@ fun RateFormScreen(
                                 focusedBorderColor = RedSoft,
                                 focusedLabelColor = RedSoft
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            isError = showError && selectedGarageId.isEmpty()
                         )
 
                         ExposedDropdownMenu(
@@ -268,7 +316,8 @@ fun RateFormScreen(
                             focusedBorderColor = RedSoft,
                             focusedLabelColor = RedSoft
                         ),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        isError = showError && (baseRateText.toDoubleOrNull() == null || baseRateText.isEmpty())
                     )
 
                     // UNIDAD (SELECT)
@@ -471,6 +520,7 @@ fun RateFormScreen(
                         selectedUnit = "hora"
                         selectedVehicleType = null
                         selectedDays = dias
+                        showError = false
                     },
                     modifier = Modifier
                         .weight(1f)
@@ -481,7 +531,8 @@ fun RateFormScreen(
                     border = ButtonDefaults.outlinedButtonBorder.copy(
                         width = 1.5.dp
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !saving
                 ) {
                     Icon(
                         Icons.Outlined.RestartAlt,
@@ -495,15 +546,27 @@ fun RateFormScreen(
                 // GUARDAR
                 Button(
                     onClick = {
+                        // 🔥 Validación
+                        val price = baseRateText.toDoubleOrNull()
+                        if (price == null || price <= 0 || selectedGarageId.isEmpty()) {
+                            showError = true
+                            return@Button
+                        }
+
+                        showError = false
+
+                        println("🔥 Guardando con garageId: $selectedGarageId") // DEBUG
+
                         viewModel.saveRate(
                             garageId = selectedGarageId,
-                            baseRate = baseRateText.toDoubleOrNull() ?: 0.0,
+                            baseRate = price,
                             timeUnit = selectedUnit,
                             vehicleTypeId = selectedVehicleType,
                             diasAplicables = selectedDays,
                             specialRate = null
                         )
-                        onSaved()
+                        // 🔥 Ya NO llamamos a onSaved() aquí
+                        // Se llamará automáticamente cuando saveSuccess sea true
                     },
                     modifier = Modifier
                         .weight(1f)
@@ -516,15 +579,28 @@ fun RateFormScreen(
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 4.dp,
                         pressedElevation = 8.dp
-                    )
+                    ),
+                    enabled = !saving
                 ) {
-                    Icon(
-                        Icons.Outlined.Save,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    if (saving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            Icons.Outlined.Save,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     Spacer(Modifier.width(8.dp))
-                    Text("Guardar", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (saving) "Guardando..." else "Guardar",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 

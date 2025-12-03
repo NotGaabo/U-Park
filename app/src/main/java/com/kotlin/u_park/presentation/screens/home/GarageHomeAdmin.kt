@@ -117,13 +117,11 @@ fun DuenoGarageScreen(
                     NavigationBarItem(
                         selected = false,
                         onClick = {
-                            val firstGarage = garages.first().idGarage
-                            navController.navigate(Routes.Rates.createRoute(firstGarage))
+                            navController.navigate(Routes.Rates.createRoute(userId))
                         },
                         icon = { Icon(Icons.Outlined.AttachMoney, null) },
                         label = { Text("Tarifas", fontSize = 12.sp) }
                     )
-
                     NavigationBarItem(
                         selected = true,
                         onClick = {},

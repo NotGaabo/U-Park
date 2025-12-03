@@ -1,5 +1,6 @@
 package com.kotlin.u_park.data.repository
 
+import coil.util.CoilUtils.result
 import com.kotlin.u_park.domain.model.GarageSimple
 import com.kotlin.u_park.domain.model.GarageNameSimple
 import com.kotlin.u_park.domain.model.Rate
@@ -37,10 +38,6 @@ class RatesRepositoryImpl(
         ).decodeAs()
     }
 
-    suspend fun paymethod(){
-
-    }
-
     // ----------------------------------------------------------
     // Obtener tipos de vehículos
     // ----------------------------------------------------------
@@ -53,12 +50,38 @@ class RatesRepositoryImpl(
     }
 
     // ----------------------------------------------------------
-    // Obtener garages
+    // 🔥 ACTUALIZADO: Obtener garages filtrados por userId
     // ----------------------------------------------------------
-    override suspend fun getGarages(): List<Pair<String, String>> {
-        val result = supabase.from("garages")
-            .select()
-            .decodeList<GarageSimple>()
+    override suspend fun getGarages(userId: String?): List<Pair<String, String>> {
+
+        println("🔍 [Repo] getGarages(userId=$userId)")
+
+        val result = try {
+            if (userId != null) {
+                val res = supabase.from("garages")
+                    .select {
+                        filter { eq("user_id", userId) }
+                    }
+                    .decodeList<GarageSimple>()
+
+                println("📦 [Repo] Garages encontrados para el userId=$userId → ${res.size}")
+                res
+            } else {
+                val res = supabase.from("garages")
+                    .select()
+                    .decodeList<GarageSimple>()
+
+                println("📦 [Repo] Todos los garages → ${res.size}")
+                res
+            }
+        } catch (e: Exception) {
+            println("❌ [Repo] Error cargando garages: ${e.message}")
+            emptyList()
+        }
+
+        result.forEach {
+            println("➡ Garage: id=${it.idGarage}, nombre=${it.nombre}, user_id=${it.userId}")
+        }
 
         return result.map { it.idGarage to it.nombre }
     }
@@ -66,12 +89,42 @@ class RatesRepositoryImpl(
     // ----------------------------------------------------------
     // CRUD de tarifas
     // ----------------------------------------------------------
-    override suspend fun getRatesByGarage(garageId: String): List<Rate> {
-        return supabase.from("rates")
-            .select {
-                filter { eq("garage_id", garageId) }
+    override suspend fun getAllRatesForOwner(userId: String): Map<String, List<Rate>> {
+
+        println("🔍 [Repo] getAllRatesForOwner(userId=$userId)")
+
+        val garages = supabase.from("garages")
+            .select { filter { eq("user_id", userId) } }
+            .decodeList<GarageSimple>()
+
+        println("📦 [Repo] Garages del dueño → ${garages.size}")
+
+        garages.forEach {
+            println("➡ GarageOwner: id=${it.idGarage}, nombre=${it.nombre}, user_id=${it.userId}")
+        }
+
+        val result = mutableMapOf<String, List<Rate>>()
+
+        for (garage in garages) {
+            println("🔍 [Repo] Buscando tarifas para garage ${garage.nombre} (${garage.idGarage})")
+
+            val rates = supabase.from("rates")
+                .select {
+                    filter { eq("garage_id", garage.idGarage) }
+                }
+                .decodeList<Rate>()
+
+            println("📦 [Repo] Tarifas encontradas: ${rates.size}")
+
+            rates.forEach { r ->
+                println("   ➡ Rate: id=${r.id}, baseRate=${r.baseRate}, unidad=${r.timeUnit}")
             }
-            .decodeList()
+
+            result[garage.nombre] = rates
+        }
+
+        println("✅ [Repo] Resultado final (groupedRates): ${result.keys}")
+        return result
     }
 
     override suspend fun createRate(rate: Rate): Rate {
@@ -135,8 +188,6 @@ class RatesRepositoryImpl(
         if (result.isEmpty()) return "Vehículo"
 
         val row = result.first()
-
-        // ✔ Ya no es Map, es un data class
         return row.model ?: row.color ?: "Vehículo"
     }
 
@@ -146,14 +197,13 @@ class RatesRepositoryImpl(
                 filter { eq("plate", plate) }
                 limit(1)
             }
-            .decodeList<VehiculoSimple>() // crea un data class con id
+            .decodeList<VehiculoSimple>()
         return result.firstOrNull()?.id
     }
 
-
     // ----------------------------------------------------------
-// Obtener nombre real del garage
-// ----------------------------------------------------------
+    // Obtener nombre real del garage
+    // ----------------------------------------------------------
     override suspend fun getGarageNameById(id: String): String {
         val result = supabase.from("garages")
             .select {
@@ -165,9 +215,6 @@ class RatesRepositoryImpl(
         if (result.isEmpty()) return "Garage"
 
         val row = result.first()
-
-        // ✔ También es un data class
         return row.nombre
     }
-
 }

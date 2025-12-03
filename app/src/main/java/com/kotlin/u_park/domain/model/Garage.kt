@@ -28,7 +28,9 @@ data class Garage(
 data class GarageSimple(
     @SerialName("id_garage")
     val idGarage: String,
-    val nombre: String
+    val nombre: String,
+    @SerialName("user_id")
+    val userId: String?
 )
 
 @Serializable

@@ -340,11 +340,15 @@ fun NavGraph(
         }
 
         // -------------------- TARIFAS (ADMIN DUEÑO) --------------------
-        composable(Routes.Rates.route, listOf(navArgument("garageId") { type = NavType.StringType })
+        // -------------------- TARIFAS (ADMIN DUEÑO) --------------------
+        composable(
+            route = Routes.Rates.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
         ) { backStackEntry ->
 
-            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
 
+            // Crear RatesViewModel correctamente
             val ratesRepo = remember { RatesRepositoryImpl(supabase) }
             val ratesViewModel: RatesViewModel = viewModel(
                 factory = RatesViewModelFactory(ratesRepo)
@@ -353,21 +357,48 @@ fun NavGraph(
             RatesScreen(
                 navController = navController,
                 viewModel = ratesViewModel,
-                garageId = garageId,
-                onCreateRate = {
-                    navController.navigate(Routes.RateForm.createRoute(garageId))
+                userId = userId,
+                onCreateRate = { garageId ->
+                    // Nueva tarifa
+                    navController.navigate(
+                        Routes.RateForm.createRoute(
+                            userId = userId,
+                            garageId = garageId,
+                            rateId = "new"
+                        )
+                    )
                 },
                 onEditRate = { rateId ->
-                    navController.navigate(Routes.RateForm.createRoute(garageId, rateId))
+                    // Buscar la tarifa para conocer el garageId
+                    val allRates = ratesViewModel.groupedRates.value.values.flatten()
+                    val rate = allRates.firstOrNull { it.id == rateId }
+
+                    if (rate != null) {
+                        navController.navigate(
+                            Routes.RateForm.createRoute(
+                                userId = userId,
+                                garageId = rate.garageId,
+                                rateId = rateId
+                            )
+                        )
+                    }
                 }
             )
         }
 
 
-       // -------------------- FORMULARIO CREAR / EDITAR TARIFA --------------------
-        composable(Routes.RateForm.route, listOf(navArgument("garageId") { type = NavType.StringType }, navArgument("rateId") { type = NavType.StringType })
+
+        // -------------------- FORMULARIO CREAR / EDITAR TARIFA --------------------
+        composable(
+            route = Routes.RateForm.route,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("garageId") { type = NavType.StringType },
+                navArgument("rateId") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
 
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
             val rateId = backStackEntry.arguments?.getString("rateId") ?: "new"
 
@@ -379,11 +410,10 @@ fun NavGraph(
             RateFormScreen(
                 navController = navController,
                 viewModel = ratesViewModel,
+                userId = userId,
                 garageId = garageId,
                 rateId = rateId,
-                onSaved = {
-                    navController.popBackStack()
-                }
+                onSaved = { navController.popBackStack() }
             )
         }
 

@@ -30,18 +30,50 @@ class RatesViewModel(
     val garages = mutableStateOf<List<Pair<String, String>>>(emptyList())
 
     // ----------------------------------------------------------
-    fun loadRates(garageId: String) {
+    val groupedRates = MutableStateFlow<Map<String, List<Rate>>>(emptyMap())
+
+    // 🔥 NUEVO: guardar el userId actual (público para navegación)
+    var currentUserId: String? = null
+        private set
+
+    fun loadAllRates(userId: String) {
+        currentUserId = userId
         viewModelScope.launch {
+
+            println("🚀 [VM] loadAllRates(userId=$userId)")
+
             try {
                 loading.value = true
-                rates.value = repo.getRatesByGarage(garageId)
+
+                groupedRates.value = repo.getAllRatesForOwner(userId)
+
+                println("📊 [VM] groupedRates cargado con ${groupedRates.value.size} garages")
+
+                loadGarages(userId)
+
             } catch (e: Exception) {
                 errorMessage.value = e.message
+                println("❌ [VM] Error cargando tarifas: ${e.message}")
             } finally {
                 loading.value = false
             }
         }
     }
+
+    fun loadGarages(userId: String?) {
+        println("🚀 [VM] loadGarages($userId)")
+        viewModelScope.launch {
+            try {
+                garages.value = repo.getGarages(userId)
+                println("📦 [VM] garages encontrados: ${garages.value.size}")
+            } catch (e: Exception) {
+                errorMessage.value = e.message
+                println("❌ [VM] Error cargando garages: ${e.message}")
+            }
+        }
+    }
+
+
 
     // ----------------------------------------------------------
     fun loadVehicleTypes() {
@@ -51,24 +83,15 @@ class RatesViewModel(
             } catch(_: Exception) {}
         }
     }
-
-    // ----------------------------------------------------------
-    fun loadGarages() {
-        viewModelScope.launch {
-            try {
-                garages.value = repo.getGarages()
-            } catch(e: Exception) {
-                errorMessage.value = e.message
-            }
-        }
-    }
-
     // ----------------------------------------------------------
     fun setEditing(rate: Rate?) {
         editingRate.value = rate
     }
 
     // ----------------------------------------------------------
+    // 🔥 NUEVO: Estado para saber cuando terminó de guardar
+    val saveSuccess = mutableStateOf(false)
+
     fun saveRate(
         garageId: String,
         baseRate: Double,
@@ -80,6 +103,7 @@ class RatesViewModel(
         viewModelScope.launch {
             try {
                 saving.value = true
+                saveSuccess.value = false
 
                 val editing = editingRate.value
 
@@ -94,24 +118,30 @@ class RatesViewModel(
                     active = editing?.active ?: true
                 )
 
+                println("🔥 Guardando tarifa: $rate") // DEBUG
+
                 val result = if (editing == null) {
                     repo.createRate(rate)
                 } else {
                     repo.updateRate(editing.id!!, rate)
                 }
 
-                // actualizar lista local
-                val list = rates.value.toMutableList()
-                val idx = list.indexOfFirst { it.id == result.id }
+                println("✅ Tarifa guardada: $result") // DEBUG
 
-                if (idx >= 0) list[idx] = result
-                else list.add(result)
+                // 🔥 NUEVO: Recargar groupedRates después de guardar
+                currentUserId?.let { userId ->
+                    groupedRates.value = repo.getAllRatesForOwner(userId)
+                    println("✅ Tarifas recargadas: ${groupedRates.value}") // DEBUG
+                }
 
-                rates.value = list
                 editingRate.value = null
+                saveSuccess.value = true // 🔥 Marcar como exitoso
 
             } catch (e: Exception) {
+                println("❌ Error guardando: ${e.message}") // DEBUG
+                e.printStackTrace()
                 errorMessage.value = e.message
+                saveSuccess.value = false
             } finally {
                 saving.value = false
             }
@@ -148,7 +178,12 @@ class RatesViewModel(
         viewModelScope.launch {
             try {
                 repo.deleteRate(id)
-                rates.value = rates.value.filterNot { it.id == id }
+
+                // 🔥 NUEVO: Recargar después de eliminar
+                currentUserId?.let { userId ->
+                    groupedRates.value = repo.getAllRatesForOwner(userId)
+                }
+
             } catch (e: Exception) {
                 errorMessage.value = e.message
             }
@@ -160,9 +195,12 @@ class RatesViewModel(
         viewModelScope.launch {
             try {
                 val updated = repo.toggleActive(rate.id!!, !rate.active)
-                rates.value = rates.value.map {
-                    if (it.id == updated.id) updated else it
+
+                // 🔥 NUEVO: Recargar después de toggle
+                currentUserId?.let { userId ->
+                    groupedRates.value = repo.getAllRatesForOwner(userId)
                 }
+
             } catch (e: Exception) {
                 errorMessage.value = e.message
             }
