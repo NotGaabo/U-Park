@@ -2,13 +2,11 @@ package com.kotlin.u_park.presentation.screens.employee
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalContext
 import com.kotlin.u_park.presentation.utils.PdfGenerator
-import java.io.File
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Download
@@ -21,12 +19,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kotlin.u_park.domain.model.SalidaResponse
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 import com.kotlin.u_park.presentation.screens.rates.RatesViewModel
 import kotlinx.coroutines.launch
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +35,6 @@ fun RegistrarSalidaScreen(
     parkingViewModel: ParkingViewModel,
     navController: NavController
 ) {
-    // ✔ corrección: debes usar ratesViewModel
     val salida = ratesViewModel.salidaState.value
     val loading by ratesViewModel.loading
     val error by ratesViewModel.errorMessage
@@ -46,23 +43,24 @@ fun RegistrarSalidaScreen(
     val scope = rememberCoroutineScope()
     var isGeneratingPdf by remember { mutableStateOf(false) }
 
-    // ✔ corrección
     val vehiculoNombre by ratesViewModel.vehiculoNombre.collectAsState()
     val garageNombre by ratesViewModel.garageNombre.collectAsState()
 
-
+    // Validar ID
     LaunchedEffect(Unit) {
         if (parkingId.isBlank()) {
-            println("❌ ERROR FATAL: parkingId llegó vacío a RegistrarSalidaScreen")
             navController.popBackStack()
             return@LaunchedEffect
         }
     }
 
+    // Cargar ticket
     LaunchedEffect(parkingId) {
-        if (parkingId.isBlank()) return@LaunchedEffect
-        ratesViewModel.cargarDatosTicket(parkingId)
+        if (parkingId.isNotBlank()) {
+            ratesViewModel.cargarDatosTicket(parkingId)
+        }
     }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -90,9 +88,7 @@ fun RegistrarSalidaScreen(
 
             error != null -> {
                 Box(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(padding),
+                    Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Error: $error")
@@ -108,24 +104,24 @@ fun RegistrarSalidaScreen(
                     verticalArrangement = Arrangement.Top
                 ) {
 
-                    // -------- TICKET --------
+                    // ---------------- TICKET ----------------
                     TicketView(
                         salida = salida,
                         vehiculoNombre = vehiculoNombre ?: "Vehículo",
                         garageNombre = garageNombre ?: "Garage"
                     )
 
-                    // -------- BOTÓN REGISTRAR SALIDA --------
+                    // --------- CONFIRMAR SALIDA ---------
                     Button(
                         onClick = {
                             scope.launch {
-                                // 1. Calcular salida
+
+                                // Recargar ticket por si acaso
                                 ratesViewModel.cargarDatosTicket(parkingId)
 
-                                // 2. Registrar salida
+                                // 🔥 LLAMADA FINAL: registra la salida CON empleadoId
                                 parkingViewModel.registrarSalida(parkingId)
 
-                                // 3. Regresar
                                 navController.popBackStack()
                             }
                         },
@@ -138,13 +134,12 @@ fun RegistrarSalidaScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Loader para PDF
                     if (isGeneratingPdf) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    // -------- BOTONES DE PDF --------
+                    // ---------------- BOTONES PDF ----------------
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -152,7 +147,7 @@ fun RegistrarSalidaScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
 
-                        // Compartir PDF
+                        // Compartir
                         Button(
                             onClick = {
                                 scope.launch {
@@ -172,16 +167,14 @@ fun RegistrarSalidaScreen(
                                 }
                             },
                             enabled = !isGeneratingPdf,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp)
+                            modifier = Modifier.weight(1f).padding(end = 8.dp)
                         ) {
                             Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(Modifier.width(8.dp))
                             Text("Compartir")
                         }
 
-                        // Descargar PDF
+                        // Descargar
                         Button(
                             onClick = {
                                 scope.launch {
@@ -200,12 +193,10 @@ fun RegistrarSalidaScreen(
                                 }
                             },
                             enabled = !isGeneratingPdf,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 8.dp)
+                            modifier = Modifier.weight(1f).padding(start = 8.dp)
                         ) {
                             Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(Modifier.width(8.dp))
                             Text("Descargar")
                         }
                     }
@@ -214,6 +205,7 @@ fun RegistrarSalidaScreen(
         }
     }
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TicketView(
@@ -245,8 +237,11 @@ fun TicketView(
             InfoRow("Entrada", formatDateTime(salida.hora_entrada))
             InfoRow("Salida", formatDateTime(salida.hora_salida))
 
-            val horas = salida.duration_hours.toInt()
-            val minutos = ((salida.duration_hours - horas) * 60).toInt()
+            // ---- DURACIÓN CORREGIDA ----
+            val horasDecimales = salida.duration_hours
+            val minutosTotales = (horasDecimales * 60).toInt()
+            val horas = minutosTotales / 60
+            val minutos = minutosTotales % 60
 
             InfoRow("Duración", "%02d:%02d horas".format(horas, minutos))
 
@@ -262,7 +257,6 @@ fun TicketView(
     }
 }
 
-
 @Composable
 fun InfoRow(label: String, value: String) {
     Row(
@@ -273,15 +267,14 @@ fun InfoRow(label: String, value: String) {
         Text(value, textAlign = TextAlign.End)
     }
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatDateTime(raw: String): String {
     return try {
         val instant = java.time.Instant.parse(raw)
-        val formatter = java.time.format.DateTimeFormatter
-            .ofPattern("dd/MM/yyyy hh:mm a")
-            .withZone(java.time.ZoneId.systemDefault())
-
-        formatter.format(instant)
+        val zoned = instant.atZone(java.time.ZoneId.systemDefault())
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a")
+        formatter.format(zoned)
     } catch (e: Exception) {
         raw.replace("T", " ")
     }

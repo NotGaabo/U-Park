@@ -7,7 +7,8 @@ import com.kotlin.u_park.domain.model.ReservaConUsuario
 
 interface ParkingRepository {
     suspend fun registrarEntrada(parking: Parking, fotosBytes: List<ByteArray>): Parking
-    suspend fun registrarSalida(parkingId: String, horaSalida: String): Parking
+    suspend fun registrarSalida(parkingId: String, horaSalida: String,
+                                empleadoId: String  ): Parking
     suspend fun getParkingById(id: String): Parking?
     suspend fun crearReserva(parking: Parking): Parking
     suspend fun getVehiculosDentro(): List<ParkingActividad>

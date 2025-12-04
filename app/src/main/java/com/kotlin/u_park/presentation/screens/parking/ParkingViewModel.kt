@@ -17,12 +17,14 @@ import com.kotlin.u_park.domain.repository.ReservasRepository
 import com.kotlin.u_park.presentation.utils.PdfGenerator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import com.kotlin.u_park.data.remote.SessionManager
 import java.io.File
 import java.time.OffsetDateTime
 
 class ParkingViewModel(
     private val repository: ParkingRepository,
-    private val reservasRepository: ReservasRepository
+    private val reservasRepository: ReservasRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _ticket = MutableStateFlow<ParkingTicket?>(null)
@@ -253,23 +255,30 @@ class ParkingViewModel(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                println("🚪 registrarSalida -> $parkingId")
 
                 val hora = OffsetDateTime.now().toString()
-                repository.registrarSalida(parkingId, hora)
+                val empleadoId = sessionManager.getUserId()!!
+
+                println("📤 Registrando salida → parkingId=$parkingId, empleadoId=$empleadoId")
+                println("🔍 empleadoId enviado realmente = '$empleadoId'")
+
+                repository.registrarSalida(
+                    parkingId = parkingId,
+                    horaSalida = hora,
+                    empleadoId = empleadoId
+                )
 
                 actualizarVehiculosDentro()
                 _message.value = "Salida registrada correctamente"
 
             } catch (e: Exception) {
-                println("🔥 Error salida: ${e.message}")
-                _message.value = e.message
+                println("🔥 Error salida VM: ${e.message}")
+                _message.value = e.message ?: "Error desconocido"
             } finally {
                 _isLoading.value = false
             }
         }
     }
-
     fun cancelarReserva(id: String) {
         viewModelScope.launch {
             try {

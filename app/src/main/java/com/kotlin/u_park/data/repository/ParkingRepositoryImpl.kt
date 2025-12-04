@@ -27,11 +27,9 @@ class ParkingRepositoryImpl(
     data class VehicleSimple(val id: String)
 
     // ------------------------------------------------------------
-    // 🔵 OBTENER UUID DESDE LA PLACA
+    // 🔵 1. OBTENER UUID DESDE LA PLACA
     // ------------------------------------------------------------
     override suspend fun getVehicleIdByPlate(plate: String): String? {
-        println("🔍 Buscando vehículo por placa = $plate")
-
         val result = client.from("vehicles")
             .select {
                 filter { eq("plate", plate) }
@@ -39,15 +37,12 @@ class ParkingRepositoryImpl(
             }
             .decodeList<VehicleSimple>()
 
-        println("🔍 Resultado búsqueda placa = $result")
-
         return result.firstOrNull()?.id
     }
 
     // ------------------------------------------------------------
-    // 🔴 HISTORIAL USUARIO
+    // 🔵 2. HISTORIAL USUARIO
     // ------------------------------------------------------------
-
     override suspend fun getHistorialByUser(userId: String): List<HistorialParking> {
         return client.postgrest.rpc(
             "historial_parking_usuario",
@@ -55,16 +50,15 @@ class ParkingRepositoryImpl(
         ).decodeList()
     }
 
-
-
     // ------------------------------------------------------------
-    // 🔴 REGISTRAR ENTRADA NORMAL (ya recibe UUID)
+    // 🔵 3. REGISTRAR ENTRADA NORMAL
     // ------------------------------------------------------------
+    @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun registrarEntrada(
         parking: Parking,
         fotosBytes: List<ByteArray>
     ): Parking {
-        // Subir fotos y generar URLs públicas
+
         val urls = fotosBytes.mapIndexed { i, foto ->
             val path = "parking/${parking.vehicle_id}_${System.currentTimeMillis()}_$i.jpg"
             client.storage.from("parking_photos").upload(path, foto)
@@ -74,12 +68,12 @@ class ParkingRepositoryImpl(
         val body = parking.copy(fotos = urls)
 
         return table.insert(body) {
-            select()
+            select() // ← devuelve TODAS las columnas, incluyendo created_by_user_id
         }.decodeSingle()
     }
 
     // ------------------------------------------------------------
-    // ¿EL VEHÍCULO TIENE ALGÚN PARKING ACTIVO?
+    // 🔵 4. ¿EL VEHÍCULO ESTÁ ACTUALMENTE DENTRO?
     // ------------------------------------------------------------
     override suspend fun estaVehiculoDentro(vehicleId: String): Boolean {
         val list = table.select {
@@ -93,55 +87,56 @@ class ParkingRepositoryImpl(
     }
 
     // ------------------------------------------------------------
-    // REGISTRAR SALIDA
+    // 🔥 5. REGISTRAR SALIDA (VERSIÓN PERFECTA)
     // ------------------------------------------------------------
+    @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun registrarSalida(
         parkingId: String,
-        horaSalida: String
+        horaSalida: String,
+        empleadoId: String               // ⬅ lo añadí porque lo necesitas
     ): Parking {
 
-        // Obtener el parking actual (si no existe, lanzamos error claro)
-        val parking = table.select {
-            filter { eq("id", parkingId) }
-            limit(1)
-        }.decodeSingle<Parking>()
-
-        // Actualizar hora_salida y estado
-        val updatedParking = table.update(
+        // 1. UPDATE perfecto con created_by_user_id
+        val updated = table.update(
             mapOf(
                 "hora_salida" to horaSalida,
-                "estado" to "completada"
+                "estado" to "completada",
+                "created_by_user_id" to empleadoId   // ⬅ AQUÍ ESTÁ LO IMPORTANTE
             )
         ) {
             filter { eq("id", parkingId) }
-            select()
+            select()   // ← DEVUELVE TODO CORRECTAMENTE
         }.decodeSingle<Parking>()
 
-        // Si este parking viene de una reserva, marcamos la reserva como completada
-        if (parking.tipo == "reserva") {
+        // 2. Si venía desde reserva → completar reserva
+        if (updated.tipo == "reserva") {
             client.from("reservas").update(
                 mapOf("estado" to "completada")
             ) {
                 filter {
-                    eq("vehicle_id", parking.vehicle_id!!)
-                    eq("garage_id", parking.garage_id!!)
+                    eq("vehicle_id", updated.vehicle_id!!)
+                    eq("garage_id", updated.garage_id!!)
                     neq("estado", "completada")
                 }
             }
         }
 
-        return updatedParking
+        return updated
     }
 
+
+    // ------------------------------------------------------------
+    // 🔵 6. OBTENER PARKING POR ID
     // ------------------------------------------------------------
     override suspend fun getParkingById(id: String): Parking? {
         return table.select {
             filter { eq("id", id) }
             limit(1)
-        }.decodeList<Parking>()
-            .firstOrNull()
+        }.decodeList<Parking>().firstOrNull()
     }
 
+    // ------------------------------------------------------------
+    // 🔵 7. CREAR RESERVA
     // ------------------------------------------------------------
     override suspend fun crearReserva(parking: Parking): Parking {
         val data = parking.copy(
@@ -152,36 +147,40 @@ class ParkingRepositoryImpl(
     }
 
     // ------------------------------------------------------------
+    // 🔵 8. VEHÍCULOS DENTRO
+    // ------------------------------------------------------------
     override suspend fun getVehiculosDentro(): List<ParkingActividad> {
         return client.from("parkings")
             .select(
                 Columns.raw(
                     """
-                    id,
-                    tipo,
-                    hora_entrada,
-                    hora_salida,
-                    vehicles:vehicle_id (plate)
+                        id,
+                        tipo,
+                        hora_entrada,
+                        hora_salida,
+                        vehicles:vehicle_id (plate)
                     """.trimIndent()
                 )
             ) {
                 filter { eq("estado", "activa") }
-            }
-            .decodeList()
+            }.decodeList()
     }
 
+    // ------------------------------------------------------------
     override suspend fun getVehiculosFuera(): List<Parking> {
         return table.select {
             filter { eq("estado", "completada") }
         }.decodeList()
     }
 
+    // ------------------------------------------------------------
     override suspend fun getReservas(): List<Parking> {
         return table.select {
             filter { eq("tipo", "reserva") }
         }.decodeList()
     }
 
+    // ------------------------------------------------------------
     override suspend fun getReservasByGarage(garageId: String): List<Parking> {
         return table.select {
             filter {
@@ -191,15 +190,16 @@ class ParkingRepositoryImpl(
         }.decodeList()
     }
 
+    // ------------------------------------------------------------
     override suspend fun getReservasConUsuario(garageId: String): List<ReservaConUsuario> {
         return client.from("reservas").select(
             Columns.raw(
                 """
-                *,
-                vehicles (
-                    plate,
-                    users (nombre)
-                )
+                    *,
+                    vehicles (
+                        plate,
+                        users (nombre)
+                    )
                 """.trimIndent()
             )
         ) {
@@ -208,6 +208,8 @@ class ParkingRepositoryImpl(
     }
 
     // ------------------------------------------------------------
+    // 🔵 13. ENTRADA DESDE RESERVA
+    // ------------------------------------------------------------
     @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun registrarEntradaDesdeReserva(
         reserva: ReservaConUsuario,
@@ -215,30 +217,24 @@ class ParkingRepositoryImpl(
         empleadoId: String
     ): Parking {
 
-        // Hora actual ISO
         val hora = OffsetDateTime.now().toString()
 
-        // 🔥 Validación fuerte: vehicle_id debe ser UUID válido
-        val vehicleId = reserva.vehicle_id ?: throw IllegalArgumentException(
-            "La reserva no contiene un vehicle_id válido"
-        )
+        val vehicleId = reserva.vehicle_id
+            ?: throw IllegalArgumentException("Reserva sin vehículo")
 
-        // Crear el registro Parking
         val parking = Parking(
             id = null,
             garage_id = reserva.garage_id,
-            vehicle_id = vehicleId,  // ← siempre UUID
-            created_by_user_id = empleadoId,
+            vehicle_id = vehicleId,
+            created_by_user_id = empleadoId, // ✔ se envía correctamente
             hora_entrada = hora,
             tipo = "reserva",
             estado = "activa",
             fotos = emptyList()
         )
 
-        // Registrar entrada (sube fotos, crea URLs, inserta en parkings)
         val creado = registrarEntrada(parking, fotosBytes)
 
-        // Actualizar la reserva original
         client.from("reservas").update(
             mapOf(
                 "estado" to "activa",
@@ -254,9 +250,7 @@ class ParkingRepositoryImpl(
 
     // ------------------------------------------------------------
     override suspend fun activarReserva(reservaId: Int): Parking {
-        val update = mapOf("estado" to "activa")
-
-        return table.update(update) {
+        return table.update(mapOf("estado" to "activa")) {
             filter { eq("id", reservaId) }
             select()
         }.decodeSingle()
@@ -275,18 +269,17 @@ class ParkingRepositoryImpl(
             .select(
                 Columns.raw(
                     """
-                    id,
-                    tipo,
-                    hora_entrada,
-                    hora_salida,
-                    vehicles:vehicle_id (plate)
+                        id,
+                        tipo,
+                        hora_entrada,
+                        hora_salida,
+                        vehicles:vehicle_id (plate)
                     """.trimIndent()
                 )
             ) {
                 filter { eq("garage_id", garageId) }
                 order("hora_entrada", Order.DESCENDING)
                 limit(20)
-            }
-            .decodeList()
+            }.decodeList()
     }
 }

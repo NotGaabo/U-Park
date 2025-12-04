@@ -157,11 +157,11 @@ class RatesViewModel(
             try {
                 loading.value = true
 
-                // Calcular salida mediante RPC
+                // 🔥 1) Real RPC calcular_salida
                 val salida = repo.calcularSalida(parkingId)
                 salidaState.value = salida
 
-                // Cargar nombres
+                // 🔥 2) Actualizar nombres
                 vehiculoNombre.value = repo.getVehicleNameById(salida.vehiculo_id)
                 garageNombre.value = repo.getGarageNameById(salida.garage_id)
 

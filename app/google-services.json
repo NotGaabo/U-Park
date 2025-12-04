@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "713913271354",
+    "project_id": "upark-a1676",
+    "storage_bucket": "upark-a1676.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:713913271354:android:fb0b30d06260965f81a103",
+        "android_client_info": {
+          "package_name": "com.kotlin.u_park"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmK-MRptyLhJ-m2RIuwaScJFzzEVHDYVI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

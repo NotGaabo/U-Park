@@ -45,7 +45,8 @@ fun NavGraph(
     val parkingViewModel: ParkingViewModel = viewModel(
         factory = ParkingViewModelFactory(
             parkingRepository,
-            reservasRepository
+            reservasRepository,
+            sessionManager
         )
     )
     val currentEmpleado by sessionManager.getUserFlow().collectAsState(initial = null)
@@ -222,7 +223,8 @@ fun NavGraph(
                     backStackEntry,
                     factory = ParkingViewModelFactory(
                         parkingRepository = parkingRepo,
-                        reservasRepository = reservasRepo
+                        reservasRepository = reservasRepo,
+                        sessionManager = sessionManager
                     )
                 )
 
@@ -279,7 +281,7 @@ fun NavGraph(
             val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
             val reservasRepo = remember { ReservasRepositoryImpl(supabase) }
             val parkingViewModel: ParkingViewModel = viewModel(
-                factory = ParkingViewModelFactory(parkingRepo, reservasRepo)
+                factory = ParkingViewModelFactory(parkingRepo, reservasRepo, sessionManager)
             )
 
             RegistrarSalidaScreen(
