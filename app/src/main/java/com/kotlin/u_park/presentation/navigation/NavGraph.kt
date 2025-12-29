@@ -16,6 +16,7 @@ import com.kotlin.u_park.data.repository.EmpleadoGarageRepositoryImpl
 import com.kotlin.u_park.data.repository.ParkingRepositoryImpl
 import com.kotlin.u_park.data.repository.RatesRepositoryImpl
 import com.kotlin.u_park.data.repository.ReservasRepositoryImpl
+import com.kotlin.u_park.data.repository.VehiclesRepositoryImpl
 import com.kotlin.u_park.presentation.screens.auth.*
 import com.kotlin.u_park.presentation.screens.detalles.DetallesScreen
 import com.kotlin.u_park.presentation.screens.employee.*
@@ -30,6 +31,9 @@ import com.kotlin.u_park.presentation.screens.rates.RatesScreen
 import com.kotlin.u_park.presentation.screens.rates.RatesViewModel
 import com.kotlin.u_park.presentation.screens.rates.RatesViewModelFactory
 import com.kotlin.u_park.presentation.screens.splash.SplashScreen
+import com.kotlin.u_park.presentation.screens.vehicles.VehicleScreen
+import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModel
+import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModelFactory
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -342,7 +346,6 @@ fun NavGraph(
         }
 
         // -------------------- TARIFAS (ADMIN DUEÑO) --------------------
-        // -------------------- TARIFAS (ADMIN DUEÑO) --------------------
         composable(
             route = Routes.Rates.route,
             arguments = listOf(navArgument("userId") { type = NavType.StringType })
@@ -418,6 +421,25 @@ fun NavGraph(
                 onSaved = { navController.popBackStack() }
             )
         }
+
+        // -------------------- VEHICULOS --------------------
+        composable(Routes.Vehicles.route) {
+            val currentUser by authViewModel.currentUser.collectAsState()
+            val userId = currentUser?.id ?: ""
+
+            val repository = remember { VehiclesRepositoryImpl(supabase) }
+            val viewModel: VehiclesViewModel = viewModel(
+                factory = VehiclesViewModelFactory(repository)
+            )
+
+            VehicleScreen(
+                navController = navController,
+                userId = userId,
+                viewModel = viewModel
+            )
+        }
+//        // -------------------- AGREGAR VEHICULO --------------------
+//        composable(Routes.VehicleAdd.route) {
 
         // -------------------- AGREGAR GARAGE --------------------
         composable(Routes.GarageAdd.route) { backStackEntry ->

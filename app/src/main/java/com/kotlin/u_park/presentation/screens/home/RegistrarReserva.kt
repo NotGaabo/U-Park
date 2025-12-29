@@ -406,7 +406,7 @@ fun RegistrarReservaScreen(
 
                             viewModel.crearReserva(
                                 garageId = garageId,
-                                vehicleId = selectedVehicle!!.id,
+                                vehicleId = selectedVehicle!!.id ?: "",
                                 fecha = fechaFinal,
                                 userId = userId
                             )

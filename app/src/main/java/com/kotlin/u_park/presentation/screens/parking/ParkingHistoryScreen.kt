@@ -67,9 +67,11 @@ fun ParkingHistoryScreen(
 
                 NavigationBarItem(
                     selected = false,
-                    onClick = { /* Opción "Agregar" */ },
-                    icon = { Icon(Icons.Default.Add, null) },
-                    label = { Text("Agregar") }
+                    onClick = {
+                        navController.navigate("vehicles")
+                    },
+                    icon = { Icon(Icons.Default.CarCrash, null) },
+                    label = { Text("Vehiculos") }
                 )
 
                 NavigationBarItem(

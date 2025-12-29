@@ -70,9 +70,11 @@ fun SettingsScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = { navController.navigate(Routes.GarageAdd.route) },
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Agregar") },
-                    label = { Text("Agregar") }
+                    onClick = {
+                        navController.navigate("vehicles")
+                    },
+                    icon = { Icon(Icons.Default.CarCrash, null) },
+                    label = { Text("Vehiculos") }
                 )
                 NavigationBarItem(
                     selected = false,

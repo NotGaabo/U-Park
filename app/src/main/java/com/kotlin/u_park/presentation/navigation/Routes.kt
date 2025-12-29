@@ -52,4 +52,9 @@ sealed class Routes(val route: String) {
     object ListaReservas : Routes("listaReservas/{garageId}") {
         fun createRoute(garageId: String) = "listaReservas/$garageId"
     }
+    object Vehicles : Routes("vehicles")
+    object VehicleAdd : Routes("vehicle_add")
+    object VehicleEdit : Routes("vehicle_edit/{vehicleId}") {
+        fun createRoute(vehicleId: String) = "vehicle_edit/$vehicleId"
+    }
 }

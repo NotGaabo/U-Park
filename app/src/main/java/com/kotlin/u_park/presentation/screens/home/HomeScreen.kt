@@ -115,9 +115,6 @@ fun HomeScreen(
                     Text("U-Park", fontWeight = FontWeight.Bold, color = RedSoft)
                 },
                 actions = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.Notifications, null, tint = Color.Black)
-                    }
                     IconButton(onClick = { navController.navigate("settings") }) {
                         Icon(Icons.Default.Settings, null, tint = Color.Black)
                     }
@@ -135,9 +132,11 @@ fun HomeScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Add, null) },
-                    label = { Text("Agregar") }
+                    onClick = {
+                        navController.navigate("vehicles")
+                    },
+                    icon = { Icon(Icons.Default.CarCrash, null) },
+                    label = { Text("Vehiculos") }
                 )
                 NavigationBarItem(
                     selected = false,

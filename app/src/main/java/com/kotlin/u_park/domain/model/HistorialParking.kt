@@ -12,7 +12,6 @@ data class HistorialParking(
     val vehicle_id: String,
     val plate: String?,
     val model: String?,
-    val registration: String?,
     val hora_entrada: String?,
     val hora_salida: String?,
     val estado: String,

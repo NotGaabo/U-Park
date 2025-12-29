@@ -5,9 +5,13 @@ import androidx.lifecycle.ViewModelProvider
 import com.kotlin.u_park.data.repository.VehiclesRepositoryImpl
 
 class VehiclesViewModelFactory(
-    private val repo: VehiclesRepositoryImpl
+    private val repository: VehiclesRepositoryImpl
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return VehiclesViewModel(repo) as T
+        if (modelClass.isAssignableFrom(VehiclesViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return VehiclesViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
