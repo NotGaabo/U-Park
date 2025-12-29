@@ -56,7 +56,7 @@ fun RegisterScreen(
     val authRepository = remember { AuthRepositoryImpl(supabase) }
 
     val authViewModel: AuthViewModel =
-        viewModel(factory = AuthViewModelFactory(authRepository, sessionManager))
+        viewModel(factory = AuthViewModelFactory(authRepository, sessionManager, appContext = context.applicationContext))
 
     val authState by authViewModel.currentUser.collectAsState(initial = null)
 
@@ -165,7 +165,7 @@ fun RegisterScreen(
                             val user = User(
                                 nombre = nombre,
                                 usuario = usuario,
-                                cedula = cedula,
+                                cedula = cedula.toLong(),
                                 telefono = telefono,
                                 correo = correo,
                                 contrasena = contrasena

@@ -1,20 +1,44 @@
 package com.kotlin.u_park.domain.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Rate(
-    val id: String,
-    val garage_id: String?,
-    val vehicle_type_id: Int?,
-    val base_rate: Double,
-    val time_unit: String?, // "hora", "día", "semana", "mes"
-    val hora_inicio: String?,
-    val hora_fin: String?,
-    val dias_aplicables: List<String>?,
-    val special_rate: Double?,
-    val active: Boolean?,
-    val start_date: String?,
-    val end_date: String?,
-    val created_at: String?
+    val id: String? = null,
+
+    @SerialName("garage_id")
+    val garageId: String,
+
+    @SerialName("vehicle_type_id")
+    val vehicleTypeId: Int? = null,
+
+    @SerialName("base_rate")
+    val baseRate: Double,
+
+    @SerialName("time_unit")
+    val timeUnit: String, // "hora", "día", "semana", "mes"
+
+    @SerialName("hora_inicio")
+    val horaInicio: String? = null, // "HH:MM:SS" o null
+
+    @SerialName("hora_fin")
+    val horaFin: String? = null,
+
+    @SerialName("dias_aplicables")
+    val diasAplicables: List<String> = listOf(
+        "lunes", "martes", "miércoles",
+        "jueves", "viernes", "sábado", "domingo"
+    ),
+
+    @SerialName("special_rate")
+    val specialRate: Double? = null,
+
+    val active: Boolean = true,
+
+    @SerialName("start_date")
+    val startDate: String? = null, // "YYYY-MM-DD"
+
+    @SerialName("end_date")
+    val endDate: String? = null
 )

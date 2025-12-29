@@ -3,71 +3,64 @@ package com.kotlin.u_park.data.repository
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.kotlin.u_park.domain.model.EmpleadoGarage
+import com.kotlin.u_park.domain.model.EmpleadoGarageInsert
 import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.domain.repository.EmpleadoGarageRepository
-import com.kotlin.u_park.presentation.screens.employee.Stats
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import com.kotlin.u_park.domain.model.Parking
+import com.kotlin.u_park.domain.model.Role
+import com.kotlin.u_park.domain.model.Stats
+import com.kotlin.u_park.domain.model.UserRole
 import kotlinx.serialization.Serializable
-import java.util.UUID
 
 class EmpleadoGarageRepositoryImpl(
     private val supabase: SupabaseClient
 ) : EmpleadoGarageRepository {
 
-    override suspend fun addEmpleadoToGarage(garageId: String, empleadoId: String): Boolean {
-        if (garageId.isBlank() || empleadoId.isBlank()) {
-            android.util.Log.e("SUPA_ADD", "ERROR → garageId o empleadoId vacíos")
+    override suspend fun addEmpleadoToGarage(garageId: String, empleadoCedula: Long): Boolean {
+        if (garageId.isBlank()) {
+            android.util.Log.e("SUPA_ADD", "ERROR → garageId vacío")
             return false
         }
 
         return try {
-            // 1️⃣ Insertar en empleados_garage
-            supabase.postgrest["empleados_garage"].insert(
-                mapOf(
-                    "garage_id" to garageId,
-                    "empleado_id" to empleadoId
-                )
+
+            val body = EmpleadoGarageInsert(
+                garage_id = garageId,
+                empleado_id = empleadoCedula
             )
 
-            // 2️⃣ Asignar rol "employee" si no lo tiene
-            assignEmployeeRoleIfNotExists(empleadoId)
+            supabase.postgrest["empleados_garage"].insert(body)
+
+            assignEmployeeRoleIfNotExists(empleadoCedula)
 
             true
+
         } catch (e: Exception) {
             android.util.Log.e("SUPA_ADD", "ERROR → ${e.message}")
             false
         }
     }
 
-    override suspend fun getGarageByEmpleadoId(userId: String): String? {
+    override suspend fun getGarageByEmpleadoId(cedula: Long): String? {
         return try {
-
-            // 1️⃣ Hacemos la consulta estilo URL (igual que tú)
             val response = supabase.postgrest[
-                "empleados_garage?empleado_id=eq.$userId&select=garage_id"
+                "empleados_garage?empleado_id=eq.$cedula&select=garage_id"
             ].select()
 
-            // 2️⃣ Decodificar lista de mapas
             val lista = response.decodeList<Map<String, String>>()
 
-            // 3️⃣ Tomar el garage_id o null
             lista.firstOrNull()?.get("garage_id")
-
         } catch (e: Exception) {
             android.util.Log.e("SUPA_GARAGE", "ERROR → ${e.message}")
             null
         }
     }
 
-
     override suspend fun getEmpleadosByGarage(garageId: String): List<EmpleadoGarage> {
-        if (garageId.isBlank()) {
-            android.util.Log.e("SUPA_GET", "ERROR → garageId vacío")
-            return emptyList()
-        }
+        if (garageId.isBlank()) return emptyList()
 
         return try {
             val select =
@@ -84,15 +77,12 @@ class EmpleadoGarageRepositoryImpl(
         }
     }
 
-    override suspend fun removeEmpleadoFromGarage(garageId: String, empleadoId: String): Boolean {
-        if (garageId.isBlank() || empleadoId.isBlank()) {
-            android.util.Log.e("SUPA_DEL", "ERROR → IDs vacíos")
-            return false
-        }
+    override suspend fun removeEmpleadoFromGarage(garageId: String, empleadoCedula: Long): Boolean {
+        if (garageId.isBlank()) return false
 
         return try {
             supabase.postgrest[
-                "empleados_garage?garage_id=eq.$garageId&empleado_id=eq.$empleadoId"
+                "empleados_garage?garage_id=eq.$garageId&empleado_id=eq.$empleadoCedula"
             ].delete()
 
             true
@@ -102,80 +92,57 @@ class EmpleadoGarageRepositoryImpl(
         }
     }
 
-    // ───────────────
-    // 🔹 Helper para asignar rol "employee" evitando duplicados usando columns.ALL
-    // ───────────────
-    private suspend fun assignEmployeeRoleIfNotExists(userId: String) {
+    private suspend fun assignEmployeeRoleIfNotExists(cedula: Long) {
         try {
-            // 1️⃣ Obtener el rol 'employee'
             val roles = supabase.from("roles")
                 .select()
                 .decodeList<Role>()
                 .filter { it.nombre == "employee" }
 
-            if (roles.isEmpty()) {
-                android.util.Log.e("SUPA_ROLE", "No existe rol 'employee'")
-                return
-            }
+            if (roles.isEmpty()) return
 
             val roleId = roles.first().id
 
-            // 2️⃣ Verificar si el usuario ya tiene ese rol
-            val existingRoles = supabase.from("user_roles")
+            val existing = supabase.from("user_roles")
                 .select()
                 .decodeList<UserRole>()
-                .filter { it.user_id == userId && it.role_id == roleId }
+                .any { it.user_id == cedula.toString() && it.role_id == roleId }
 
-            if (existingRoles.isEmpty()) {
-                // 3️⃣ Insertar rol
-                supabase.from("user_roles")
-                    .insert(UserRole(user_id = userId, role_id = roleId))
-                android.util.Log.d("SUPA_ROLE", "Rol 'employee' asignado a $userId")
-            } else {
-                android.util.Log.d("SUPA_ROLE", "Usuario ya tiene rol 'employee'")
+            if (!existing) {
+                supabase.from("user_roles").insert(
+                    UserRole(
+                        user_id = cedula.toString(),
+                        role_id = roleId
+                    )
+                )
             }
 
         } catch (e: Exception) {
-            android.util.Log.e("SUPA_ROLE", "No se pudo asignar rol employee → ${e.message}")
+            android.util.Log.e("SUPA_ROLE", "ERROR → ${e.message}")
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun getStats(garageId: String): Stats {
         return try {
-            // 🔹 Obtener garage
-            val garageList = supabase.from("garages")
-                .select()
-                .decodeList<Garage>()
+            val garageList = supabase.from("garages").select().decodeList<Garage>()
 
             val garage = garageList.firstOrNull { it.idGarage == garageId }
-                ?: return Stats() // Si no existe, devolver stats vacíos
+                ?: return Stats()
 
             val capacidadTotal = garage.capacidadTotal
 
-            // 🔹 Obtener todos los parkings
-            val parkingList = supabase.from("parkings")
-                .select()
-                .decodeList<Parking>()
+            val parkingList = supabase.from("parkings").select().decodeList<Parking>()
 
-            // 🔹 Filtrar por garageId
-            val parkingsGarage = parkingList.filter { it.garageId == garageId }
+            val parkingsGarage = parkingList.filter { it.garage_id == garageId }
 
-            // 🔹 Autos activos dentro del garage (hora_salida = null)
-            val autosActivos = parkingsGarage.count { it.horaSalida == null }
+            val autosActivos = parkingsGarage.count { it.hora_salida == null }
 
-            // 🔹 Entradas y salidas de hoy
-            val hoy = java.time.LocalDate.now().toString() // "yyyy-MM-dd"
+            val hoy = java.time.LocalDate.now().toString()
 
-            val entradasHoy = parkingsGarage.count {
-                it.horaEntrada.toString().startsWith(hoy)
-            }
+            val entradasHoy = parkingsGarage.count { it.hora_entrada.toString().startsWith(hoy) }
+            val salidasHoy = parkingsGarage.count { it.hora_salida?.toString()?.startsWith(hoy) == true }
 
-            val salidasHoy = parkingsGarage.count {
-                it.horaSalida?.toString()?.startsWith(hoy) == true
-            }
-
-            // 🔹 Espacios libres
             val espaciosLibres = capacidadTotal - autosActivos
 
             Stats(
@@ -190,17 +157,5 @@ class EmpleadoGarageRepositoryImpl(
             Stats()
         }
     }
-
 }
 
-@Serializable
-data class Role(
-    val id: Int,
-    val nombre: String
-)
-
-@Serializable
-data class UserRole(
-    val user_id: String,
-    val role_id: Int
-)

@@ -35,8 +35,11 @@ import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.presentation.components.GarageCard
 import com.kotlin.u_park.presentation.components.GarageDetailBottomSheet
 import com.kotlin.u_park.presentation.components.GarageSkeleton
+import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
 import com.kotlin.u_park.presentation.utils.NetworkViewModel
+import com.kotlin.u_park.presentation.utils.checkLocationPermission
+import com.kotlin.u_park.presentation.utils.getCurrentLocation
 import kotlinx.coroutines.launch
 
 private val RedSoft = Color(0xFFE60023)
@@ -50,6 +53,8 @@ fun HomeScreen(
     networkViewModel: NetworkViewModel = viewModel()
 ) {
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(authViewModel))
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val userId = currentUser?.id ?: ""
     val context = LocalContext.current
 
     val coroutineScope = rememberCoroutineScope()
@@ -66,7 +71,7 @@ fun HomeScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted -> permissionGranted = granted }
 
-    // Solicitud de permiso
+    // 📌 Solicitud de permiso
     LaunchedEffect(Unit) {
         val hasPermission = checkLocationPermission(context)
         if (!hasPermission)
@@ -75,12 +80,13 @@ fun HomeScreen(
             permissionGranted = true
     }
 
-    // Obtener ubicación
+    // 📌 Obtener ubicación
     LaunchedEffect(permissionGranted) {
         if (permissionGranted) {
             getCurrentLocation(context, fusedLocationClient) { loc ->
                 userLocation = loc
                 isGettingLocation = false
+
                 if (loc != null)
                     homeViewModel.loadGarages(context, loc.first, loc.second)
                 else
@@ -109,9 +115,6 @@ fun HomeScreen(
                     Text("U-Park", fontWeight = FontWeight.Bold, color = RedSoft)
                 },
                 actions = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.Notifications, null, tint = Color.Black)
-                    }
                     IconButton(onClick = { navController.navigate("settings") }) {
                         Icon(Icons.Default.Settings, null, tint = Color.Black)
                     }
@@ -129,13 +132,18 @@ fun HomeScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Add, null) },
-                    label = { Text("Agregar") }
+                    onClick = {
+                        navController.navigate("vehicles")
+                    },
+                    icon = { Icon(Icons.Default.CarCrash, null) },
+                    label = { Text("Vehiculos") }
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = {},
+                    onClick = {
+                            navController.navigate(
+                                Routes.HistorialParking.createRoute(userId))
+                    },
                     icon = { Icon(Icons.Default.History, null) },
                     label = { Text("Historial") }
                 )
@@ -156,6 +164,7 @@ fun HomeScreen(
                 .padding(padding)
         ) {
 
+            // 🔎 Buscador
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -172,6 +181,7 @@ fun HomeScreen(
                 )
             )
 
+            // 📍 Estado de ubicación
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -180,17 +190,16 @@ fun HomeScreen(
             ) {
                 when {
                     isGettingLocation -> Text("📡 Obteniendo ubicación...", color = Color.Gray)
-
                     userLocation != null -> Text(
                         "📍 Coordenadas: ${userLocation!!.first}, ${userLocation!!.second}",
                         color = Color.DarkGray,
                         fontWeight = FontWeight.Medium
                     )
-
                     else -> Text("⚠️ No se pudo obtener la ubicación", color = Color.Red)
                 }
             }
 
+            // 📋 Listado de garajes
             LazyColumn(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -199,6 +208,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .weight(1f)
             ) {
+
                 when {
                     isLoading -> items(4) {
                         GarageSkeleton()
@@ -241,24 +251,33 @@ fun HomeScreen(
         }
     }
 
-    // 🟥 BottomSheet con el nuevo callback onGoToGarage
-    selectedGarage?.let {
+    // 🟥 BottomSheet — CORREGIDO COMPLETAMENTE
+    selectedGarage?.let { garage ->
         ModalBottomSheet(
             onDismissRequest = { selectedGarage = null },
             sheetState = sheetState
         ) {
             GarageDetailBottomSheet(
-                garage = it,
+                garage = garage,
                 onDismiss = { selectedGarage = null },
                 locationLine = selectedLocationLine,
-                onReserve = {},
-                onDetails = {
-                    navController.navigate("garage/${it.idGarage}")
-                },
-                onGoToGarage = { garage ->
-                    val lat = garage.latitud ?: return@GarageDetailBottomSheet
-                    val lng = garage.longitud ?: return@GarageDetailBottomSheet
 
+                // 🟩 ✔️ Navegación correcta a RegistrarReservaScreen
+                onReserve = { g ->
+                    navController.navigate(
+                        "registrarReserva/${g.idGarage}"
+                    )
+                },
+
+                // 🟦 Navegar a detalles
+                onDetails = { g ->
+                    navController.navigate("garage/${g.idGarage}")
+                },
+
+                // 🟧 Abrir Google Maps
+                onGoToGarage = { g ->
+                    val lat = g.latitud ?: return@GarageDetailBottomSheet
+                    val lng = g.longitud ?: return@GarageDetailBottomSheet
                     openGoogleMaps(context, lat, lng)
                 }
             )
@@ -266,63 +285,9 @@ fun HomeScreen(
     }
 }
 
-@SuppressLint("MissingPermission")
-fun getCurrentLocation(
-    context: Context,
-    fusedLocationClient: FusedLocationProviderClient,
-    onLocationReceived: (Pair<Double, Double>?) -> Unit
-) {
-    if (!checkLocationPermission(context)) {
-        onLocationReceived(null)
-        return
-    }
-
-    fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-        if (location != null) {
-            onLocationReceived(Pair(location.latitude, location.longitude))
-        } else {
-            val request = LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                1000L
-            ).setMaxUpdates(1).build()
-
-            fusedLocationClient.requestLocationUpdates(
-                request,
-                object : LocationCallback() {
-                    override fun onLocationResult(result: LocationResult) {
-                        fusedLocationClient.removeLocationUpdates(this)
-                        val loc = result.lastLocation
-                        onLocationReceived(loc?.let {
-                            Pair(it.latitude, it.longitude)
-                        })
-                    }
-                },
-                context.mainLooper
-            )
-        }
-    }.addOnFailureListener {
-        onLocationReceived(null)
-    }
-}
-
-
 fun openGoogleMaps(context: Context, lat: Double, lng: Double) {
     val uri = "geo:$lat,$lng?q=$lat,$lng"
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
     intent.setPackage("com.google.android.apps.maps")
     context.startActivity(intent)
-}
-
-fun checkLocationPermission(context: Context): Boolean {
-    val fine = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_FINE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-
-    val coarse = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_COARSE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-
-    return fine || coarse
 }

@@ -5,20 +5,35 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.kotlin.u_park.data.remote.SessionManager
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.GarageRepositoryImpl
 import com.kotlin.u_park.data.repository.EmpleadoGarageRepositoryImpl
-import com.kotlin.u_park.domain.model.Garage
+import com.kotlin.u_park.data.repository.ParkingRepositoryImpl
+import com.kotlin.u_park.data.repository.RatesRepositoryImpl
+import com.kotlin.u_park.data.repository.ReservasRepositoryImpl
+import com.kotlin.u_park.data.repository.VehiclesRepositoryImpl
 import com.kotlin.u_park.presentation.screens.auth.*
 import com.kotlin.u_park.presentation.screens.detalles.DetallesScreen
 import com.kotlin.u_park.presentation.screens.employee.*
 import com.kotlin.u_park.presentation.screens.garage.*
 import com.kotlin.u_park.presentation.screens.home.*
+import com.kotlin.u_park.presentation.screens.parking.ParkingHistoryScreen
+import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
+import com.kotlin.u_park.presentation.screens.parking.ParkingViewModelFactory
 import com.kotlin.u_park.presentation.screens.profile.*
+import com.kotlin.u_park.presentation.screens.rates.RateFormScreen
+import com.kotlin.u_park.presentation.screens.rates.RatesScreen
+import com.kotlin.u_park.presentation.screens.rates.RatesViewModel
+import com.kotlin.u_park.presentation.screens.rates.RatesViewModelFactory
 import com.kotlin.u_park.presentation.screens.splash.SplashScreen
+import com.kotlin.u_park.presentation.screens.vehicles.VehicleScreen
+import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModel
+import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModelFactory
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -29,6 +44,18 @@ fun NavGraph(
     startDestination: String = Routes.Splash.route
 ) {
     val garageRepository = remember { GarageRepositoryImpl(supabase) }
+    val parkingRepository = remember { ParkingRepositoryImpl(supabase) }
+    val reservasRepository = remember { ReservasRepositoryImpl(supabase) }
+    val parkingViewModel: ParkingViewModel = viewModel(
+        factory = ParkingViewModelFactory(
+            parkingRepository,
+            reservasRepository,
+            sessionManager
+        )
+    )
+    val currentEmpleado by sessionManager.getUserFlow().collectAsState(initial = null)
+    val empleadoId = currentEmpleado?.id ?: ""
+
 
     NavHost(navController = navController, startDestination = startDestination) {
 
@@ -82,6 +109,7 @@ fun NavGraph(
             )
         }
 
+        // -------------------- SETTINGS DUENO --------------------
         composable(Routes.SettingsDueno.route) {
             SettingsScreenDueno(
                 navController,
@@ -98,17 +126,25 @@ fun NavGraph(
 
         // -------------------- EMPLEADOS --------------------
         composable(Routes.Empleados.route) { backStackEntry ->
+
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
 
-            val repo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val empleadoRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
+
             val viewModel: EmpleadosViewModel = viewModel(
                 backStackEntry,
-                factory = EmpleadosViewModelFactory(repo)
+                factory = EmpleadosViewModelFactory(
+                    empleadoRepo = empleadoRepo,
+                    parkingRepo = parkingRepo
+                )
             )
 
             LaunchedEffect(garageId) {
                 if (garageId.isNotBlank()) {
                     viewModel.loadEmpleados(garageId)
+                    viewModel.loadStats(garageId)
+                    viewModel.loadActividad(garageId)  // si lo agregaste
                 }
             }
 
@@ -121,13 +157,18 @@ fun NavGraph(
             )
         }
 
+        // -------------------- AGREGAR EMPLEADOS --------------------
         composable(Routes.AgregarEmpleado.route) { backStackEntry ->
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
 
-            val repo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val empleadoRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
             val viewModel: EmpleadosViewModel = viewModel(
                 backStackEntry,
-                factory = EmpleadosViewModelFactory(repo)
+                factory = EmpleadosViewModelFactory(
+                    empleadoRepo = empleadoRepo,
+                    parkingRepo = parkingRepo
+                )
             )
 
             AgregarEmpleadoScreen(
@@ -156,38 +197,249 @@ fun NavGraph(
 
         // -------------------- EMPLOYEE HOME --------------------
         composable(Routes.EmployeeHome.route) { backStackEntry ->
+
             val currentUser by authViewModel.currentUser.collectAsState()
-            val repo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+
+            val empleadoRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
+            val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
+            val reservasRepo = remember { ReservasRepositoryImpl(supabase) }
 
             var garageId by remember { mutableStateOf("") }
+            var parkingId by remember { mutableStateOf("") }
 
             LaunchedEffect(currentUser) {
                 currentUser?.let {
-                    garageId = repo.getGarageByEmpleadoId(it.id!!) ?: ""
+                    garageId = empleadoRepo.getGarageByEmpleadoId(it.cedula!!.toLong()) ?: ""
                 }
             }
 
             if (garageId.isNotBlank()) {
+
+                val empleadosViewModel: EmpleadosViewModel = viewModel(
+                    backStackEntry,
+                    factory = EmpleadosViewModelFactory(
+                        empleadoRepo = empleadoRepo,
+                        parkingRepo = parkingRepo
+                    )
+                )
+
+                val parkingViewModel: ParkingViewModel = viewModel(
+                    backStackEntry,
+                    factory = ParkingViewModelFactory(
+                        parkingRepository = parkingRepo,
+                        reservasRepository = reservasRepo,
+                        sessionManager = sessionManager
+                    )
+                )
+
                 EmployeeHomeScreen(
                     navController = navController,
                     garageId = garageId,
-                    viewModel = viewModel(
-                        backStackEntry,
-                        factory = EmpleadosViewModelFactory(repo)
-                    )
+                    parkingId = parkingId,
+                    viewModel = empleadosViewModel,
+                    parkingViewModel = parkingViewModel   // 🔥 YA NO FALTA
                 )
             }
         }
-        // -------------------- REGISTRAR ENTRADA --------------------
-        composable(Routes.RegistrarEntrada.route) { backStackEntry ->
+
+        // -------------------- VEHICULOS DENTRO --------------------
+        composable(Routes.VehiculosDentro.route,listOf(navArgument("garageId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
 
-            RegistrarEntradaScreen(
+            VehiculosDentroScreen(
                 navController = navController,
+                parkingViewModel = parkingViewModel,
                 garageId = garageId
             )
         }
 
+        // -------------------- REGISTRAR ENTRADA --------------------
+        composable(Routes.RegistrarEntrada.route,listOf(navArgument("garageId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+
+            RegistrarEntradaScreen(
+                navController = navController,
+                viewModel = parkingViewModel,
+                garageId = garageId,
+                empleadoId = empleadoId    // 🟩 ID real desde SessionManager
+            )
+        }
+
+        // -------------------- REGISTRAR SALIDA --------------------
+        composable(Routes.RegistrarSalida.route, listOf(navArgument("parkingId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val parkingId = backStackEntry.arguments?.getString("parkingId") ?: ""
+
+            // RatesViewModel
+            val ratesRepo = remember { RatesRepositoryImpl(supabase) }
+            val ratesViewModel: RatesViewModel = viewModel(
+                factory = RatesViewModelFactory(ratesRepo)
+            )
+
+            // ParkingViewModel  ← NECESARIO AHORA
+            val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
+            val reservasRepo = remember { ReservasRepositoryImpl(supabase) }
+            val parkingViewModel: ParkingViewModel = viewModel(
+                factory = ParkingViewModelFactory(parkingRepo, reservasRepo, sessionManager)
+            )
+
+            RegistrarSalidaScreen(
+                parkingId = parkingId,
+                ratesViewModel = ratesViewModel,
+                parkingViewModel = parkingViewModel,
+                navController = navController
+            )
+        }
+
+        // -------------------- REGISTRAR RESERVA --------------------
+        composable(Routes.RegistrarReserva.route, listOf(navArgument("garageId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+            val currentUser by authViewModel.currentUser.collectAsState()
+
+            val userId = currentUser?.id ?: ""
+
+            RegistrarReservaScreen(
+                viewModel = parkingViewModel,
+                garageId = garageId,
+                navController = navController,
+                userId = userId
+            )
+        }
+
+        // -------------------- HISTORIAL PARKING --------------------
+        composable(
+            Routes.HistorialParking.route,
+            listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+
+            ParkingHistoryScreen(
+                viewModel = parkingViewModel,
+                navController = navController,
+                userId = userId
+            )
+        }
+
+
+        // -------------------- LISTA DE RESERVAS --------------------
+        composable(Routes.ListaReservas.route, listOf(navArgument("garageId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+            val currentUser by authViewModel.currentUser.collectAsState()
+            val userId = currentUser?.id ?: ""
+
+            ListaReservasScreen(
+                viewModel = parkingViewModel,
+                garageId = garageId,
+                userId = userId,
+                garageRepository = garageRepository
+            )
+        }
+
+        // -------------------- TARIFAS (ADMIN DUEÑO) --------------------
+        composable(
+            route = Routes.Rates.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+
+            // Crear RatesViewModel correctamente
+            val ratesRepo = remember { RatesRepositoryImpl(supabase) }
+            val ratesViewModel: RatesViewModel = viewModel(
+                factory = RatesViewModelFactory(ratesRepo)
+            )
+
+            RatesScreen(
+                navController = navController,
+                viewModel = ratesViewModel,
+                userId = userId,
+                onCreateRate = { garageId ->
+                    // Nueva tarifa
+                    navController.navigate(
+                        Routes.RateForm.createRoute(
+                            userId = userId,
+                            garageId = garageId,
+                            rateId = "new"
+                        )
+                    )
+                },
+                onEditRate = { rateId ->
+                    // Buscar la tarifa para conocer el garageId
+                    val allRates = ratesViewModel.groupedRates.value.values.flatten()
+                    val rate = allRates.firstOrNull { it.id == rateId }
+
+                    if (rate != null) {
+                        navController.navigate(
+                            Routes.RateForm.createRoute(
+                                userId = userId,
+                                garageId = rate.garageId,
+                                rateId = rateId
+                            )
+                        )
+                    }
+                }
+            )
+        }
+
+
+
+        // -------------------- FORMULARIO CREAR / EDITAR TARIFA --------------------
+        composable(
+            route = Routes.RateForm.route,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("garageId") { type = NavType.StringType },
+                navArgument("rateId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+            val rateId = backStackEntry.arguments?.getString("rateId") ?: "new"
+
+            val ratesRepo = remember { RatesRepositoryImpl(supabase) }
+            val ratesViewModel: RatesViewModel = viewModel(
+                factory = RatesViewModelFactory(ratesRepo)
+            )
+
+            RateFormScreen(
+                navController = navController,
+                viewModel = ratesViewModel,
+                userId = userId,
+                garageId = garageId,
+                rateId = rateId,
+                onSaved = { navController.popBackStack() }
+            )
+        }
+
+        // -------------------- VEHICULOS --------------------
+        composable(Routes.Vehicles.route) {
+            val currentUser by authViewModel.currentUser.collectAsState()
+            val userId = currentUser?.id ?: ""
+
+            val repository = remember { VehiclesRepositoryImpl(supabase) }
+            val viewModel: VehiclesViewModel = viewModel(
+                factory = VehiclesViewModelFactory(repository)
+            )
+
+            VehicleScreen(
+                navController = navController,
+                userId = userId,
+                viewModel = viewModel
+            )
+        }
+//        // -------------------- AGREGAR VEHICULO --------------------
+//        composable(Routes.VehicleAdd.route) {
 
         // -------------------- AGREGAR GARAGE --------------------
         composable(Routes.GarageAdd.route) { backStackEntry ->
@@ -211,6 +463,8 @@ fun NavGraph(
                 )
             }
         }
+
+        // -------------------- SETTINGS EMPLEADOS --------------------
         composable(Routes.EmployeeSettings.route) {
             SettingsEmployeeScreen(
                 navController = navController,

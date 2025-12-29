@@ -23,32 +23,33 @@ fun AgregarEmpleadoScreen(
     viewModel: EmpleadosViewModel,
     onClose: () -> Unit
 ) {
-    var empleadoId by remember { mutableStateOf("") }
+    var cedulaText by remember { mutableStateOf("") }
+    var cedulaError by remember { mutableStateOf<String?>(null) }
 
     val isLoading by viewModel.isLoading.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
 
     LaunchedEffect(isSuccess) {
-        if (isSuccess == true) {
-            onClose()
+        if (isSuccess == true) onClose()
+    }
+
+    // Validación en tiempo real
+    LaunchedEffect(cedulaText) {
+        cedulaError = when {
+            cedulaText.isBlank() -> "La cédula no puede estar vacía"
+            !cedulaText.all { it.isDigit() } -> "Solo se permiten números"
+            cedulaText.length !in 8..11 -> "Cédula inválida"
+            else -> null
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Agregar Empleado",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+                title = { Text("Agregar Empleado", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Cerrar"
-                        )
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -66,20 +67,19 @@ fun AgregarEmpleadoScreen(
                     brush = Brush.verticalGradient(
                         colors = listOf(
                             Color(0xFFF5F5F5),
-                            Color(0xFFFFFFFF)
+                            Color.White
                         )
                     )
                 )
+                .padding(padding)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(padding)
                     .padding(24.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // Ícono decorativo
                 Surface(
                     modifier = Modifier.size(80.dp),
                     shape = RoundedCornerShape(40.dp),
@@ -87,7 +87,7 @@ fun AgregarEmpleadoScreen(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Default.PersonAdd,
+                            Icons.Default.PersonAdd,
                             contentDescription = null,
                             tint = Color(0xFF6200EA),
                             modifier = Modifier.size(40.dp)
@@ -107,7 +107,7 @@ fun AgregarEmpleadoScreen(
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    "Ingresa el ID del empleado para agregarlo al garage",
+                    "Ingresa la cédula del empleado para agregarlo al garage",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     modifier = Modifier.padding(horizontal = 16.dp)
@@ -115,23 +115,20 @@ fun AgregarEmpleadoScreen(
 
                 Spacer(Modifier.height(32.dp))
 
-                // Card contenedor del formulario
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp)
-                    ) {
+                    Column(Modifier.padding(20.dp)) {
+
                         OutlinedTextField(
-                            value = empleadoId,
-                            onValueChange = { empleadoId = it },
-                            label = { Text("ID del Empleado") },
-                            placeholder = { Text("Ej: EMP12345") },
+                            value = cedulaText,
+                            onValueChange = { cedulaText = it },
+                            label = { Text("Cédula del Empleado") },
+                            placeholder = { Text("Ej: 40212345678") },
+                            isError = cedulaError != null,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
@@ -141,14 +138,24 @@ fun AgregarEmpleadoScreen(
                             )
                         )
 
+                        if (cedulaError != null) {
+                            Text(
+                                text = cedulaError!!,
+                                color = Color.Red,
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+
                         Spacer(Modifier.height(24.dp))
 
                         Button(
                             onClick = {
-                                android.util.Log.d("UI_ADD", "CLICK → empleadoId=$empleadoId")
-                                viewModel.addEmpleado(garageId, empleadoId)
+                                val cedulaLong = cedulaText.toLong()
+                                android.util.Log.d("UI_ADD", "CEDULA=$cedulaLong")
+                                viewModel.addEmpleado(garageId, cedulaLong)
                             },
-                            enabled = empleadoId.isNotBlank() && !isLoading,
+                            enabled = cedulaError == null && !isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp),
@@ -178,11 +185,7 @@ fun AgregarEmpleadoScreen(
                 Spacer(Modifier.height(16.dp))
 
                 TextButton(onClick = onClose) {
-                    Text(
-                        "Cancelar",
-                        color = Color.Gray,
-                        fontSize = 15.sp
-                    )
+                    Text("Cancelar", color = Color.Gray, fontSize = 15.sp)
                 }
             }
         }

@@ -1,15 +1,72 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# ==========================
+# ANDROID & KOTLIN
+# ==========================
+
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local Settings
 local.properties
+*.properties
+secrets.properties
+**/secrets.properties
+
+# Outputs
+*/out
+out/
+
+# Jetpack Compose
+.compose-build/
+
+# ==========================
+# ANDROID STUDIO / IDEA
+# ==========================
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Specific subfiles to ignore
+.idea/caches/
+.idea/libraries/
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# ==========================
+# LOGS / TEMP
+# ==========================
+*.log
+captures/
+.DS_Store
+Thumbs.db
+
+# ==========================
+# APK / BUNDLE
+# ==========================
+*.apk
+*.ap_
+*.aab
+
+# ==========================
+# KEYSTORES (MUY IMPORTANTE)
+# ==========================
+*.jks
+*.keystore
+key.properties
+
+# ==========================
+# KOTLIN / JAVA GENERATED
+# ==========================
+*.class
+*.jar
+*.war
+*.zip
+
+# ==========================
+# ANDROID GENERATED RESOURCES
+# ==========================
+app/res/generated/
+*/generated/

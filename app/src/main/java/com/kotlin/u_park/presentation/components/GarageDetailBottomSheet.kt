@@ -27,10 +27,11 @@ fun GarageDetailBottomSheet(
     garage: Garage,
     onDismiss: () -> Unit,
     locationLine: String,
-    onReserve: () -> Unit,
-    onDetails: () -> Unit,
+    onReserve: (Garage) -> Unit,
+    onDetails: (Garage) -> Unit,
     onGoToGarage: (Garage) -> Unit
 ) {
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -39,6 +40,7 @@ fun GarageDetailBottomSheet(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
+        // 📸 Imagen del Garage
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(garage.imageUrl)
@@ -54,6 +56,7 @@ fun GarageDetailBottomSheet(
 
         Spacer(modifier = Modifier.height(14.dp))
 
+        // 📌 Nombre
         Text(
             text = garage.nombre,
             fontSize = 20.sp,
@@ -63,10 +66,12 @@ fun GarageDetailBottomSheet(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // 📍 Dirección corta
         Text(text = locationLine, color = Color.Gray, fontSize = 13.sp)
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // 🕒 Horario + Capacidad
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -83,22 +88,26 @@ fun GarageDetailBottomSheet(
 
         Spacer(modifier = Modifier.height(18.dp))
 
+        // 🟦 Botones: Detalles — Reservar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+
             Button(
-                onClick = onDetails,
+                onClick = { onDetails(garage) },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
                 Text(text = "Detalles", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Button(
-                onClick = onReserve,
+                onClick = { onReserve(garage) },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE60023)),
@@ -110,13 +119,16 @@ fun GarageDetailBottomSheet(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 🗺️ Ir al garage
         Button(
             onClick = { onGoToGarage(garage) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(50),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            ),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
         ) {
             Icon(Icons.Default.Map, contentDescription = "map", tint = Color.White)
@@ -146,7 +158,7 @@ fun GarageDetailSheetPreview() {
             locationLine = "Ubicación",
             onReserve = {},
             onDetails = {},
-            onGoToGarage = {} // ✅ SE AGREGA ESTO
+            onGoToGarage = {}
         )
     }
 }
