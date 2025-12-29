@@ -1,4 +1,4 @@
-package com.kotlin.u_park.presentation.screens.profile
+package com.kotlin.u_park.presentation.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column

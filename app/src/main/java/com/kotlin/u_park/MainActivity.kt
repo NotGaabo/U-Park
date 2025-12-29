@@ -6,7 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
 import com.kotlin.u_park.data.remote.SessionManager
 import com.kotlin.u_park.data.remote.supabase
@@ -14,8 +14,8 @@ import com.kotlin.u_park.data.repository.AuthRepositoryImpl
 import com.kotlin.u_park.presentation.navigation.NavGraph
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
+import com.kotlin.u_park.presentation.utils.FirebaseNotificationUtils
 import com.kotlin.u_park.ui.theme.UParkTheme
-
 
 class MainActivity : ComponentActivity() {
 
@@ -24,14 +24,26 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // 📌 Crear canal de notificaciones
+        FirebaseNotificationUtils.createNotificationChannel(this)
+
         val sessionManager = SessionManager.getInstance(this, supabase)
         val authRepository = AuthRepositoryImpl(supabase)
-        val authViewModel = AuthViewModel(authRepository, sessionManager)
+
+        // ❗ AQUI se pasa appContext
+        val authViewModel = AuthViewModel(
+            authRepository = authRepository,
+            sessionManager = sessionManager,
+            appContext = applicationContext
+        )
 
         setContent {
             UParkTheme {
-                // startDestination siempre splash
-                App(authViewModel, sessionManager, startDestination = Routes.Splash.route)
+                App(
+                    authViewModel = authViewModel,
+                    sessionManager = sessionManager,
+                    startDestination = Routes.Splash.route
+                )
             }
         }
     }

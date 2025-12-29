@@ -7,14 +7,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.firebase.messaging.FirebaseMessaging
 import com.kotlin.u_park.domain.model.User
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
 
 class SessionManager private constructor(
@@ -40,6 +40,14 @@ class SessionManager private constructor(
         }
         Log.d("SessionManager", "✅ Sesión guardada en DataStore.")
     }
+    suspend fun getFCMToken(): String? {
+        return try {
+            FirebaseMessaging.getInstance().token.await()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
 
     // Guardar usuario completo
     suspend fun saveUser(user: User) {
@@ -53,6 +61,10 @@ class SessionManager private constructor(
         return dataStore.data.map { prefs ->
             prefs[USER_KEY]?.let { Json.decodeFromString<User>(it) }
         }.firstOrNull()
+    }
+    // Obtener SOLO el id del usuario
+    suspend fun getUserId(): String? {
+        return getUser()?.id
     }
 
     // Flujo observable del usuario (si quieres usarlo con collectAsState)

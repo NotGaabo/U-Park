@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.kotlin.u_park.domain.model.ReservaConUsuario
+import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 
 private val PrimaryRed = Color(0xFFE60023)
@@ -83,9 +84,17 @@ fun RegistrarEntradaScreen(
 
     LaunchedEffect(ticket) {
         ticket?.let {
-            navController.navigate("ticket/${it.parkingId}")
+            // 👉 Regresar al Home del empleado
+            navController.navigate(Routes.EmployeeHome.route) {
+                popUpTo(Routes.EmployeeHome.route) { inclusive = true }
+                launchSingleTop = true
+            }
+
+            // 👉 Limpiar para no volver a navegar accidentalmente
+            viewModel.resetTicket()
         }
     }
+
 
     LaunchedEffect(message) {
         message?.let { Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show() }
@@ -249,7 +258,7 @@ fun RegistrarEntradaScreen(
                         if (modoEntrada == "Normal") {
                             viewModel.registrarEntrada(
                                 garageId = garageId,
-                                vehicleId = placa.trim(),
+                                vehiclePlate = placa.trim(),
                                 empleadoId = empleadoId,
                                 fotosBytes = fotos
                             )

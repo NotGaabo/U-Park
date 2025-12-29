@@ -28,6 +28,14 @@ data class ParkingActividad(
     val vehicles: VehiclePlate? = null
 )
 
+data class ParkingTicket(
+    val plate: String,
+    val horaEntrada: String,
+    val fotos: List<String>,
+    val garage: String,
+    val parkingId: String
+)
+
 @Serializable
 data class VehiclePlate(
     val plate: String? = null

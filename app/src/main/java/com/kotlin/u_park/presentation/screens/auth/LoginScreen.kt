@@ -44,7 +44,7 @@ fun LoginScreen(
 
     // ✅ Instancia única del ViewModel con Factory
     val authViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(authRepository, sessionManager)
+        factory = AuthViewModelFactory(authRepository, sessionManager, appContext = context.applicationContext)
     )
 
     val currentUser by authViewModel.currentUser.collectAsState()

@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version libs.versions.kotlin.get()
+
+    id("com.google.gms.google-services") // 🔥 NECESARIO PARA FIREBASE
 }
 
 android {
@@ -42,22 +44,22 @@ android {
     buildFeatures {
         compose = true
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.7.0-beta01"
+    }
 
-    // -----------------------------
-    // 🔹 Solución 16 KB page size
-    // -----------------------------
+
     packaging {
         resources {
             excludes += setOf(
-                "dump_syms/linux/dump_syms.bin" // archivo problemático
+                "dump_syms/linux/dump_syms.bin"
             )
         }
     }
 }
 
-
 dependencies {
-    // ----------------- AndroidX -----------------
+    // AndroidX
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -68,44 +70,34 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.navigation.runtime.ktx)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.compose.foundation.layout)
-    implementation(libs.firebase.crashlytics.buildtools)
-    implementation(libs.androidx.compose.ui.geometry)
-    implementation(libs.androidx.compose.runtime.livedata)
 
-    // Testing
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // 🔥🔥🔥 FIREBASE BOM (OBLIGATORIO)
+    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
 
-    // ----------------- Supabase -----------------
+    // Notificaciones
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
+
+    // Supabase
     implementation(platform("io.github.jan-tennert.supabase:bom:3.2.4"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
     implementation("io.ktor:ktor-client-android:3.3.1")
     implementation("io.github.jan-tennert.supabase:storage-kt")
     implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.0")
 
-    // Coil
-    implementation("io.coil-kt:coil-compose:2.4.0")
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    // Coil + DataStore
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    // -------- UBICACION ---------
+    // Ubicación
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
-    // Material Icons
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
-    implementation("androidx.compose.material3:material3:1.2.0")
+    // Icons
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
-    // Kotlin Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-}
 
+    // JSON
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    implementation(libs.navigation.compose)
+    implementation(libs.androidx.runtime.livedata)
+}

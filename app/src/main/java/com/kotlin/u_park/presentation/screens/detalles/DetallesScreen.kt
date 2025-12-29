@@ -1,123 +1,326 @@
 package com.kotlin.u_park.presentation.screens.detalles
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.kotlin.u_park.data.repository.GarageRepositoryImpl
 import com.kotlin.u_park.data.remote.supabase
+import com.kotlin.u_park.data.repository.GarageRepositoryImpl
+import com.kotlin.u_park.data.repository.EmpleadoGarageRepositoryImpl
 import com.kotlin.u_park.domain.model.Garage
+import com.kotlin.u_park.domain.model.Stats
+import com.kotlin.u_park.presentation.screens.home.openGoogleMaps
 
+private val RedSoft = Color(0xFFE60023)
+private val BackgroundColor = Color(0xFFF5F5F5)
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetallesScreen(navController: NavController, garageId: String) {
 
-    // Repo para cargar el garage
-    val repo = remember { GarageRepositoryImpl(supabase) }
+    val context = LocalContext.current
+    val garageRepo = remember { GarageRepositoryImpl(supabase) }
+    val empleadoRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
 
-    // Estado del garage cargado
     var garage by remember { mutableStateOf<Garage?>(null) }
+    var stats by remember { mutableStateOf<Stats?>(null) }
     var loading by remember { mutableStateOf(true) }
 
-    // Cargar garage desde Supabase
+    // Cargar Garage + Stats
     LaunchedEffect(garageId) {
         loading = true
         try {
-            garage = repo.getGarageById(garageId)
+            garage = garageRepo.getGarageById(garageId)
+            stats = empleadoRepo.getStats(garageId)
         } finally {
             loading = false
         }
     }
 
-    LaunchedEffect(garageId) {
-        loading = true
-        try {
-            garage = repo.getGarageById(garageId)
-        } finally {
-            loading = false
+    Scaffold(
+        containerColor = BackgroundColor,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Detalles del Garage",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF212121)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color(0xFF212121)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = BackgroundColor
+                )
+            )
         }
-    }
+    ) { padding ->
 
-    // Mostrar loader mientras carga
-    if (loading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+        // Loader
+        if (loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = RedSoft)
+            }
+            return@Scaffold
+        }
+
+        // Error: no existe garage
+        if (garage == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "Garage no encontrado",
+                        fontSize = 16.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Button(
+                        onClick = { navController.navigateUp() },
+                        colors = ButtonDefaults.buttonColors(containerColor = RedSoft)
+                    ) {
+                        Text("Volver")
+                    }
+                }
+            }
+            return@Scaffold
+        }
+
+        val g = garage!!
+        val espaciosLibres = stats?.espaciosLibres ?: 0
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(BackgroundColor)
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
         ) {
-            CircularProgressIndicator()
+
+            // Imagen
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(g.imageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = g.nombre,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+
+                // Título y dirección
+                Text(
+                    text = g.nombre ?: "Sin nombre",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF212121)
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = g.direccion ?: "Sin dirección",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // 🔵 Espacios Disponibles
+                EspaciosDisponiblesCard(espacios = espaciosLibres)
+
+                Spacer(Modifier.height(16.dp))
+
+                // Horario
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                "Horario",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF212121)
+                            )
+                            Text(
+                                g.horario ?: "No especificado",
+                                color = Color.Gray,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // Botones de acción
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Reservar
+                    Button(
+                        onClick = {
+                            navController.navigate("registrarReserva/${g.idGarage}")
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(containerColor = RedSoft),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                    ) {
+                        Text(
+                            text = "Reservar",
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Ir al garage (Google Maps)
+                Button(
+                    onClick = {
+                        val lat = g.latitud ?: return@Button
+                        val lng = g.longitud ?: return@Button
+                        openGoogleMaps(context, lat, lng)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1976D2)
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                ) {
+                    Icon(Icons.Default.Map, contentDescription = "map", tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Ir al garage", color = Color.White, fontWeight = FontWeight.Medium)
+                }
+
+                Spacer(Modifier.height(32.dp))
+            }
         }
-        return
     }
+}
 
-    // Si no existe
-    if (garage == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = androidx.compose.ui.Alignment.Center
-        ) {
-            Text("Garage no encontrado")
-        }
-        return
-    }
-
-    val g = garage!!
-
-    // ---------------- UI ----------------
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+@Composable
+fun EspaciosDisponiblesCard(espacios: Int) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+        elevation = CardDefaults.cardElevation(3.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
-
-        val imageUrl = g.imageUrl?.trim()?.replace("\n", "")
-
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(imageUrl)
-                .crossfade(true)
-                .build(),
-            contentDescription = g.nombre,
-            contentScale = ContentScale.Crop,
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
-                .clip(RoundedCornerShape(12.dp))
-        )
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Column {
+                Text(
+                    "Espacios Disponibles",
+                    color = Color(0xFF0D47A1),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    espacios.toString(),
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1565C0)
+                )
+            }
 
-        Text(
-            text = g.nombre ?: "Sin nombre",
-            style = MaterialTheme.typography.headlineSmall
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = g.direccion ?: "Sin dirección",
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Capacidad: ${g.capacidadTotal}",
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Horario: ${g.horario ?: "-"}",
-            style = MaterialTheme.typography.bodyMedium
-        )
-
+            Surface(
+                modifier = Modifier.size(56.dp),
+                shape = CircleShape,
+                color = Color(0xFF2196F3).copy(alpha = 0.15f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.LocalParking,
+                        contentDescription = null,
+                        tint = Color(0xFF1565C0),
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            }
+        }
     }
 }

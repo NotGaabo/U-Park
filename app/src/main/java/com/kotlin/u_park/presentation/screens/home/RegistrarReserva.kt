@@ -1,6 +1,5 @@
 package com.kotlin.u_park.presentation.screens.home
 
-import android.app.TimePickerDialog
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -21,22 +20,21 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.VehiclesRepositoryImpl
 import com.kotlin.u_park.domain.model.Vehicle
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModel
 import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModelFactory
-import java.time.LocalDate
 import java.time.LocalTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.Instant
@@ -52,6 +50,7 @@ private val darkText = Color(0xFF2C3E50)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrarReservaScreen(
+    navController: NavController,
     viewModel: ParkingViewModel,
     garageId: String,
     userId: String
@@ -83,8 +82,21 @@ fun RegistrarReservaScreen(
     val msg by viewModel.message.collectAsState()
 
     LaunchedEffect(msg) {
-        msg?.let { Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show() }
+        msg?.let {
+
+            if (it == "Reserva creada") {
+                Toast.makeText(ctx, "Reserva creada", Toast.LENGTH_SHORT).show()
+
+                // Navegar al home y limpiar backstack
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                }
+            } else {
+                Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
+
 
     Scaffold(
         topBar = {
@@ -252,7 +264,7 @@ fun RegistrarReservaScreen(
                         ),
                         border = ButtonDefaults.outlinedButtonBorder.copy(
                             width = 1.dp,
-                            brush = androidx.compose.ui.graphics.SolidColor(grayMedium)
+                            brush = SolidColor(grayMedium)
                         )
                     ) {
                         Row(
@@ -352,6 +364,7 @@ fun RegistrarReservaScreen(
                             .height(56.dp),
                         onClick = {
                             val fechaMillis = datePickerState.selectedDateMillis
+
                             if (selectedVehicle == null) {
                                 Toast.makeText(ctx, "Selecciona un vehículo", Toast.LENGTH_SHORT).show()
                                 return@Button
@@ -365,16 +378,35 @@ fun RegistrarReservaScreen(
                                 return@Button
                             }
 
-                            val fechaFinal = Instant.ofEpochMilli(fechaMillis)
+                            val hoy = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
+                            val fechaSeleccionada = Instant.ofEpochMilli(fechaMillis)
                                 .atZone(ZoneId.systemDefault())
                                 .toLocalDate()
+
+                            // ❌ No permitir fecha pasada
+                            if (fechaSeleccionada.isBefore(hoy)) {
+                                Toast.makeText(ctx, "No puedes seleccionar una fecha pasada", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+
+                            // ❌ Si es hoy, no permitir hora pasada
+                            if (fechaSeleccionada.isEqual(hoy)) {
+                                val ahora = LocalTime.now()
+                                if (selectedTime!!.isBefore(ahora)) {
+                                    Toast.makeText(ctx, "La hora no puede ser en el pasado", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+                            }
+
+                            val fechaFinal = fechaSeleccionada
                                 .atTime(selectedTime!!)
-                                .atOffset(ZoneOffset.UTC)
+                                .atZone(ZoneId.systemDefault())
+                                .toOffsetDateTime()
                                 .toString()
 
                             viewModel.crearReserva(
                                 garageId = garageId,
-                                vehicleId = selectedVehicle!!.id,
+                                vehicleId = selectedVehicle!!.id ?: "",
                                 fecha = fechaFinal,
                                 userId = userId
                             )
@@ -393,93 +425,13 @@ fun RegistrarReservaScreen(
                             )
                             Spacer(Modifier.width(12.dp))
                         } else {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null
-                            )
+                            Icon(Icons.Filled.Check, null)
                             Spacer(Modifier.width(8.dp))
                         }
-                        Text(
-                            if (loading) "Guardando..." else "Crear Reserva",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(if (loading) "Guardando..." else "Crear Reserva")
                     }
                 }
             }
-
-            // -------------------------
-            // DEBUG (Opcional - con mejor diseño)
-            // -------------------------
-            if (vehicles.isNotEmpty() || true) { // Cambiar a false para ocultar
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White.copy(alpha = 0.7f)
-                    )
-                ) {
-                    Column(Modifier.padding(16.dp)) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Info,
-                                contentDescription = null,
-                                tint = darkText.copy(alpha = 0.6f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                "Información de Debug",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = darkText.copy(alpha = 0.8f)
-                            )
-                        }
-
-                        Spacer(Modifier.height(12.dp))
-                        Divider(color = grayMedium)
-                        Spacer(Modifier.height(12.dp))
-
-                        Text(
-                            "User ID: $userId",
-                            fontSize = 12.sp,
-                            color = darkText.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            "Vehículos encontrados: ${vehicles.size}",
-                            fontSize = 12.sp,
-                            color = darkText.copy(alpha = 0.7f)
-                        )
-
-                        if (vehicles.isNotEmpty()) {
-                            Spacer(Modifier.height(8.dp))
-                            vehicles.forEach { v ->
-                                Text(
-                                    "• ${v.plate} | id=${v.id}",
-                                    fontSize = 11.sp,
-                                    color = darkText.copy(alpha = 0.6f)
-                                )
-                            }
-                        }
-
-                        if (vehicles.isEmpty()) {
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "⚠️ No se encontraron vehículos para este usuario",
-                                color = redPrimary,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
         }
     }
 

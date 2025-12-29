@@ -1,24 +1,71 @@
 package com.kotlin.u_park.presentation.utils
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import android.graphics.Color
+import android.graphics.DashPathEffect
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.kotlin.u_park.domain.model.ParkingTicket
+import com.kotlin.u_park.domain.model.SalidaResponse
 import java.io.File
 import java.io.FileOutputStream
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 object PdfGenerator {
 
+    // --- Formateo de fecha ---
     @RequiresApi(Build.VERSION_CODES.O)
-    fun generateFactura(context: Context, ticket: ParkingTicket): File {
+    private fun formatDate(raw: String): String {
+        return try {
+            val instant = Instant.parse(raw)
+            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a")
+                .withZone(ZoneId.systemDefault())
+            formatter.format(instant)
+        } catch (e: Exception) {
+            raw.replace("T", " ")
+        }
+    }
 
-        val dir = File(context.cacheDir, "facturas")
+    // --- Formateo de duración ---
+    private fun formatDuration(hours: Double): String {
+        val h = hours.toInt()
+        val m = ((hours - h) * 60).toInt()
+        return "%02d:%02d hrs".format(h, m)
+    }
+
+    // -------------------------------------------------------
+    // ⚡ GENERAR PDF CON DISEÑO MODERNO
+    // -------------------------------------------------------
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun generateFacturaSalida(
+        context: Context,
+        ticket: SalidaResponse,
+        vehiculoNombre: String,
+        garageNombre: String,
+        saveToDownloads: Boolean = false
+    ): File {
+
+        // Si quiere descargar, guarda en Documentos/U-Park
+        // Si solo quiere compartir, guarda en caché temporal
+        val dir = if (saveToDownloads) {
+            File(
+                android.os.Environment.getExternalStoragePublicDirectory(
+                    android.os.Environment.DIRECTORY_DOCUMENTS
+                ),
+                "U-Park"
+            )
+        } else {
+            File(context.cacheDir, "facturas")
+        }
+
         if (!dir.exists()) dir.mkdirs()
 
-        val file = File(dir, "factura_${ticket.parkingId}.pdf")
+        val file = File(dir, "Ticket_${ticket.parking_id.take(8)}.pdf")
         if (file.exists()) file.delete()
 
         val pdf = PdfDocument()
@@ -28,27 +75,149 @@ object PdfGenerator {
 
         val paint = Paint().apply { isAntiAlias = true }
 
-        // Header
-        paint.textSize = 20f
-        paint.typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
-        canvas.drawText("U-Park - Ticket Entrada", 40f, 50f, paint)
+        // 🎨 COLORES MODERNOS
+        val primaryColor = Color.rgb(230, 0, 35) // Rojo U•Park
+        val darkGray = Color.rgb(51, 51, 51)
+        val lightGray = Color.rgb(153, 153, 153)
+        val bgGray = Color.rgb(248, 248, 248)
 
-        paint.textSize = 12f
+        // ═══════════════════════════════════════════
+        // 📌 HEADER CON FONDO
+        // ═══════════════════════════════════════════
+        paint.color = primaryColor
+        canvas.drawRect(0f, 0f, 595f, 120f, paint)
+
+        // Logo/Título en blanco
+        paint.color = Color.WHITE
+        paint.textSize = 32f
+        paint.typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
+        canvas.drawText("U•PARK", 40f, 55f, paint)
+
+        paint.textSize = 16f
         paint.typeface = Typeface.DEFAULT
-        canvas.drawText("Parking ID: ${ticket.parkingId}", 40f, 90f, paint)
-        canvas.drawText("Vehículo: ${ticket.plate}", 40f, 110f, paint)
-        canvas.drawText("Hora Entrada: ${ticket.horaEntrada}", 40f, 130f, paint)
-        canvas.drawText("Garage: ${ticket.garage}", 40f, 150f, paint)
-        // Fotos URLs
-        var y = 200f
-        paint.textSize = 10f
-        ticket.fotos.forEachIndexed { index, url ->
-            canvas.drawText("${index + 1}. $url", 40f, y, paint)
-            y += 15f
+        canvas.drawText("Sistema de Estacionamiento", 40f, 85f, paint)
+
+        // Ticket ID en header
+        paint.textAlign = Paint.Align.RIGHT
+        paint.textSize = 14f
+        canvas.drawText("Ticket #${ticket.parking_id.take(8)}", 555f, 70f, paint)
+        paint.textAlign = Paint.Align.LEFT
+
+        // ═══════════════════════════════════════════
+        // 📋 SECCIÓN: INFORMACIÓN DEL TICKET
+        // ═══════════════════════════════════════════
+        var y = 160f
+
+        // Título de sección
+        paint.color = darkGray
+        paint.textSize = 18f
+        paint.typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
+        canvas.drawText("TICKET DE SALIDA", 40f, y, paint)
+        y += 10f
+
+        // Línea separadora
+        paint.color = lightGray
+        paint.strokeWidth = 1f
+        canvas.drawLine(40f, y, 555f, y, paint)
+        y += 30f
+
+        // ═══════════════════════════════════════════
+        // 🚗 DATOS DEL VEHÍCULO Y GARAGE
+        // ═══════════════════════════════════════════
+        paint.typeface = Typeface.DEFAULT
+        paint.textSize = 13f
+
+        fun drawRow(label: String, value: String) {
+            paint.color = lightGray
+            paint.textSize = 11f
+            canvas.drawText(label, 40f, y, paint)
+
+            paint.color = darkGray
+            paint.textSize = 14f
+            canvas.drawText(value, 40f, y + 20f, paint)
+            y += 50f
         }
 
-        paint.textSize = 12f
-        canvas.drawText("Generado: ${java.time.OffsetDateTime.now()}", 40f, 800f, paint)
+        drawRow("VEHÍCULO", vehiculoNombre)
+        drawRow("GARAGE", garageNombre)
+
+        // ═══════════════════════════════════════════
+        // ⏰ TIEMPOS
+        // ═══════════════════════════════════════════
+        y += 10f
+
+        // Fondo gris para sección de tiempos
+        paint.color = bgGray
+        canvas.drawRect(40f, y - 10f, 555f, y + 125f, paint)
+
+        y += 15f
+
+        fun drawTimeRow(label: String, value: String) {
+            paint.color = lightGray
+            paint.textSize = 11f
+            canvas.drawText(label, 55f, y, paint)
+
+            paint.color = darkGray
+            paint.textSize = 13f
+            paint.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
+            canvas.drawText(value, 55f, y + 20f, paint)
+            paint.typeface = Typeface.DEFAULT
+            y += 40f
+        }
+
+        drawTimeRow("ENTRADA", formatDate(ticket.hora_entrada))
+        drawTimeRow("SALIDA", formatDate(ticket.hora_salida))
+        drawTimeRow("DURACIÓN", formatDuration(ticket.duration_hours))
+
+        y += 20f
+
+        // ═══════════════════════════════════════════
+        // 💰 TOTAL A PAGAR (DESTACADO)
+        // ═══════════════════════════════════════════
+
+        // Línea punteada separadora
+        paint.color = lightGray
+        paint.strokeWidth = 2f
+        paint.pathEffect = DashPathEffect(floatArrayOf(10f, 5f), 0f)
+        canvas.drawLine(40f, y, 555f, y, paint)
+        paint.pathEffect = null
+        y += 40f
+
+        // Label "Total"
+        paint.color = darkGray
+        paint.textSize = 14f
+        paint.typeface = Typeface.DEFAULT
+        canvas.drawText("TOTAL A PAGAR", 40f, y, paint)
+
+        // Monto en rojo y grande
+        paint.color = primaryColor
+        paint.textSize = 32f
+        paint.typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
+        paint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("RD$ ${"%,.2f".format(ticket.total)}", 555f, y, paint)
+        paint.textAlign = Paint.Align.LEFT
+
+        // ═══════════════════════════════════════════
+        // 📝 PIE DE PÁGINA
+        // ═══════════════════════════════════════════
+        y = 780f
+
+        paint.color = lightGray
+        paint.textSize = 10f
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+        paint.textAlign = Paint.Align.CENTER
+
+        canvas.drawText("Gracias por usar U•Park", 297.5f, y, paint)
+        canvas.drawText("Documento generado automáticamente", 297.5f, y + 15f, paint)
+
+        val fecha = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+            .withZone(ZoneId.systemDefault())
+            .format(Instant.now())
+        canvas.drawText("Fecha de emisión: $fecha", 297.5f, y + 30f, paint)
+
+        paint.textAlign = Paint.Align.LEFT
+
+        // ═══════════════════════════════════════════
 
         pdf.finishPage(page)
 
@@ -57,6 +226,83 @@ object PdfGenerator {
         out.close()
         pdf.close()
 
+        // 🔔 Si se guardó en Descargas, notificar al usuario
+        if (saveToDownloads) {
+            notifyFileSaved(context, file)
+        }
+
         return file
+    }
+
+    // -------------------------------------------------------
+    // 🔔 NOTIFICAR QUE SE GUARDÓ EL ARCHIVO
+    // -------------------------------------------------------
+    private fun notifyFileSaved(context: Context, file: File) {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(
+                androidx.core.content.FileProvider.getUriForFile(
+                    context,
+                    context.packageName + ".provider",
+                    file
+                ),
+                "application/pdf"
+            )
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            // Si no puede abrir el PDF, al menos se guardó
+        }
+    }
+
+    // -------------------------------------------------------
+    // 📤 COMPARTIR UNIVERSAL (WhatsApp, Gmail, Drive, etc.)
+    // -------------------------------------------------------
+    fun compartirFactura(context: Context, file: File) {
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            context.packageName + ".provider",
+            file
+        )
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, "Ticket de Salida - U•Park")
+            putExtra(Intent.EXTRA_TEXT, "Adjunto el ticket de salida del estacionamiento.")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        val chooser = Intent.createChooser(intent, "Compartir ticket")
+        context.startActivity(chooser)
+    }
+
+    // -------------------------------------------------------
+    // 📱 COMPARTIR DIRECTO A WHATSAPP
+    // -------------------------------------------------------
+    fun compartirFacturaWhatsApp(context: Context, file: File) {
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            context.packageName + ".provider",
+            file
+        )
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_TEXT, "Ticket de salida - U•Park")
+            setPackage("com.whatsapp")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            // Si WhatsApp no está instalado, usar selector universal
+            compartirFactura(context, file)
+        }
     }
 }
