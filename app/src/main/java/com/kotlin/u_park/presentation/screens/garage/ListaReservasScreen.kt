@@ -78,7 +78,7 @@ fun ListaReservasScreen(
                 items(reservas) { reserva ->
                     ReservaCard(
                         vehicleId = reserva.vehicles?.plate ?: reserva.vehicle_id ?: "Sin placa",
-                        usuario = reserva.vehicles?.users?.nombre ?: "Usuario desconocido",
+                        usuario = reserva.users?.nombre ?: "Usuario desconocido",
                         estado = reserva.estado ?: "",
                         fecha = reserva.hora_reserva ?: "",
                         onActivar = { reserva.id?.let { viewModel.activarReserva(it) } },
@@ -257,11 +257,14 @@ private fun EstadoChip(estado: String) {
                 modifier = Modifier.size(16.dp)
             )
             Text(
-                estado.capitalize(),
+                estado.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                },
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
+
         }
     }
 }

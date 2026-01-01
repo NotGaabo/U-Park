@@ -1,5 +1,6 @@
 package com.kotlin.u_park.data.repository
 
+import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.kotlin.u_park.domain.model.Parking
@@ -15,7 +16,12 @@ import io.github.jan.supabase.postgrest.rpc
 import kotlinx.serialization.Serializable
 import com.kotlin.u_park.domain.model.HistorialParking
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.upload
+import java.io.File
 import java.time.OffsetDateTime
+import androidx.core.net.toUri
+import com.kotlin.u_park.data.remote.supabase
+import com.kotlin.u_park.domain.model.ParkingPago
 
 class ParkingRepositoryImpl(
     private val client: SupabaseClient
@@ -47,7 +53,7 @@ class ParkingRepositoryImpl(
         return client.postgrest.rpc(
             "historial_parking_usuario",
             mapOf("p_user_id" to userId)
-        ).decodeList()
+        ).decodeList<HistorialParking>()
     }
 
     // ------------------------------------------------------------
@@ -84,6 +90,65 @@ class ParkingRepositoryImpl(
         }.decodeList<Parking>()
 
         return list.isNotEmpty()
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override suspend fun registrarSalidaConPago(
+        parkingId: String,
+        horaSalida: String,
+        empleadoId: String,
+        metodoPago: String,
+        comprobanteBytes: ByteArray?
+    ): Parking {
+
+        var comprobanteUrlFinal: String? = null
+
+        // 1️⃣ Subir comprobante si es transferencia
+        if (metodoPago == "TRANSFERENCIA") {
+            if (comprobanteBytes == null) {
+                throw IllegalArgumentException("La transferencia requiere comprobante")
+            }
+
+            val fileName = "payments/$parkingId-${System.currentTimeMillis()}.jpg"
+
+            client.storage
+                .from("parking_payments")
+                .upload(fileName, comprobanteBytes) {
+                    upsert = true
+                }
+
+            comprobanteUrlFinal = client.storage
+                .from("parking_payments")
+                .publicUrl(fileName)
+        }
+
+        // 2️⃣ Ejecutar RPC (TRANSACCIÓN REAL)
+        val updated = client.postgrest.rpc(
+            "registrar_salida_con_pago",
+            mapOf(
+                "p_parking_id" to parkingId,
+                "p_hora_salida" to horaSalida,
+                "p_empleado_id" to empleadoId,
+                "p_metodo" to metodoPago,
+                "p_comprobante_url" to comprobanteUrlFinal
+            )
+        ).decodeList<Parking>().first()
+
+        // 3️⃣ Si venía de reserva → completar reserva
+        if (updated.tipo == "reserva") {
+            client.from("reservas").update(
+                mapOf("estado" to "completada")
+            ) {
+                filter {
+                    eq("vehicle_id", updated.vehicle_id!!)
+                    eq("garage_id", updated.garage_id!!)
+                    neq("estado", "completada")
+                }
+            }
+        }
+
+        return updated
     }
 
     // ------------------------------------------------------------
@@ -146,6 +211,29 @@ class ParkingRepositoryImpl(
         return table.insert(data) { select() }.decodeSingle()
     }
 
+    private suspend fun subirComprobanteTransferencia(
+        parkingId: String,
+        comprobanteBytes: ByteArray
+    ): String {
+
+        val fileName = "payments/$parkingId-${System.currentTimeMillis()}.jpg"
+
+        client.storage
+            .from("parking_payments")
+            .upload(
+                path = fileName,
+                data = comprobanteBytes
+            ) {
+                upsert = true
+            }
+
+        return client.storage
+            .from("parking_payments")
+            .publicUrl(fileName)
+    }
+
+
+
     // ------------------------------------------------------------
     // 🔵 8. VEHÍCULOS DENTRO
     // ------------------------------------------------------------
@@ -192,19 +280,56 @@ class ParkingRepositoryImpl(
 
     // ------------------------------------------------------------
     override suspend fun getReservasConUsuario(garageId: String): List<ReservaConUsuario> {
-        return client.from("reservas").select(
-            Columns.raw(
-                """
-                    *,
-                    vehicles (
-                        plate,
-                        users (nombre)
-                    )
-                """.trimIndent()
-            )
-        ) {
-            filter { eq("garage_id", garageId) }
-        }.decodeList()
+        return try {
+            println("🔍 DEBUG: Buscando reservas para garage: $garageId")
+
+            val result = client.from("reservas").select(
+                Columns.raw("""
+        id,
+        garage_id,
+        vehicle_id,
+        empleado_id,
+        hora_reserva,
+        hora_llegada,
+        estado,
+
+        vehicles:vehicle_id (
+            plate,
+            user_id
+        ),
+
+        users:vehicles(user_id) (
+            id,
+            nombre,
+            usuario,
+            cedula,
+            telefono,
+            correo
+        )
+    """.trimIndent())
+            ) {
+                filter {
+                    eq("garage_id", garageId)
+                    eq("estado", "pendiente")
+                }
+                order("hora_reserva", Order.ASCENDING)
+            }.decodeList<ReservaConUsuario>()
+
+            println("✅ DEBUG: ${result.size} reservas encontradas")
+            result.forEach { reserva ->
+                println("   📋 ID: ${reserva.id}")
+                println("      Placa: ${reserva.vehicles?.plate}")
+                println("      Usuario: ${reserva.users?.nombre}")
+                println("      Hora: ${reserva.hora_reserva}")
+            }
+
+            result
+
+        } catch (e: Exception) {
+            println("❌ ERROR en getReservasConUsuario: ${e.message}")
+            e.printStackTrace()
+            emptyList()
+        }
     }
 
     // ------------------------------------------------------------
@@ -249,18 +374,22 @@ class ParkingRepositoryImpl(
     }
 
     // ------------------------------------------------------------
-    override suspend fun activarReserva(reservaId: Int): Parking {
-        return table.update(mapOf("estado" to "activa")) {
-            filter { eq("id", reservaId) }
-            select()
-        }.decodeSingle()
-    }
-
-    override suspend fun cancelarReserva(reservaId: Int): Boolean {
-        table.update(mapOf("estado" to "cancelada")) {
+    override suspend fun cancelarReserva(reservaId: String): Boolean {
+        client.from("reservas").update(
+            mapOf("estado" to "cancelada")
+        ) {
             filter { eq("id", reservaId) }
         }
         return true
+    }
+
+    override suspend fun activarReserva(reservaId: String): Parking {
+        return client.from("reservas").update(
+            mapOf("estado" to "activa")
+        ) {
+            filter { eq("id", reservaId) }
+            select()
+        }.decodeSingle()
     }
 
     // ------------------------------------------------------------

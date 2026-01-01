@@ -39,6 +39,7 @@ fun VehiculosDentroScreen(
     garageId: String
 ) {
     val vehiculosDentro by parkingViewModel.vehiculosDentro.collectAsState()
+    val redSoft = Color(0xFFE60023)
     val actividad by parkingViewModel.actividad.collectAsState()
 
     /* ================================================
@@ -79,15 +80,6 @@ fun VehiculosDentroScreen(
                         )
                     }
                 },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = Color.White
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = RedSoft,
                     titleContentColor = Color.White
@@ -105,6 +97,34 @@ fun VehiculosDentroScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            NavigationBar(containerColor = Color.White) {
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { navController.navigate(Routes.EmployeeHome.route) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                    label = { Text("Home") }
+                )
+                NavigationBarItem(
+                    selected = true,
+                    onClick = { },
+                    icon = { Icon(Icons.Default.DirectionsCar,null, tint = RedSoft)
+                    },
+                    label = {
+                        Text(
+                            "Vehículos",
+                            color = RedSoft
+                        )
+                    }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { navController.navigate(Routes.EmployeeSettings.route) },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
+                    label = { Text("Perfil") }
+                )
+            }
         }
     ) { padding ->
 

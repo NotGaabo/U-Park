@@ -28,9 +28,12 @@ import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private val RedSoft = Color(0xFFE60023)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsEmployeeScreen(
+    garageId: String,
     navController: NavController,
     supabase: SupabaseClient,
     onSignOut: () -> Unit
@@ -67,6 +70,19 @@ fun SettingsEmployeeScreen(
                     onClick = { navController.navigate(Routes.EmployeeHome.route) },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
                     label = { Text("Home") }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { navController.navigate(
+                        Routes.VehiculosDentro.createRoute(garageId)
+                    )},
+                    icon = { Icon(Icons.Default.DirectionsCar,null)
+                    },
+                    label = {
+                        Text(
+                            "Vehículos"
+                        )
+                    }
                 )
                 NavigationBarItem(
                     selected = true,

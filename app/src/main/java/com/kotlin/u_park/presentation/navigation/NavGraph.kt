@@ -466,7 +466,11 @@ fun NavGraph(
 
         // -------------------- SETTINGS EMPLEADOS --------------------
         composable(Routes.EmployeeSettings.route) {
+                backStackEntry ->
+            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+
             SettingsEmployeeScreen(
+                garageId = garageId,
                 navController = navController,
                 supabase = supabase,
                 onSignOut = {

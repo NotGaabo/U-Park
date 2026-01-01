@@ -106,23 +106,7 @@ fun EmployeeHomeScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = RedSoft,
                     titleContentColor = Color.White
-                ),
-                actions = {
-                    IconButton(onClick = { /* Notificaciones */ }) {
-                        if (totalEmpleados > 0) {
-                            Badge(
-                                containerColor = Color(0xFFFFD700)
-                            ) {
-                                Text("$totalEmpleados", color = Color.Black, fontSize = 10.sp)
-                            }
-                        }
-                        Icon(
-                            Icons.Default.Notifications,
-                            contentDescription = "Notificaciones",
-                            tint = Color.White
-                        )
-                    }
-                }
+                )
             )
         },
         bottomBar = {
@@ -169,8 +153,6 @@ fun EmployeeHomeScreen(
                         )
                     }
                 )
-
-
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = {

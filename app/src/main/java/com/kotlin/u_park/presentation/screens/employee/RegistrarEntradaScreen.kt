@@ -76,9 +76,10 @@ fun RegistrarEntradaScreen(
     val message by viewModel.message.collectAsState()
 
     // Cargar reservas cuando se selecciona modo Reserva
-    LaunchedEffect(modoEntrada) {
+    LaunchedEffect(modoEntrada, reservaSeleccionada) {
         if (modoEntrada == "Reserva") {
             viewModel.loadReservasConUsuario(garageId)
+            placa = reservaSeleccionada?.vehicles?.plate ?: placa
         }
     }
 
@@ -464,7 +465,7 @@ fun ReservaSelector(
             ) {
                 OutlinedTextField(
                     value = reservaSeleccionada?.let {
-                        "${it.vehicles?.users?.nombre ?: "Usuario"} - ${it.vehicles?.plate ?: "Placa"}"
+                        "${it.users?.nombre ?: "Usuario"} - ${it.vehicles?.plate ?: "Sin placa"}"
                     } ?: "",
                     onValueChange = {},
                     readOnly = true,
@@ -497,7 +498,7 @@ fun ReservaSelector(
                             text = {
                                 Column {
                                     Text(
-                                        "${reserva.vehicles?.users?.nombre} - ${reserva.vehicles?.plate}",
+                                        "${reserva.users?.nombre ?: "Usuario"} - ${reserva.vehicles?.plate ?: "Sin placa"}",
                                         fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
