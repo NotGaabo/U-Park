@@ -301,8 +301,8 @@ fun EmployeeHomeScreen(
                     }
 
                     val actividadOrdenada = actividadReciente.sortedByDescending { act ->
-                        act.hora_salida ?: act.hora_entrada ?: ""
-                    }
+                        act.hora_salida ?: act.hora_entrada ?: ""}
+                        .take(5)
 
                     if (actividadOrdenada.isEmpty()) {
 

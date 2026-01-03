@@ -2,7 +2,6 @@ package com.kotlin.u_park.presentation.screens.garage
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,16 +13,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.kotlin.u_park.domain.repository.GarageRepository
+import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 
 // Colores del diseño
 private val redPrimary = Color(0xFFE74C3C)
+private val redSoft = Color(0xFFE60023)
 private val greenSuccess = Color(0xFF27AE60)
 private val orangeWarning = Color(0xFFF39C12)
 private val blueInfo = Color(0xFF3498DB)
@@ -38,7 +39,8 @@ fun ListaReservasScreen(
     viewModel: ParkingViewModel,
     garageId: String,
     userId: String,
-    garageRepository: GarageRepository
+    garageRepository: GarageRepository,
+    navController: NavController
 ) {
     // 🔥 Ahora sí: reservas con usuario incluido
     val reservas by viewModel.reservasConUsuario.collectAsState()
@@ -63,7 +65,38 @@ fun ListaReservasScreen(
                 )
             )
         },
-        containerColor = grayLight
+        containerColor = grayLight,
+        bottomBar = {
+            NavigationBar(containerColor = Color.White) {
+                NavigationBarItem(
+                selected = false,
+                onClick = {
+                    navController.navigate(Routes.Rates.route)
+                },
+                icon = { Icon(Icons.Default.AttachMoney, contentDescription = "Tarifas") },
+                label = { Text("Tarifas") }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { navController.navigate(Routes.DuenoGarage.route) },
+                    icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
+                    label = { Text("Dashboard") }
+                )
+
+                NavigationBarItem(
+                    selected = true,
+                    onClick = {},
+                    icon = { Icon(Icons.Default.Book, tint = redSoft, contentDescription = "Reservas") },
+                    label = { Text("Reservas", color = redSoft) }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { navController.navigate(Routes.SettingsDueno.route) },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
+                    label = { Text("Perfil") }
+                )
+            }
+        }
     ) { padding ->
         if (reservas.isEmpty()) {
             EmptyStateReservas(Modifier.padding(padding))
@@ -89,6 +122,7 @@ fun ListaReservasScreen(
         }
     }
 }
+
 @Composable
 private fun EmptyStateReservas(modifier: Modifier = Modifier) {
     Column(
@@ -125,8 +159,7 @@ fun ReservaCard(
     fecha: String,
     onActivar: () -> Unit,
     onCancelar: () -> Unit
-)
- {
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -163,7 +196,27 @@ fun ReservaCard(
                 EstadoChip(estado)
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
+
+            // Información del usuario
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Person,
+                    contentDescription = null,
+                    tint = darkText.copy(alpha = 0.6f),
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    usuario,
+                    fontSize = 14.sp,
+                    color = darkText.copy(alpha = 0.7f)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
 
             // Información de fecha
             Row(
@@ -264,7 +317,6 @@ private fun EstadoChip(estado: String) {
                 fontWeight = FontWeight.Bold,
                 color = color
             )
-
         }
     }
 }

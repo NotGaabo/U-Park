@@ -20,23 +20,31 @@ class RatesRepositoryImpl(
     // ----------------------------------------------------------
     // RPC existentes
     // ----------------------------------------------------------
-    override suspend fun asignarTarifa(garageId: String, vehicleId: String): String {
-        val response = supabase.postgrest.rpc(
-            "asignar_tarifa",
-            mapOf(
-                "garage" to garageId,
-                "vehicle" to vehicleId
-            )
-        )
-        return response.decodeAs<String>()
-    }
+//    override suspend fun asignarTarifa(garageId: String, vehicleId: String): String {
+//        val response = supabase.postgrest.rpc(
+//            "asignar_tarifa",
+//            mapOf(
+//                "garage" to garageId,
+//                "vehicle" to vehicleId
+//            )
+//        )
+//        return response.decodeAs<String>()
+//    }
 
-    override suspend fun calcularSalida(parkingId: String): SalidaResponse {
+    override suspend fun calcularSalidaPreview(parkingId: String): SalidaResponse {
         return supabase.postgrest.rpc(
-            "calcular_salida",
+            "calcular_salida_preview",
             mapOf("p_parking_id" to parkingId)
         ).decodeAs()
     }
+
+    override suspend fun confirmarSalida(parkingId: String) {
+        supabase.postgrest.rpc(
+            "confirmar_salida",
+            mapOf("p_parking_id" to parkingId)
+        )
+    }
+
 
     // ----------------------------------------------------------
     // Obtener tipos de vehículos

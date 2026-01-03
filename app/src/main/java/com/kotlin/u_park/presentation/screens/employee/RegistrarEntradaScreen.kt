@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.kotlin.u_park.domain.model.Rate
 import com.kotlin.u_park.domain.model.ReservaConUsuario
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
@@ -62,6 +63,9 @@ fun RegistrarEntradaScreen(
     val ctx = LocalContext.current
     val scrollState = rememberScrollState()
 
+    val rates by viewModel.rates.collectAsState()
+    val selectedRate by viewModel.selectedRate.collectAsState()
+
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var placa by remember { mutableStateOf("") }
     var modoEntrada by remember { mutableStateOf("Normal") }
@@ -82,6 +86,11 @@ fun RegistrarEntradaScreen(
             placa = reservaSeleccionada?.vehicles?.plate ?: placa
         }
     }
+
+    LaunchedEffect(garageId) {
+        viewModel.loadRatesByGarage(garageId)
+    }
+
 
     LaunchedEffect(ticket) {
         ticket?.let {
@@ -217,6 +226,20 @@ fun RegistrarEntradaScreen(
                     )
                 }
 
+                // Paso X: Seleccionar Tarifa
+                StepCard(
+                    stepNumber = if (modoEntrada == "Reserva") "4" else "3",
+                    title = "Seleccionar Tarifa",
+                    isCompleted = selectedRate != null
+                ) {
+                    RateSelector(
+                        rates = rates,
+                        selectedRate = selectedRate,
+                        onRateSelected = { viewModel.selectRate(it) }
+                    )
+                }
+
+
                 // Paso 4: Fotografía
                 StepCard(
                     stepNumber = if (modoEntrada == "Reserva") "4" else "3",
@@ -244,6 +267,12 @@ fun RegistrarEntradaScreen(
                     enabled = placa.isNotBlank() && bitmap != null &&
                             (modoEntrada == "Normal" || reservaSeleccionada != null),
                     onClick = {
+
+                        if (selectedRate == null) {
+                            Toast.makeText(ctx, "Selecciona una tarifa", Toast.LENGTH_SHORT).show()
+                            return@ConfirmButton
+                        }
+
                         if (placa.isBlank()) {
                             Toast.makeText(ctx, "Ingresa la placa", Toast.LENGTH_SHORT).show()
                             return@ConfirmButton
@@ -261,6 +290,7 @@ fun RegistrarEntradaScreen(
                                 garageId = garageId,
                                 vehiclePlate = placa.trim(),
                                 empleadoId = empleadoId,
+                                rateId = selectedRate!!.id!!,
                                 fotosBytes = fotos
                             )
                         } else {
@@ -283,6 +313,92 @@ fun RegistrarEntradaScreen(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RateSelector(
+    rates: List<Rate>,
+    selectedRate: Rate?,
+    onRateSelected: (Rate) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectedRate?.let {
+                "${it.baseRate} / ${it.timeUnit}"
+            } ?: "",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Tarifa") },
+            placeholder = { Text("Selecciona una tarifa") },
+            trailingIcon = {
+                Icon(
+                    if (expanded)
+                        Icons.Default.KeyboardArrowUp
+                    else
+                        Icons.Default.KeyboardArrowDown,
+                    contentDescription = null
+                )
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = PrimaryRed,
+                unfocusedBorderColor = Color(0xFFDEE2E6),
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            rates.forEach { rate ->
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(
+                                text = "${rate.baseRate} / ${rate.timeUnit}",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = buildString {
+                                    append("Horario: ")
+                                    append(rate.horaInicio ?: "00:00")
+                                    append(" - ")
+                                    append(rate.horaFin ?: "24:00")
+                                },
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    },
+                    onClick = {
+                        onRateSelected(rate)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+
+    if (rates.isEmpty()) {
+        Text(
+            text = "No hay tarifas activas para este garaje",
+            fontSize = 12.sp,
+            color = TextSecondary,
+            modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+        )
+    }
+}
+
 
 @Composable
 fun StepCard(

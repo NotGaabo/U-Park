@@ -39,25 +39,28 @@ fun VehiculosDentroScreen(
     garageId: String
 ) {
     val vehiculosDentro by parkingViewModel.vehiculosDentro.collectAsState()
-    val redSoft = Color(0xFFE60023)
     val actividad by parkingViewModel.actividad.collectAsState()
 
+    var searchQuery by remember { mutableStateOf("") }
+
+    // 🔥 Filtrado avanzado por placa
+    val filteredVehiculos = vehiculosDentro.filter { plate ->
+        plate.replace("-", "").replace(" ", "")
+            .contains(searchQuery.trim().replace("-", "").replace(" ", ""), ignoreCase = true)
+    }
+
     /* ================================================
-     * 🔥 1. Recargar datos cuando la pantalla vuelva
+     * 🔥 Recargar datos cuando la pantalla vuelva
      * ================================================ */
     val lifecycleOwner = LocalLifecycleOwner.current
-
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                println("🔄 ON_RESUME → Recargando vehículos y actividad...")
                 parkingViewModel.actualizarVehiculosDentro()
                 parkingViewModel.loadActividad(garageId)
             }
         }
-
         lifecycleOwner.lifecycle.addObserver(observer)
-
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
@@ -89,11 +92,7 @@ fun VehiculosDentroScreen(
                         parkingViewModel.actualizarVehiculosDentro()
                         parkingViewModel.loadActividad(garageId)
                     }) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Actualizar",
-                            tint = Color.White
-                        )
+                        Icon(Icons.Default.Refresh, contentDescription = "Actualizar", tint = Color.White)
                     }
                 }
             )
@@ -109,14 +108,8 @@ fun VehiculosDentroScreen(
                 NavigationBarItem(
                     selected = true,
                     onClick = { },
-                    icon = { Icon(Icons.Default.DirectionsCar,null, tint = RedSoft)
-                    },
-                    label = {
-                        Text(
-                            "Vehículos",
-                            color = RedSoft
-                        )
-                    }
+                    icon = { Icon(Icons.Default.DirectionsCar,null, tint = RedSoft) },
+                    label = { Text("Vehículos", color = RedSoft) }
                 )
                 NavigationBarItem(
                     selected = false,
@@ -128,78 +121,63 @@ fun VehiculosDentroScreen(
         }
     ) { padding ->
 
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(BackgroundColor)
                 .padding(padding)
         ) {
 
-            if (vehiculosDentro.isEmpty()) {
+            // 🔥 BUSCADOR POR PLACA
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                placeholder = { Text("Buscar por placa...") },
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+            )
+
+            if (filteredVehiculos.isEmpty()) {
                 EmptySalidaState()
             } else {
-
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    item { VehiclesHeader(totalVehicles = filteredVehiculos.size) }
 
-                    // Header con información
-                    item {
-                        VehiclesHeader(totalVehicles = vehiculosDentro.size)
-                    }
+                    items(filteredVehiculos) { plate ->
 
-                    items(vehiculosDentro) { plate ->
-
-                        /* ============================
-                         * DEBUG LOG
-                         * ============================ */
                         LaunchedEffect(plate, actividad) {
                             println("========= DEBUG SALIDA =========")
                             println("Vehículo dentro: $plate")
-                            println("Lista actividad:")
                             actividad.forEach {
-                                println(
-                                    "  -> act.id=${it.id}, tipo=${it.tipo}, placa=${it.vehicles?.plate}, salida=${it.hora_salida}"
-                                )
+                                println("  -> act.id=${it.id}, tipo=${it.tipo}, placa=${it.vehicles?.plate}, salida=${it.hora_salida}")
                             }
                         }
 
-                        /* ============================
-                         * OBTENER PARKING ACTIVO
-                         * ============================ */
                         val parkingId = actividad.firstOrNull { act ->
                             act.vehicles?.plate == plate &&
                                     (act.tipo == "entrada" || act.tipo == "reserva") &&
                                     act.hora_salida == null
                         }?.id ?: ""
 
-                        if (parkingId.isBlank()) {
-                            println("⚠️ No se encontró parking ACTIVO para placa: $plate")
-                        } else {
-                            println("✔ Parking activo encontrado para $plate: $parkingId")
-                        }
-
                         VehiculoCardSalida(
                             plate = plate,
                             parkingId = parkingId,
                             onClick = {
                                 if (parkingId.isNotBlank()) {
-                                    navController.navigate(
-                                        Routes.RegistrarSalida.createRoute(parkingId)
-                                    )
-                                } else {
-                                    println("❌ NO SE NAVEGA: parkingId vacío")
+                                    navController.navigate(Routes.RegistrarSalida.createRoute(parkingId))
                                 }
                             }
                         )
                     }
 
-                    // Espaciado final
-                    item {
-                        Spacer(Modifier.height(16.dp))
-                    }
+                    item { Spacer(Modifier.height(16.dp)) }
                 }
             }
         }
@@ -397,7 +375,7 @@ fun VehiculoCardSalida(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "Placa del vehículo",
-                    fontSize = 12.sp,
+                    fontSize = 16.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
                 )
@@ -405,7 +383,7 @@ fun VehiculoCardSalida(
                 Text(
                     plate,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
+                    fontSize = 16.sp,
                     color = Color(0xFF1A1A1A),
                     letterSpacing = 1.sp
                 )

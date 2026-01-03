@@ -252,6 +252,7 @@ fun HomeScreen(
     }
 
     // 🟥 BottomSheet — CORREGIDO COMPLETAMENTE
+    // 🟥 BottomSheet — CORREGIDO COMPLETAMENTE
     selectedGarage?.let { garage ->
         ModalBottomSheet(
             onDismissRequest = { selectedGarage = null },
@@ -259,26 +260,25 @@ fun HomeScreen(
         ) {
             GarageDetailBottomSheet(
                 garage = garage,
-                onDismiss = { selectedGarage = null },
                 locationLine = selectedLocationLine,
 
-                // 🟩 ✔️ Navegación correcta a RegistrarReservaScreen
                 onReserve = { g ->
-                    navController.navigate(
-                        "registrarReserva/${g.idGarage}"
-                    )
+                    navController.navigate("registrarReserva/${g.idGarage}")
                 },
 
-                // 🟦 Navegar a detalles
                 onDetails = { g ->
                     navController.navigate("garage/${g.idGarage}")
                 },
 
-                // 🟧 Abrir Google Maps
                 onGoToGarage = { g ->
                     val lat = g.latitud ?: return@GarageDetailBottomSheet
                     val lng = g.longitud ?: return@GarageDetailBottomSheet
                     openGoogleMaps(context, lat, lng)
+                },
+
+                // ✅ CORREGIDO - Usar createRoute con el ID real
+                onSubscribe = { g ->
+                    navController.navigate(Routes.Subscription.createRoute(g.idGarage))
                 }
             )
         }

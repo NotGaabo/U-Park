@@ -25,12 +25,16 @@ import com.kotlin.u_park.domain.model.Garage
 @Composable
 fun GarageDetailBottomSheet(
     garage: Garage,
-    onDismiss: () -> Unit,
     locationLine: String,
-    onReserve: (Garage) -> Unit,
     onDetails: (Garage) -> Unit,
+    onReserve: (Garage) -> Unit,
+    onSubscribe: (Garage) -> Unit,
     onGoToGarage: (Garage) -> Unit
 ) {
+
+    val red = Color(0xFFE60023)
+    val gray = MaterialTheme.colorScheme.surfaceVariant
+    val grayText = MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(
         modifier = Modifier
@@ -40,7 +44,7 @@ fun GarageDetailBottomSheet(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // 📸 Imagen del Garage
+        // 📸 Imagen
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(garage.imageUrl)
@@ -54,7 +58,7 @@ fun GarageDetailBottomSheet(
             contentScale = ContentScale.Crop
         )
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(Modifier.height(14.dp))
 
         // 📌 Nombre
         Text(
@@ -64,83 +68,104 @@ fun GarageDetailBottomSheet(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(8.dp))
 
-        // 📍 Dirección corta
-        Text(text = locationLine, color = Color.Gray, fontSize = 13.sp)
+        // 📍 Dirección
+        Text(locationLine, color = Color.Gray, fontSize = 13.sp)
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(8.dp))
 
         // 🕒 Horario + Capacidad
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = garage.horario ?: "-", color = Color.Gray, fontSize = 13.sp)
+            Text(garage.horario ?: "-", color = Color.Gray, fontSize = 13.sp)
             Text(
-                text = "Capacidad: ${garage.capacidadTotal}",
+                "Capacidad: ${garage.capacidadTotal}",
                 color = Color.Gray,
                 fontSize = 13.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(Modifier.height(20.dp))
 
-        // 🟦 Botones: Detalles — Reservar
-        Row(
+        // ───────── BOTONES ─────────
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
-            Button(
-                onClick = { onDetails(garage) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            // 🔹 FILA 1 → Gris | Rojo
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(text = "Detalles", color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                Button(
+                    onClick = { onDetails(garage) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = gray),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
+                ) {
+                    Text("Detalles", color = grayText, fontWeight = FontWeight.Medium)
+                }
+
+                Button(
+                    onClick = { onReserve(garage) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = red),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
+                ) {
+                    Text("Reservar", color = Color.White, fontWeight = FontWeight.Medium)
+                }
             }
 
-            Button(
-                onClick = { onReserve(garage) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE60023)),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            // 🔹 FILA 2 → Rojo | Gris
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(text = "Reservar", color = Color.White)
+
+                Button(
+                    onClick = { onSubscribe(garage) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = red),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
+                ) {
+                    Text("Suscribirse", color = Color.White, fontWeight = FontWeight.Medium)
+                }
+
+                Button(
+                    onClick = { onGoToGarage(garage) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = gray),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
+                ) {
+                    Icon(Icons.Default.Map, contentDescription = null, tint = grayText)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Ir al garage", color = grayText, fontWeight = FontWeight.Medium)
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // 🗺️ Ir al garage
-        Button(
-            onClick = { onGoToGarage(garage) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(50),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-        ) {
-            Icon(Icons.Default.Map, contentDescription = "map", tint = Color.White)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Ir al garage", color = Color.White)
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(Modifier.height(8.dp))
     }
 }
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 640)
+@Preview(showBackground = true, widthDp = 360)
 @Composable
 fun GarageDetailSheetPreview() {
     val g = Garage(
@@ -148,16 +173,16 @@ fun GarageDetailSheetPreview() {
         direccion = "Av. Principal 123",
         horario = "08:00 - 22:00",
         capacidadTotal = 120,
-        imageUrl = "https://picsum.photos/800/600?random=2"
+        imageUrl = "https://picsum.photos/800/600"
     )
 
     Surface {
         GarageDetailBottomSheet(
             garage = g,
-            onDismiss = {},
-            locationLine = "Ubicación",
-            onReserve = {},
+            locationLine = "Av. Principal, Santo Domingo",
             onDetails = {},
+            onReserve = {},
+            onSubscribe = {},
             onGoToGarage = {}
         )
     }

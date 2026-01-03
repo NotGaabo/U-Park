@@ -28,6 +28,7 @@ import com.kotlin.u_park.data.repository.GarageRepositoryImpl
 import com.kotlin.u_park.data.repository.EmpleadoGarageRepositoryImpl
 import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.domain.model.Stats
+import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.home.openGoogleMaps
 
 private val RedSoft = Color(0xFFE60023)
@@ -243,6 +244,18 @@ fun DetallesScreen(navController: NavController, garageId: String) {
                             color = Color.White,
                             fontWeight = FontWeight.Medium
                         )
+                    }
+                    Button(
+                        onClick = {
+                            navController.navigate(
+                                Routes.Subscription.createRoute(g.idGarage)
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D47A1))
+                    ) {
+                        Text("Suscribirse", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
 

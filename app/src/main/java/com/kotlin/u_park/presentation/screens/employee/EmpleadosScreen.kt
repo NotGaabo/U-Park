@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kotlin.u_park.domain.model.EmpleadoGarage
@@ -34,9 +35,8 @@ private val BackgroundGray = Color(0xFFF5F7FA)
 
 
 // ——————————————————————————————
-//     PANTALLA PRINCIPAL
+//     PANTALLA PRINCIPAL (SIN SCAFFOLD)
 // ——————————————————————————————
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmpleadosScreen(
     garageId: String,
@@ -48,9 +48,27 @@ fun EmpleadosScreen(
 
     LaunchedEffect(garageId) { viewModel.loadEmpleados(garageId) }
 
-    Scaffold(
-        topBar = { CompactTopBar() },
-        floatingActionButton = {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundGray)
+    ) {
+        when {
+            isLoading -> LoadingState()
+            empleados.isEmpty() -> EmptyState(onAgregarEmpleado)
+            else -> EmpleadosList(
+                empleados = empleados,
+                onDelete = { cedula -> viewModel.removeEmpleado(garageId, cedula) }
+            )
+        }
+
+        // FAB flotante
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.BottomEnd
+        ) {
             FloatingActionButton(
                 onClick = onAgregarEmpleado,
                 containerColor = RedPrimary,
@@ -59,28 +77,9 @@ fun EmpleadosScreen(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
             }
-        },
-        containerColor = BackgroundGray,
-        contentWindowInsets = WindowInsets.safeDrawing   // 👈 FIX PRINCIPAL
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            when {
-                isLoading -> LoadingState()
-                empleados.isEmpty() -> EmptyState(onAgregarEmpleado)
-                else -> EmpleadosList(
-                    empleados = empleados,
-                    onDelete = { cedula -> viewModel.removeEmpleado(garageId, cedula) }
-                )
-
-            }
         }
     }
 }
-
 
 
 // ——————————————————————————————
@@ -93,9 +92,27 @@ private fun EmpleadosList(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Header con título
+        item {
+            Column {
+                Text(
+                    "Empleados",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+                Text(
+                    "Gestiona tu equipo de trabajo",
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+
         item { HeaderCard(empleados.size) }
 
         items(empleados, key = { it.empleado_id }) { empleado ->
@@ -105,63 +122,9 @@ private fun EmpleadosList(
             )
         }
 
-        item { Spacer(Modifier.height(60.dp)) }
+        item { Spacer(Modifier.height(80.dp)) }
     }
 }
-
-
-
-// ——————————————————————————————
-//     TOP BAR  (ARREGLADA 🚀)
-// ——————————————————————————————
-@Composable
-fun CompactTopBar() {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars),   // 👈 FIX PARA QUE NO SE META BAJO LA HORA
-        shadowElevation = 1.dp,
-        color = Color.White
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(30.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            brush = Brush.linearGradient(listOf(RedPrimary, RedLight))
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Group,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                Spacer(Modifier.width(8.dp))
-
-                Column {
-                    Text("Empleados", fontSize = 15.sp, color = TextPrimary)
-                    Text("Gestiona tu equipo", fontSize = 10.sp, color = TextSecondary)
-                }
-            }
-
-            IconButton(onClick = {}) {
-                Icon(Icons.Outlined.Search, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
-            }
-        }
-    }
-}
-
 
 
 // ——————————————————————————————
@@ -176,26 +139,36 @@ fun HeaderCard(total: Int) {
         )
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(RedPrimary.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.People, contentDescription = null, tint = RedPrimary, modifier = Modifier.size(18.dp))
+                Icon(
+                    Icons.Default.People,
+                    contentDescription = null,
+                    tint = RedPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(12.dp))
 
             Column {
-                Text("Total de Empleados", fontSize = 11.sp, color = TextSecondary)
                 Text(
-                    "$total activos",
-                    fontSize = 16.sp,
+                    "Total de Empleados",
+                    fontSize = 12.sp,
+                    color = TextSecondary
+                )
+                Text(
+                    "$total ${if (total == 1) "empleado" else "empleados"}",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
                     color = RedPrimary
                 )
             }
@@ -204,9 +177,8 @@ fun HeaderCard(total: Int) {
 }
 
 
-
 // ——————————————————————————————
-//     CARD EMPLEADO
+//     CARD EMPLEADO (CORREGIDA)
 // ——————————————————————————————
 @Composable
 fun CompactEmpleadoCard(
@@ -219,17 +191,51 @@ fun CompactEmpleadoCard(
 
     Card(
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(Color.White)
+        colors = CardDefaults.cardColors(Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(Modifier.padding(12.dp)) {
+        Column(Modifier.padding(16.dp)) {
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Avatar(user?.nombre)
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(12.dp))
 
                 Column(Modifier.weight(1f)) {
-                    Text(user?.nombre ?: "Nombre no disponible", color = TextPrimary, fontSize = 15.sp)
-                    Text("ID: ${empleado.empleado_id}", fontSize = 10.sp, color = RedPrimary)
+                    Text(
+                        user?.nombre ?: "Nombre no disponible",
+                        color = TextPrimary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            color = RedPrimary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                "ID: ${empleado.empleado_id}",
+                                fontSize = 11.sp,
+                                color = RedPrimary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+//
+//                        // Badge de rol
+//                        Surface(
+//                            color = Color(0xFF00B894).copy(alpha = 0.1f),
+//                            shape = RoundedCornerShape(4.dp)
+//                        ) {
+//                            Text(
+//                                empleado. ?: "Empleado",
+//                                fontSize = 11.sp,
+//                                color = Color(0xFF00B894),
+//                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+//                            )
+//                        }
+                    }
                 }
 
                 IconButton(
@@ -239,32 +245,40 @@ fun CompactEmpleadoCard(
                     Icon(
                         if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
+                        tint = TextSecondary
                     )
                 }
             }
 
             AnimatedVisibility(expanded) {
                 Column {
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(12.dp))
                     Divider(color = BackgroundGray)
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     InfoRow(Icons.Outlined.Email, "Correo", user?.correo)
                     InfoRow(Icons.Outlined.Phone, "Teléfono", user?.telefono)
+                    InfoRow(Icons.Outlined.Badge, "Cédula", empleado.empleado_id.toString())
                     InfoRow(Icons.Outlined.CalendarToday, "Registrado", empleado.fecha_registro)
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     OutlinedButton(
                         onClick = { dialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(vertical = 8.dp)
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.Red
+                        )
                     ) {
-                        Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Eliminar", fontSize = 13.sp)
+                        Icon(
+                            Icons.Outlined.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("Eliminar empleado", fontSize = 13.sp)
                     }
                 }
             }
@@ -282,7 +296,6 @@ fun CompactEmpleadoCard(
 }
 
 
-
 // ——————————————————————————————
 //     SUBCOMPONENTES
 // ——————————————————————————————
@@ -290,15 +303,20 @@ fun CompactEmpleadoCard(
 fun Avatar(name: String?) {
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(44.dp)
             .clip(CircleShape)
-            .background(RedPrimary.copy(alpha = 0.15f)),
+            .background(
+                brush = Brush.linearGradient(
+                    listOf(RedPrimary, RedLight)
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
         Text(
             (name?.firstOrNull()?.uppercase() ?: "?"),
-            color = RedPrimary,
-            fontSize = 14.sp
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -307,19 +325,35 @@ fun Avatar(name: String?) {
 fun InfoRow(icon: ImageVector, label: String, value: String?) {
     if (value.isNullOrBlank()) return
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            null,
+            tint = RedPrimary.copy(alpha = 0.7f),
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(Modifier.width(12.dp))
 
         Column {
-            Text(label, fontSize = 10.sp, color = TextSecondary)
-            Text(value, fontSize = 13.sp, color = TextPrimary)
+            Text(
+                label,
+                fontSize = 11.sp,
+                color = TextSecondary
+            )
+            Text(
+                value,
+                fontSize = 14.sp,
+                color = TextPrimary,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
-
-    Spacer(Modifier.height(6.dp))
 }
-
 
 
 // ——————————————————————————————
@@ -329,17 +363,35 @@ fun InfoRow(icon: ImageVector, label: String, value: String?) {
 fun DeleteDialog(name: String?, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.Warning,
+                contentDescription = null,
+                tint = Color.Red,
+                modifier = Modifier.size(32.dp)
+            )
+        },
+        title = {
+            Text("Confirmar Eliminación")
+        },
+        text = {
+            Text("¿Estás seguro de que deseas eliminar a ${name ?: "este empleado"}? Esta acción no se puede deshacer.")
+        },
         confirmButton = {
-            Button(onClick = onConfirm) { Text("Eliminar") }
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Eliminar")
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        },
-        title = { Text("Confirmar Eliminación") },
-        text = { Text("¿Eliminar a ${name ?: "este empleado"}?") }
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
     )
 }
-
 
 
 // ——————————————————————————————
@@ -350,26 +402,57 @@ fun EmptyState(onAgregarEmpleado: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .padding(20.dp),
+            .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            Icons.Outlined.PersonOff,
-            contentDescription = null,
-            tint = RedPrimary,
-            modifier = Modifier.size(70.dp)
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .background(RedPrimary.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Outlined.PersonOff,
+                contentDescription = null,
+                tint = RedPrimary,
+                modifier = Modifier.size(50.dp)
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        Text(
+            "No hay empleados registrados",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary
         )
-        Spacer(Modifier.height(14.dp))
-        Text("No hay empleados", fontSize = 18.sp)
-        Text("Agrega tu primer empleado", color = TextSecondary, fontSize = 13.sp)
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
 
-        Button(onClick = onAgregarEmpleado) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(4.dp))
-            Text("Agregar", fontSize = 14.sp)
+        Text(
+            "Agrega tu primer empleado para comenzar",
+            color = TextSecondary,
+            fontSize = 14.sp
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        Button(
+            onClick = onAgregarEmpleado,
+            colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.height(50.dp)
+        ) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text("Agregar Empleado", fontSize = 15.sp)
         }
     }
 }
@@ -382,7 +465,7 @@ fun LoadingState() {
         verticalArrangement = Arrangement.Center
     ) {
         CircularProgressIndicator(color = RedPrimary)
-        Spacer(Modifier.height(8.dp))
-        Text("Cargando…", color = TextSecondary, fontSize = 13.sp)
+        Spacer(Modifier.height(16.dp))
+        Text("Cargando empleados...", color = TextSecondary, fontSize = 14.sp)
     }
 }

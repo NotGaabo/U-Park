@@ -18,7 +18,11 @@ import com.kotlin.u_park.presentation.utils.PdfGenerator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import com.kotlin.u_park.data.remote.SessionManager
+import com.kotlin.u_park.data.remote.supabase
+import com.kotlin.u_park.domain.model.Rate
 import com.kotlin.u_park.presentation.utils.UiError
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.rpc
 import java.io.File
 import java.time.OffsetDateTime
 
@@ -30,6 +34,41 @@ class ParkingViewModel(
 
     private val _ticket = MutableStateFlow<ParkingTicket?>(null)
     val ticket = _ticket.asStateFlow()
+
+    private val _rates = MutableStateFlow<List<Rate>>(emptyList())
+    val rates = _rates.asStateFlow()
+
+    private val _selectedRate = MutableStateFlow<Rate?>(null)
+    val selectedRate = _selectedRate.asStateFlow()
+
+    fun loadRatesByGarage(garageId: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+
+                val result = supabase.postgrest
+                    .rpc(
+                        "get_active_rates_by_garage",
+                        mapOf("p_garage_id" to garageId)
+                    )
+                    .decodeList<Rate>()
+
+                _rates.value = result
+
+            } catch (e: Exception) {
+                _message.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+
+    fun selectRate(rate: Rate) {
+        _selectedRate.value = rate
+    }
+
+
 
     private val _reservasConUsuario = MutableStateFlow<List<ReservaConUsuario>>(emptyList())
     val reservasConUsuario = _reservasConUsuario.asStateFlow()
@@ -81,32 +120,27 @@ class ParkingViewModel(
 
                 _isLoading.value = true
 
-                val hora = OffsetDateTime.now().toString()
+                val horaSalida = OffsetDateTime.now().toString()
                 val empleadoId = sessionManager.getUserId()!!
 
-                println("🔥 Registrando salida con pago:")
-                println("   parkingId: $parkingId")
-                println("   metodoPago: $metodoPago")
-                println("   empleadoId: $empleadoId")
+                println("🔥 CONFIRMANDO SALIDA REAL")
+                println("parkingId=$parkingId | empleado=$empleadoId")
 
                 repository.registrarSalidaConPago(
                     parkingId = parkingId,
-                    horaSalida = hora,
+                    horaSalida = horaSalida,
                     empleadoId = empleadoId,
                     metodoPago = metodoPago,
                     comprobanteBytes = comprobanteBytes
                 )
 
-                println("✅ Salida registrada exitosamente")
-
-                // 🔥 ACTUALIZAR TODO
                 actualizarVehiculosDentro()
 
-                _message.value = "Salida registrada y pagada correctamente"
+                _message.value = "Salida registrada y pagada correctamente ✅"
 
             } catch (e: Exception) {
                 handleError(e)
-        } finally {
+            } finally {
                 _isLoading.value = false
             }
         }
@@ -180,6 +214,7 @@ class ParkingViewModel(
         garageId: String,
         vehiclePlate: String,
         empleadoId: String,
+        rateId: String,
         fotosBytes: List<ByteArray>
     ) {
         viewModelScope.launch {
@@ -204,6 +239,7 @@ class ParkingViewModel(
                     id = null,
                     garage_id = garageId,
                     vehicle_id = vehicleUuid,
+                    rate_id = rateId,
                     created_by_user_id = empleadoId,
                     hora_entrada = hora,
                     tipo = "entrada",

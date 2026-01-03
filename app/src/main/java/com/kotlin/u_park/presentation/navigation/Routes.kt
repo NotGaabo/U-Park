@@ -40,6 +40,24 @@ sealed class Routes(val route: String) {
             rateId: String = "new"
         ) = "rate_form/$userId/$garageId/$rateId"
     }
+
+    // -------------------- SUSCRIPCIONES --------------------
+    object ManageSubscription : Routes("manage_subscription/{garageId}") {
+        fun createRoute(garageId: String) = "manage_subscription/$garageId"
+    }
+    // -------------------- SUSCRIBIRSE --------------------
+    object Subscription : Routes("subscription/{garageId}") {
+        fun createRoute(garageId: String) = "subscription/$garageId"
+    }
+
+    // En Routes.kt, agrega:
+    object GarageManagement : Routes("garage_management/{garageId}") {
+        fun createRoute(garageId: String) = "garage_management/$garageId"
+    }
+
+    object GarageSuscripciones : Routes("garage_suscripciones/{garageId}") {
+        fun createRoute(garageId: String) = "garage_suscripciones/$garageId"
+    }
     object HistorialParking : Routes("historial_parking/{userId}") {
         fun createRoute(userId: String) = "historial_parking/$userId"
     }
@@ -55,8 +73,4 @@ sealed class Routes(val route: String) {
         fun createRoute(garageId: String) = "listaReservas/$garageId"
     }
     object Vehicles : Routes("vehicles")
-    object VehicleAdd : Routes("vehicle_add")
-    object VehicleEdit : Routes("vehicle_edit/{vehicleId}") {
-        fun createRoute(vehicleId: String) = "vehicle_edit/$vehicleId"
-    }
 }

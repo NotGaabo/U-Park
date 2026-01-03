@@ -7,6 +7,7 @@ import com.kotlin.u_park.domain.model.Rate
 import com.kotlin.u_park.domain.model.SalidaResponse
 import com.kotlin.u_park.domain.repository.RatesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class RatesViewModel(
@@ -14,20 +15,23 @@ class RatesViewModel(
 ) : ViewModel() {
 
     val rates = mutableStateOf<List<Rate>>(emptyList())
-    val loading = mutableStateOf(false)
-    val errorMessage = mutableStateOf<String?>(null)
-
     val editingRate = mutableStateOf<Rate?>(null)
     val saving = mutableStateOf(false)
 
     // resultado del ticket de salida
-    val salidaState = mutableStateOf<SalidaResponse?>(null)
 
     // tipos de vehículos
     val vehicleTypes = mutableStateOf<List<Pair<Int, String>>>(emptyList())
 
     // garages disponibles
     val garages = mutableStateOf<List<Pair<String, String>>>(emptyList())
+
+    private val _vehiculoNombre = MutableStateFlow<String?>(null)
+    val vehiculoNombre: StateFlow<String?> = _vehiculoNombre
+
+    private val _garageNombre = MutableStateFlow<String?>(null)
+    val garageNombre: StateFlow<String?> = _garageNombre
+
 
     // ----------------------------------------------------------
     val groupedRates = MutableStateFlow<Map<String, List<Rate>>>(emptyMap())
@@ -149,22 +153,15 @@ class RatesViewModel(
     }
 
     // ----------------------------------------------------------
-    val vehiculoNombre = MutableStateFlow<String?>(null)
-    val garageNombre = MutableStateFlow<String?>(null)
+    val loading = mutableStateOf(false)
+    val salidaState = mutableStateOf<SalidaResponse?>(null)
+    val errorMessage = mutableStateOf<String?>(null)
 
     fun cargarDatosTicket(parkingId: String) {
         viewModelScope.launch {
             try {
                 loading.value = true
-
-                // 🔥 1) Real RPC calcular_salida
-                val salida = repo.calcularSalida(parkingId)
-                salidaState.value = salida
-
-                // 🔥 2) Actualizar nombres
-                vehiculoNombre.value = repo.getVehicleNameById(salida.vehiculo_id)
-                garageNombre.value = repo.getGarageNameById(salida.garage_id)
-
+                salidaState.value = repo.calcularSalidaPreview(parkingId)
             } catch (e: Exception) {
                 errorMessage.value = e.message
             } finally {
@@ -208,16 +205,4 @@ class RatesViewModel(
     }
 
     // ----------------------------------------------------------
-    fun calcularSalida(parkingId: String) {
-        viewModelScope.launch {
-            try {
-                loading.value = true
-                salidaState.value = repo.calcularSalida(parkingId)
-            } catch (e: Exception) {
-                errorMessage.value = e.message
-            } finally {
-                loading.value = false
-            }
-        }
-    }
 }
