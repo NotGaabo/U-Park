@@ -1,14 +1,19 @@
 package com.kotlin.u_park.presentation.screens.vehicles
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -16,23 +21,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kotlin.u_park.domain.model.Vehicle
 import com.kotlin.u_park.domain.model.VehicleTypeSimple
 import com.kotlin.u_park.presentation.navigation.Routes
+import com.kotlin.u_park.presentation.screens.parking.BottomBarItem
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
 
+// 🎨 Color System (matching Home)
+private val PrimaryRed = Color(0xFFE60023)
+private val DarkRed = Color(0xFFB8001C)
+private val LightRed = Color(0xFFFFE5E9)
+private val BackgroundColor = Color(0xFFFAFAFA)
+private val SurfaceColor = Color(0xFFFFFFFF)
+private val TextPrimary = Color(0xFF0D0D0D)
+private val TextSecondary = Color(0xFF6E6E73)
+private val BorderColor = Color(0xFFE5E5EA)
+private val SuccessGreen = Color(0xFF34C759)
 
-private val RedSoft = Color(0xFFE60023)
-private val BackgroundColor = Color(0xFFF5F5F5)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VehicleScreen(
@@ -44,80 +59,74 @@ fun VehicleScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     var showAddSheet by remember { mutableStateOf(false) }
 
-    val redPrimary = Color(0xFFE60023)
-    val backgroundGray = Color(0xFFF5F7FA)
-
     LaunchedEffect(userId) {
-        userId?.let {
-            viewModel.loadVehicles(it)
-        }
+        userId?.let { viewModel.loadVehicles(it) }
     }
 
     Scaffold(
+        containerColor = BackgroundColor,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text("Tus Vehiculos", fontWeight = FontWeight.Bold, color = RedSoft)
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundColor)
-            )
+            Surface(
+                color = SurfaceColor,
+                shadowElevation = 2.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                ) {
+                    Text(
+                        "Mis Vehículos",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        letterSpacing = (-0.5).sp
+                    )
+                    Text(
+                        "Administra tu flota",
+                        fontSize = 14.sp,
+                        color = TextSecondary,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {
-                        navController.navigate("home")
-                    },
-                    icon = { Icon(Icons.Default.Home, null) },
-                    label = { Text("Home") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.CarCrash, null, tint = RedSoft) },
-                    label = { Text("Vehiculos", color = RedSoft) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {
-                        userId?.let {
-                            navController.navigate(
-                                Routes.HistorialParking.createRoute(it)
-                            )
-                        }
-                    },
-                    icon = { Icon(Icons.Default.History, null) },
-                    label = { Text("Historial") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate("settings") },
-                    icon = { Icon(Icons.Default.Person, null) },
-                    label = { Text("Perfil") }
-                )
-            }
+            ModernBottomBar(
+                selectedIndex = 1,
+                onItemSelected = { index ->
+                    when (index) {
+                        0 -> navController.navigate("home")
+                        2 -> userId?.let { navController.navigate(Routes.HistorialParking.createRoute(it)) }
+                        3 -> navController.navigate("settings")
+                    }
+                }
+            )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddSheet = true },
-                containerColor = redPrimary,
-                contentColor = Color.White,
-                modifier = Modifier.size(64.dp)
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Agregar vehículo",
-                    modifier = Modifier.size(28.dp)
-                )
+            if (vehicles.isNotEmpty() && !isLoading) {
+                FloatingActionButton(
+                    onClick = { showAddSheet = true },
+                    containerColor = PrimaryRed,
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Agregar vehículo",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
-        },
-        containerColor = backgroundGray
-    ) { paddingValues ->
+        }
+    ) { padding ->
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(padding)
         ) {
             when {
                 isLoading -> {
@@ -125,18 +134,72 @@ fun VehicleScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = redPrimary)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                color = PrimaryRed,
+                                strokeWidth = 3.dp,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Text(
+                                "Cargando vehículos...",
+                                fontSize = 15.sp,
+                                color = TextSecondary
+                            )
+                        }
                     }
                 }
+
                 vehicles.isEmpty() -> {
                     EmptyVehiclesState(onAddVehicle = { showAddSheet = true })
                 }
+
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        contentPadding = PaddingValues(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "${vehicles.size} vehículo${if (vehicles.size != 1) "s" else ""}",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = LightRed
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = PrimaryRed,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            "Activos",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = PrimaryRed
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         items(vehicles) { vehicle ->
                             VehicleCard(
                                 vehicle = vehicle,
@@ -164,94 +227,102 @@ fun VehicleScreen(
 
 @Composable
 fun EmptyVehiclesState(onAddVehicle: () -> Unit) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
+            .padding(40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .background(BackgroundColor, CircleShape),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
-                Icons.Default.DirectionsCar,
+                Icons.Outlined.DirectionsCar,
                 contentDescription = null,
-                modifier = Modifier.size(120.dp),
-                tint = Color.Gray.copy(alpha = 0.3f)
+                modifier = Modifier.size(64.dp),
+                tint = TextSecondary.copy(alpha = 0.4f)
             )
-            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            "No tienes vehículos",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            "Agrega tu primer vehículo para comenzar a usar U-Park y reservar espacios",
+            fontSize = 15.sp,
+            color = TextSecondary,
+            textAlign = TextAlign.Center,
+            lineHeight = 22.sp,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onAddVehicle,
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed),
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(56.dp)
+        ) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
-                "No tienes vehículos registrados",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF2D3436)
+                "Agregar Vehículo",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "Agrega tu primer vehículo para empezar",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = onAddVehicle,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFE60023)
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(48.dp)
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Agregar Vehículo",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VehicleCard(
     vehicle: Vehicle,
     onDelete: (String) -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
-    val redPrimary = Color(0xFFE60023)
 
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        color = SurfaceColor,
+        shadowElevation = 2.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF5F7FA)),
+                    .size(72.dp)
+                    .background(LightRed, RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Default.DirectionsCar,
                     contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = redPrimary
+                    modifier = Modifier.size(36.dp),
+                    tint = PrimaryRed
                 )
             }
 
@@ -260,120 +331,151 @@ fun VehicleCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     vehicle.model ?: "Sin modelo",
-                    fontSize = 18.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2D3436)
+                    color = TextPrimary
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.CarRepair,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        vehicle.plate,
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                VehicleDetailRow(
+                    icon = Icons.Outlined.Tag,
+                    text = vehicle.plate
+                )
+
                 if (vehicle.color != null) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Palette,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            vehicle.color,
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    }
+                    VehicleDetailRow(
+                        icon = Icons.Outlined.Palette,
+                        text = vehicle.color
+                    )
                 }
+
                 if (vehicle.year != null) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.CalendarToday,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            vehicle.year.toString(),
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    }
+                    VehicleDetailRow(
+                        icon = Icons.Outlined.CalendarToday,
+                        text = vehicle.year.toString()
+                    )
                 }
             }
 
-            IconButton(
+            Surface(
                 onClick = { showDeleteDialog = true },
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        Color(0xFFFFEBEE),
-                        RoundedCornerShape(10.dp)
-                    )
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFFEECEB),
+                modifier = Modifier.size(48.dp)
             ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Eliminar",
-                    tint = Color(0xFFD32F2F),
-                    modifier = Modifier.size(20.dp)
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Outlined.Delete,
+                        contentDescription = "Eliminar",
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
         }
     }
 
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            icon = {
-                Icon(
-                    Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = Color(0xFFD32F2F),
-                    modifier = Modifier.size(48.dp)
-                )
+        DeleteVehicleDialog(
+            vehicleModel = vehicle.model ?: "este vehículo",
+            onConfirm = {
+                onDelete(vehicle.id ?: "")
+                showDeleteDialog = false
             },
-            title = {
-                Text(
-                    "¿Eliminar vehículo?",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text("Esta acción no se puede deshacer. ¿Deseas continuar?")
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onDelete(vehicle.id ?: "")
-                        showDeleteDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFD32F2F)
-                    )
-                ) {
-                    Text("Eliminar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancelar", color = Color.Gray)
-                }
-            }
+            onDismiss = { showDeleteDialog = false }
         )
     }
+}
+
+@Composable
+fun VehicleDetailRow(icon: ImageVector, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = TextSecondary
+        )
+        Text(
+            text,
+            fontSize = 14.sp,
+            color = TextSecondary,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+fun DeleteVehicleDialog(
+    vehicleModel: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = SurfaceColor,
+        shape = RoundedCornerShape(24.dp),
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .background(Color(0xFFFEECEB), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.DeleteForever,
+                    contentDescription = null,
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        },
+        title = {
+            Text(
+                "¿Eliminar vehículo?",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Text(
+                "Se eliminará $vehicleModel permanentemente. Esta acción no se puede deshacer.",
+                fontSize = 14.sp,
+                color = TextSecondary,
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFD32F2F)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Sí, eliminar", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Cancelar", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -388,33 +490,23 @@ fun AddVehicleSheet(
     val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // 🔹 Estados del formulario
     var plate by rememberSaveable { mutableStateOf("") }
     var model by rememberSaveable { mutableStateOf("") }
     var color by rememberSaveable { mutableStateOf("") }
     var year by rememberSaveable { mutableStateOf("") }
-
-    // 🔹 Estados del SELECT (CORRECTO AQUÍ)
     var expanded by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf<VehicleTypeSimple?>(null) }
 
     val vehicleTypes by viewModel.vehicleTypes.collectAsState()
-
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-
     val isLoading by viewModel.isLoading.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
 
-    val redPrimary = Color(0xFFE60023)
-    val backgroundGray = Color(0xFFF5F7FA)
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
-    val isFormValid =
-        plate.isNotBlank() &&
-                model.isNotBlank() &&
-                color.isNotBlank() &&
-                selectedType != null
-
+    val isFormValid = plate.isNotBlank() && model.isNotBlank() &&
+            color.isNotBlank() && selectedType != null
 
     LaunchedEffect(Unit) {
         viewModel.loadVehicleTypes()
@@ -423,25 +515,24 @@ fun AddVehicleSheet(
     LaunchedEffect(isSuccess) {
         if (isSuccess) {
             viewModel.resetStatus()
-            onSuccess()
+            showSuccessDialog = true
         }
     }
 
+    if (showSuccessDialog) {
+        SuccessVehicleDialog(
+            onDismiss = {
+                showSuccessDialog = false
+                onSuccess()
+            }
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color.White,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .width(50.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(Color.Gray.copy(alpha = 0.3f))
-            )
-        }
+        containerColor = SurfaceColor,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -451,6 +542,7 @@ fun AddVehicleSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 24.dp)
         ) {
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -458,60 +550,64 @@ fun AddVehicleSheet(
             ) {
                 Column {
                     Text(
-                        text = "Nuevo Vehículo",
-                        style = MaterialTheme.typography.headlineSmall,
+                        "Nuevo Vehículo",
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2D3436)
+                        color = TextPrimary
                     )
                     Text(
-                        text = "Completa la información",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray,
-                        fontSize = 14.sp
+                        "Completa la información",
+                        fontSize = 14.sp,
+                        color = TextSecondary
                     )
                 }
 
-                IconButton(
+                Surface(
                     onClick = onDismiss,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(backgroundGray, RoundedCornerShape(10.dp))
+                    shape = CircleShape,
+                    color = BackgroundColor,
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Cerrar",
-                        tint = Color(0xFF2D3436)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = TextPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
+            // Preview Card
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = backgroundGray
-                )
+                color = LightRed
             ) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         Icon(
                             Icons.Default.DirectionsCar,
                             contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = Color.Gray.copy(alpha = 0.4f)
+                            modifier = Modifier.size(40.dp),
+                            tint = PrimaryRed.copy(alpha = 0.6f)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Información del vehículo",
-                            color = Color.Gray,
-                            fontSize = 14.sp
+                            "Tu vehículo",
+                            fontSize = 16.sp,
+                            color = TextSecondary,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
@@ -519,75 +615,24 @@ fun AddVehicleSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Column {
-                Text(
-                    "Placa *",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF2D3436)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = plate,
-                    onValueChange = {
-                        plate = it.uppercase()
-                        showError = false
-                    },
-                    placeholder = { Text("ABC-1234", color = Color.Gray.copy(alpha = 0.6f)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = redPrimary,
-                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = backgroundGray
-                    ),
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Pin,
-                            contentDescription = null,
-                            tint = if (plate.isNotBlank()) redPrimary else Color.Gray
-                        )
-                    }
-                )
-            }
+            // Form Fields
+            FormTextField(
+                label = "Placa *",
+                value = plate,
+                onValueChange = { plate = it.uppercase(); showError = false },
+                placeholder = "ABC-1234",
+                icon = Icons.Outlined.Tag
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Column {
-                Text(
-                    "Modelo *",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF2D3436)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = model,
-                    onValueChange = {
-                        model = it
-                        showError = false
-                    },
-                    placeholder = { Text("Toyota Corolla", color = Color.Gray.copy(alpha = 0.6f)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = redPrimary,
-                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = backgroundGray
-                    ),
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.CarRepair,
-                            contentDescription = null,
-                            tint = if (model.isNotBlank()) redPrimary else Color.Gray
-                        )
-                    }
-                )
-            }
+            FormTextField(
+                label = "Modelo *",
+                value = model,
+                onValueChange = { model = it; showError = false },
+                placeholder = "Toyota Corolla",
+                icon = Icons.Outlined.CarRepair
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -596,86 +641,41 @@ fun AddVehicleSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Color *",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF2D3436)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
+                    FormTextField(
+                        label = "Color *",
                         value = color,
-                        onValueChange = {
-                            color = it
-                            showError = false
-                        },
-                        placeholder = { Text("Rojo", color = Color.Gray.copy(alpha = 0.6f)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = redPrimary,
-                            unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = backgroundGray
-                        ),
-                        singleLine = true,
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Palette,
-                                contentDescription = null,
-                                tint = if (color.isNotBlank()) redPrimary else Color.Gray
-                            )
-                        }
+                        onValueChange = { color = it; showError = false },
+                        placeholder = "Rojo",
+                        icon = Icons.Outlined.Palette
                     )
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Año",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF2D3436)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
+                    FormTextField(
+                        label = "Año",
                         value = year,
                         onValueChange = {
                             if (it.all { char -> char.isDigit() } && it.length <= 4) {
                                 year = it
                             }
                         },
-                        placeholder = { Text("2024", color = Color.Gray.copy(alpha = 0.6f)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = redPrimary,
-                            unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = backgroundGray
-                        ),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.CalendarToday,
-                                contentDescription = null,
-                                tint = if (year.isNotBlank()) redPrimary else Color.Gray
-                            )
-                        }
+                        placeholder = "2024",
+                        icon = Icons.Outlined.CalendarToday,
+                        keyboardType = KeyboardType.Number
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Vehicle Type Dropdown
             Column {
                 Text(
                     "Tipo de Vehículo *",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF2D3436)
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
                 )
-
                 Spacer(modifier = Modifier.height(8.dp))
 
                 ExposedDropdownMenuBox(
@@ -686,31 +686,26 @@ fun AddVehicleSheet(
                         value = selectedType?.name ?: "",
                         onValueChange = {},
                         readOnly = true,
-                        placeholder = {
-                            Text(
-                                "Selecciona un tipo",
-                                color = Color.Gray.copy(alpha = 0.6f)
-                            )
-                        },
+                        placeholder = { Text("Selecciona un tipo", color = TextSecondary) },
                         modifier = Modifier
                             .menuAnchor()
                             .fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Category,
+                                contentDescription = null,
+                                tint = if (selectedType != null) PrimaryRed else TextSecondary
+                            )
+                        },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded)
                         },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Category,
-                                contentDescription = null,
-                                tint = if (selectedType != null) redPrimary else Color.Gray
-                            )
-                        },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = redPrimary,
-                            unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = backgroundGray
+                            focusedBorderColor = PrimaryRed,
+                            unfocusedBorderColor = BorderColor,
+                            focusedContainerColor = SurfaceColor,
+                            unfocusedContainerColor = BackgroundColor
                         )
                     )
 
@@ -733,19 +728,21 @@ fun AddVehicleSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            if (showError) {
-                Card(
+            // Error Message
+            AnimatedVisibility(
+                visible = showError,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFEBEE)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFFEECEB)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(
                             Icons.Default.ErrorOutline,
@@ -753,28 +750,29 @@ fun AddVehicleSheet(
                             tint = Color(0xFFD32F2F),
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             errorMessage,
                             color = Color(0xFFD32F2F),
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
+            // Submit Button
             Button(
                 onClick = {
                     if (!isFormValid) {
                         showError = true
-                        errorMessage = "Por favor completa los campos obligatorios (*)"
+                        errorMessage = "Completa todos los campos obligatorios (*)"
                         return@Button
                     }
 
                     if (userId.isNullOrEmpty()) {
                         showError = true
-                        errorMessage = "Error de sesión. Inicia sesión nuevamente"
+                        errorMessage = "Error de sesión"
                         return@Button
                     }
 
@@ -788,19 +786,17 @@ fun AddVehicleSheet(
                             year = year.toIntOrNull(),
                             type_id = selectedType!!.id
                         )
-
                         viewModel.addVehicle(newVehicle)
                     }
-
                 },
                 enabled = !isLoading && isFormValid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = redPrimary,
-                    disabledContainerColor = Color.Gray.copy(alpha = 0.3f)
+                    containerColor = PrimaryRed,
+                    disabledContainerColor = BorderColor
                 )
             ) {
                 if (isLoading) {
@@ -809,28 +805,184 @@ fun AddVehicleSheet(
                         color = Color.White,
                         strokeWidth = 2.dp
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        "Guardando...",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
                 } else {
                     Icon(
-                        Icons.Default.Check,
+                        Icons.Default.CheckCircle,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         "Guardar Vehículo",
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(16.dp))
+@Composable
+fun FormTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    icon: ImageVector,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
+    Column {
+        Text(
+            label,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = { Text(placeholder, color = TextSecondary) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            leadingIcon = {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = if (value.isNotBlank()) PrimaryRed else TextSecondary
+                )
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = PrimaryRed,
+                unfocusedBorderColor = BorderColor,
+                focusedContainerColor = SurfaceColor,
+                unfocusedContainerColor = BackgroundColor
+            ),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+        )
+    }
+}
+
+@Composable
+fun SuccessVehicleDialog(onDismiss: () -> Unit) {
+    var progress by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(Unit) {
+        while (progress < 1f) {
+            delay(30)
+            progress += 0.02f
+        }
+        delay(500)
+        onDismiss()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = SurfaceColor,
+        shape = RoundedCornerShape(24.dp),
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(vertical = 20.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(SuccessGreen.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = SuccessGreen,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    "¡Vehículo agregado!",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    "Tu vehículo ha sido registrado exitosamente",
+                    fontSize = 14.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                LinearProgressIndicator(
+                    progress = progress,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = SuccessGreen,
+                    trackColor = SuccessGreen.copy(alpha = 0.2f)
+                )
+            }
+        },
+        confirmButton = {}
+    )
+}
+
+
+@Composable
+fun ModernBottomBar(
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = SurfaceColor,
+        shadowElevation = 12.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BottomBarItem(
+                icon = Icons.Outlined.Home,
+                selectedIcon = Icons.Default.Home,
+                label = "Inicio",
+                isSelected = selectedIndex == 0,
+                onClick = { onItemSelected(0) }
+            )
+            BottomBarItem(
+                icon = Icons.Outlined.DirectionsCar,
+                selectedIcon = Icons.Default.DirectionsCar,
+                label = "Vehículos",
+                isSelected = selectedIndex == 1,
+                onClick = { onItemSelected(1) }
+            )
+            BottomBarItem(
+                icon = Icons.Outlined.History,
+                selectedIcon = Icons.Default.History,
+                label = "Historial",
+                isSelected = selectedIndex == 2,
+                onClick = { onItemSelected(2) }
+            )
+            BottomBarItem(
+                icon = Icons.Outlined.Person,
+                selectedIcon = Icons.Default.Person,
+                label = "Perfil",
+                isSelected = selectedIndex == 3,
+                onClick = { onItemSelected(3) }
+            )
         }
     }
 }

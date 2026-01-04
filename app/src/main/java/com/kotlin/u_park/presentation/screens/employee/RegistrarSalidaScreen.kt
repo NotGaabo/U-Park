@@ -74,8 +74,6 @@ fun RegistrarSalidaScreen(
     val vmMessage by parkingViewModel.message.collectAsState()
     val vmLoading by parkingViewModel.isLoading.collectAsState()
 
-    val uiError by parkingViewModel.uiError.collectAsState()
-
     // Estados para método de pago
     var showPaymentDialog by remember { mutableStateOf(false) }
     var selectedPaymentMethod by remember { mutableStateOf<String?>(null) }
@@ -508,53 +506,6 @@ fun RegistrarSalidaScreen(
                         shape = RoundedCornerShape(20.dp)
                     )
                 }
-                // 🔥 DIÁLOGO DE ERROR COMPLETO (STACKTRACE EN PANTALLA)
-                if (uiError != null) {
-                    AlertDialog(
-                        onDismissRequest = { parkingViewModel.clearUiError() },
-                        title = {
-                            Text(
-                                "❌ Error crítico",
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Red
-                            )
-                        },
-                        text = {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(max = 400.dp)
-                                    .verticalScroll(rememberScrollState())
-                            ) {
-                                Text("📌 Mensaje:", fontWeight = FontWeight.Bold)
-                                Text(
-                                    uiError!!.message,
-                                    color = Color.Red,
-                                    fontSize = 14.sp
-                                )
-
-                                Spacer(Modifier.height(12.dp))
-
-                                Text("🧵 Stacktrace:", fontWeight = FontWeight.Bold)
-                                Text(
-                                    uiError!!.stacktrace,
-                                    fontSize = 12.sp,
-                                    color = Color.DarkGray
-                                )
-                            }
-                        },
-                        confirmButton = {
-                            Button(
-                                onClick = { parkingViewModel.clearUiError() },
-                                colors = ButtonDefaults.buttonColors(containerColor = RedSoft)
-                            ) {
-                                Text("Cerrar", color = Color.White)
-                            }
-                        },
-                        shape = RoundedCornerShape(20.dp)
-                    )
-                }
-
             }
         }
     }

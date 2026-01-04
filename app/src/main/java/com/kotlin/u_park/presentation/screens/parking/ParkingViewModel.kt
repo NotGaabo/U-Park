@@ -20,7 +20,6 @@ import kotlinx.coroutines.launch
 import com.kotlin.u_park.data.remote.SessionManager
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.domain.model.Rate
-import com.kotlin.u_park.presentation.utils.UiError
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import java.io.File
@@ -76,20 +75,6 @@ class ParkingViewModel(
     private val _vehiculosDentro = MutableStateFlow<List<String>>(emptyList())
     val vehiculosDentro = _vehiculosDentro.asStateFlow()
 
-    private val _uiError = MutableStateFlow<UiError?>(null)
-    val uiError = _uiError.asStateFlow()
-
-    private fun handleError(e: Throwable) {
-        val fullStacktrace = e.stackTraceToString()
-
-        _uiError.value = UiError(
-            title = "❌ Error Crítico",
-            message = e.message ?: "Sin mensaje",
-            stacktrace = fullStacktrace
-        )
-    }
-
-
     private val _actividad = MutableStateFlow<List<ParkingActividad>>(emptyList())
     val actividad = _actividad.asStateFlow()
 
@@ -139,7 +124,7 @@ class ParkingViewModel(
                 _message.value = "Salida registrada y pagada correctamente ✅"
 
             } catch (e: Exception) {
-                handleError(e)
+                _message.value = e.message
             } finally {
                 _isLoading.value = false
             }
@@ -177,6 +162,8 @@ class ParkingViewModel(
             }
         }
     }
+
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun crearReserva(
@@ -334,7 +321,7 @@ class ParkingViewModel(
                 loadReservasConUsuario(created.garage_id!!)
 
             } catch (e: Exception) {
-                handleError(e)
+                _message.value = e.message
             } finally {
                 _isLoading.value = false
             }
@@ -363,7 +350,7 @@ class ParkingViewModel(
                 _message.value = "Salida registrada correctamente"
 
             } catch (e: Exception) {
-                handleError(e)
+                _message.value = e.message
             }
              finally {
                 _isLoading.value = false
@@ -417,11 +404,6 @@ class ParkingViewModel(
             garageNombre = garageNombre
         )
     }
-    // 🔥 Limpiar error UI (para cerrar el dialog)
-    fun clearUiError() {
-        _uiError.value = null
-    }
-
 
     // 🔥 Función para limpiar mensajes
     fun clearMessage() {

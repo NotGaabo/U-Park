@@ -50,11 +50,24 @@ class ParkingRepositoryImpl(
     // 🔵 2. HISTORIAL USUARIO
     // ------------------------------------------------------------
     override suspend fun getHistorialByUser(userId: String): List<HistorialParking> {
-        return client.postgrest.rpc(
-            "historial_parking_usuario",
-            mapOf("p_user_id" to userId)
-        ).decodeList<HistorialParking>()
+        return try {
+            val result = client.postgrest.rpc(
+                "historial_parking_usuario",
+                mapOf("p_user_id" to userId)
+            ).decodeList<HistorialParking>()
+
+            println("✅ RPC historial_parking_usuario OK → ${result.size} registros")
+            result.forEach {
+                println("📄 parking= estado=${it.estado}")
+            }
+
+            result
+        } catch (e: Exception) {
+            println("❌ RPC historial_parking_usuario FALLÓ: ${e.message}")
+            emptyList()
+        }
     }
+
 
     // ------------------------------------------------------------
     // 🔵 3. REGISTRAR ENTRADA NORMAL
