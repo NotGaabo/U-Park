@@ -23,7 +23,6 @@ import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.auth.AuthViewModel
 import com.kotlin.u_park.presentation.utils.LocationHelper
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext

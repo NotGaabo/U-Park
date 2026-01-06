@@ -1,5 +1,7 @@
 package com.kotlin.u_park.presentation.screens.rates
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,15 +17,27 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.kotlin.u_park.domain.model.Rate
 import com.kotlin.u_park.presentation.navigation.Routes
 
-private val RedSoft = Color(0xFFE60023)
-private val BackgroundColor = Color(0xFFF5F5F5)
+// 🎨 Modern Color System
+private val PrimaryRed = Color(0xFFE60023)
+private val DarkRed = Color(0xFFB8001C)
+private val LightRed = Color(0xFFFFE5E9)
+private val BackgroundColor = Color(0xFFFAFAFA)
+private val SurfaceColor = Color(0xFFFFFFFF)
+private val TextPrimary = Color(0xFF0D0D0D)
+private val TextSecondary = Color(0xFF6E6E73)
+private val BorderColor = Color(0xFFE5E5EA)
+private val SuccessGreen = Color(0xFF34C759)
+private val InfoBlue = Color(0xFF007AFF)
+private val WarningOrange = Color(0xFFFF9500)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,13 +48,10 @@ fun RatesScreen(
     onCreateRate: (String) -> Unit,
     onEditRate: (String) -> Unit
 ) {
-
-    val redPrimary = Color(0xFFE60023)
     val vehicleTypes by viewModel.vehicleTypes
     val grouped by viewModel.groupedRates.collectAsState()
     val garages by viewModel.garages
 
-    // 🔥 Estado para el diálogo de selección
     var showGarageDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
@@ -48,489 +59,648 @@ fun RatesScreen(
         viewModel.loadVehicleTypes()
         viewModel.loadGarages(userId)
     }
-    LaunchedEffect(userId) {
-        println("🖥 [UI] RatesScreen INIT para user → $userId")
-
-        viewModel.loadAllRates(userId)
-        viewModel.loadVehicleTypes()
-        viewModel.loadGarages(userId)
-    }
 
     Scaffold(
-
-        // ---------------- TOPBAR ----------------
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Mis Tarifas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "Gestión de precios por garage",
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = RedSoft,
-                    titleContentColor = Color.White
-                )
-            )
-        },
-
-        // ---------------- FAB ÚNICO ----------------
+        containerColor = BackgroundColor,
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            FloatingActionButton(
                 onClick = { showGarageDialog = true },
-                containerColor = RedSoft,
-                contentColor = Color.White,
-                icon = { Icon(Icons.Default.Add, null) },
-                text = { Text("Nueva Tarifa") }
-            )
-        },
-
-        // ---------------- BOTTOMBAR ----------------
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
+                containerColor = PrimaryRed,
+                contentColor = SurfaceColor,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 8.dp,
+                    pressedElevation = 12.dp
+                )
             ) {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(Icons.Outlined.AttachMoney, null, tint = redPrimary) },
-                    label = { Text("Tarifas", color = redPrimary, fontSize = 12.sp) }
-                )
-
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {
-                        navController.navigate(Routes.DuenoGarage.route)
-                    },
-                    icon = { Icon(Icons.Filled.Dashboard, null) },
-                    label = { Text("Dashboard", fontSize = 12.sp) }
-                )
-
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {
-                        navController.navigate(Routes.ListaReservas.createRoute("all"))
-                    },
-                    icon = { Icon(Icons.Outlined.BookmarkBorder, null) },
-                    label = { Text("Reservas", fontSize = 12.sp) }
-                )
-
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate(Routes.SettingsDueno.route) },
-                    icon = { Icon(Icons.Outlined.Person, null) },
-                    label = { Text("Perfil", fontSize = 12.sp) }
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Nueva tarifa",
+                    modifier = Modifier.size(24.dp)
                 )
             }
+        },
+        bottomBar = {
+            ModernBottomBarAdmin(
+                selectedIndex = 0,
+                onItemSelected = { index ->
+                    when (index) {
+                        1 -> navController.navigate(Routes.DuenoGarage.route)
+                        2 -> navController.navigate(Routes.ListaReservas.createRoute("all"))
+                        3 -> navController.navigate(Routes.SettingsDueno.route)
+                    }
+                }
+            )
         }
     ) { padding ->
 
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .background(BackgroundColor)
+                .padding(padding),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-            // 🔥 SI NO HAY NINGÚN GARAGE
-            if (grouped.isEmpty()) {
-                EmptyRatesState(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                )
-
-            } else {
-                println("🖥 [UI] groupedRates tamaño: ${grouped.size}")
-                grouped.forEach { (g, r) ->
-                    println("   🏷 Garage UI: $g → ${r.size} tarifas")
-                }
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-
-                    grouped.forEach { (garageName, rates) ->
-
-                        // ---------------- HEADER DEL GARAGE ----------------
-                        item(key = "header_$garageName") {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = RedSoft
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                elevation = CardDefaults.cardElevation(4.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            Icons.Outlined.Garage,
-                                            null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(28.dp)
-                                        )
-                                        Spacer(Modifier.width(12.dp))
-                                        Column {
-                                            Text(
-                                                garageName,
-                                                fontSize = 18.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White
-                                            )
-                                            Text(
-                                                if (rates.isEmpty())
-                                                    "Sin tarifas"
-                                                else
-                                                    "${rates.size} tarifa${if (rates.size != 1) "s" else ""}",
-                                                fontSize = 12.sp,
-                                                color = Color.White.copy(alpha = 0.8f)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // ---------------- TARIFAS DEL GARAGE ----------------
-                        if (rates.isEmpty()) {
-
-                            // 🔥 Mostrar mensaje cuando el garage NO tiene tarifas
-                            item(key = "empty_$garageName") {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        "No hay tarifas en este garage",
-                                        fontSize = 14.sp,
-                                        color = Color.Gray
-                                    )
-                                }
-                            }
-
-                        } else {
-
-                            items(
-                                items = rates,
-                                key = { rate -> rate.id ?: "" }
-                            ) { rate ->
-
-                                val vehicleTypeName = vehicleTypes
-                                    .firstOrNull { it.first == rate.vehicleTypeId }
-                                    ?.second
-
-                                RateItemCard(
-                                    rate = rate,
-                                    vehicleTypeName = vehicleTypeName,
-                                    onEdit = { onEditRate(rate.id!!) },
-                                    onDelete = { viewModel.deleteRate(rate.id!!) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 🔥 DIÁLOGO PARA SELECCIONAR GARAGE
-        if (showGarageDialog) {
-            AlertDialog(
-                onDismissRequest = { showGarageDialog = false },
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Outlined.Warehouse,
-                            null,
-                            tint = RedSoft,
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text("Selecciona un Garage", fontWeight = FontWeight.Bold)
-                    }
-                },
-                text = {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            "¿A qué garage deseas agregar la tarifa?",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-
-                        Spacer(Modifier.height(8.dp))
-
-                        // 🔥 Solo garages del dueño
-                        garages.forEach { (garageId, garageName) ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        showGarageDialog = false
-                                        onCreateRate(garageId)
-                                    },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color.White
-                                ),
-                                elevation = CardDefaults.cardElevation(2.dp),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Surface(
-                                        modifier = Modifier.size(40.dp),
-                                        shape = CircleShape,
-                                        color = RedSoft.copy(alpha = 0.15f)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Outlined.Warehouse,
-                                                null,
-                                                tint = RedSoft,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(Modifier.width(16.dp))
-
-                                    Text(
-                                        garageName,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        modifier = Modifier.weight(1f)
-                                    )
-
-                                    Icon(
-                                        Icons.Default.ChevronRight,
-                                        null,
-                                        tint = Color.Gray
-                                    )
-                                }
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showGarageDialog = false }) {
-                        Text("Cancelar", color = RedSoft)
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun EmptyRatesState(modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(32.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            Surface(
-                modifier = Modifier.size(80.dp),
-                shape = CircleShape,
-                color = Color(0xFFE0E0E0)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Outlined.AttachMoney,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(40.dp)
+            // Header Section
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Mis Tarifas",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        letterSpacing = (-0.5).sp
+                    )
+                    Text(
+                        "Gestión de precios por garage",
+                        fontSize = 14.sp,
+                        color = TextSecondary,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            // Empty State or Garage Groups
+            if (grouped.isEmpty()) {
+                item {
+                    ModernEmptyRatesState()
+                }
+            } else {
+                grouped.forEach { (garageName, rates) ->
+                    // Garage Header
+                    item(key = "header_$garageName") {
+                        GarageHeaderCard(
+                            garageName = garageName,
+                            ratesCount = rates.size
+                        )
+                    }
 
-            Text(
-                "No hay tarifas registradas",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+                    // Rates List or Empty
+                    if (rates.isEmpty()) {
+                        item(key = "empty_$garageName") {
+                            EmptyRatesForGarage()
+                        }
+                    } else {
+                        items(
+                            items = rates,
+                            key = { rate -> rate.id ?: "" }
+                        ) { rate ->
+                            val vehicleTypeName = vehicleTypes
+                                .firstOrNull { it.first == rate.vehicleTypeId }
+                                ?.second
 
-            Spacer(Modifier.height(8.dp))
+                            ModernRateCard(
+                                rate = rate,
+                                vehicleTypeName = vehicleTypeName,
+                                onEdit = { onEditRate(rate.id!!) },
+                                onDelete = { viewModel.deleteRate(rate.id!!) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
 
-            Text(
-                "Comienza creando tu primera tarifa",
-                fontSize = 14.sp,
-                color = Color.Gray
+        // Garage Selection Dialog
+        if (showGarageDialog) {
+            GarageSelectionDialog(
+                garages = garages,
+                onDismiss = { showGarageDialog = false },
+                onGarageSelected = { garageId ->
+                    showGarageDialog = false
+                    onCreateRate(garageId)
+                }
             )
         }
     }
 }
 
 @Composable
-fun RateItemCard(
+fun GarageHeaderCard(
+    garageName: String,
+    ratesCount: Int
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = PrimaryRed,
+        shadowElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(SurfaceColor.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.Garage,
+                    contentDescription = null,
+                    tint = SurfaceColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    garageName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SurfaceColor
+                )
+                Text(
+                    if (ratesCount == 0) "Sin tarifas"
+                    else "$ratesCount tarifa${if (ratesCount != 1) "s" else ""}",
+                    fontSize = 13.sp,
+                    color = SurfaceColor.copy(alpha = 0.85f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ModernRateCard(
     rate: Rate,
     vehicleTypeName: String?,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(14.dp)
-    ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = SurfaceColor,
+        shadowElevation = 2.dp
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            // ---------------- HEADER ----------------
+            // Header with Price and Actions
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-
-                    Surface(
-                        modifier = Modifier.size(42.dp),
-                        shape = CircleShape,
-                        color = RedSoft.copy(alpha = 0.15f)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(PrimaryRed.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Outlined.AttachMoney,
+                            contentDescription = null,
+                            tint = PrimaryRed,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            "RD$ ${rate.baseRate}",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryRed
+                        )
+                        Text(
+                            "por ${rate.timeUnit}",
+                            fontSize = 13.sp,
+                            color = TextSecondary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Surface(
+                        onClick = onEdit,
+                        shape = CircleShape,
+                        color = InfoBlue.copy(alpha = 0.1f)
+                    ) {
+                        Box(
+                            modifier = Modifier.size(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
-                                imageVector = Icons.Outlined.AttachMoney,
-                                contentDescription = null,
-                                tint = RedSoft,
+                                Icons.Outlined.Edit,
+                                contentDescription = "Editar",
+                                tint = InfoBlue,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
 
-                    Spacer(Modifier.width(12.dp))
-
-                    Column {
-                        Text(
-                            "RD$ ${rate.baseRate}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = RedSoft
-                        )
-                        Text(
-                            "por ${rate.timeUnit}",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
-                    }
-                }
-
-                Row {
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, null, tint = Color(0xFF2196F3))
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, null, tint = RedSoft)
+                    Surface(
+                        onClick = { showDeleteDialog = true },
+                        shape = CircleShape,
+                        color = PrimaryRed.copy(alpha = 0.1f)
+                    ) {
+                        Box(
+                            modifier = Modifier.size(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Outlined.Delete,
+                                contentDescription = "Eliminar",
+                                tint = PrimaryRed,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Divider(color = BorderColor)
 
-            // ---------------- DETALLES ----------------
-            InfoRow(
+            // Vehicle Type
+            InfoRowModern(
                 icon = Icons.Outlined.DirectionsCar,
                 label = "Tipo de vehículo",
-                value = vehicleTypeName ?: "Cualquiera"
+                value = vehicleTypeName ?: "Cualquiera",
+                iconColor = TextSecondary
             )
 
-            Spacer(Modifier.height(6.dp))
-
-            InfoRow(
+            // Days
+            InfoRowModern(
                 icon = Icons.Outlined.CalendarToday,
                 label = "Días aplicables",
-                value = rate.diasAplicables.joinToString(", ") { it.capitalize() }
+                value = rate.diasAplicables.joinToString(", ") { it.capitalize() },
+                iconColor = TextSecondary
             )
 
+            // Special Rate Badge
             rate.specialRate?.let { special ->
-                Spacer(Modifier.height(8.dp))
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFFFF3E0)
+                    shape = RoundedCornerShape(12.dp),
+                    color = WarningOrange.copy(alpha = 0.1f)
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Outlined.Star, null, tint = Color(0xFFFF9800))
-                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            Icons.Outlined.Star,
+                            contentDescription = null,
+                            tint = WarningOrange,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Text(
                             "Tarifa especial: $special",
-                            color = Color(0xFFE65100)
+                            fontSize = 13.sp,
+                            color = WarningOrange,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
         }
     }
-}
 
-@Composable
-fun InfoRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    value: String
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-
-        Icon(icon, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-
-        Text("$label: ", fontSize = 13.sp, color = Color.Gray)
-        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+    // Delete Confirmation Dialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            icon = {
+                Icon(
+                    Icons.Outlined.Warning,
+                    contentDescription = null,
+                    tint = PrimaryRed,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    "¿Eliminar tarifa?",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    "Esta acción no se puede deshacer. La tarifa será eliminada permanentemente.",
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryRed
+                    )
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar", color = TextSecondary)
+                }
+            }
+        )
     }
 }
 
-fun String.capitalize() = replaceFirstChar {
-    if (it.isLowerCase()) it.titlecase() else it.toString()
+@Composable
+fun InfoRowModern(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    iconColor: Color
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size(18.dp)
+        )
+        Column {
+            Text(
+                label,
+                fontSize = 12.sp,
+                color = TextSecondary,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                value,
+                fontSize = 14.sp,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+fun EmptyRatesForGarage() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = SurfaceColor,
+        shadowElevation = 1.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "No hay tarifas en este garage",
+                fontSize = 14.sp,
+                color = TextSecondary,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun ModernEmptyRatesState() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 60.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .background(BackgroundColor, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Outlined.AttachMoney,
+                contentDescription = null,
+                modifier = Modifier.size(50.dp),
+                tint = TextSecondary.copy(alpha = 0.5f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            "Sin tarifas registradas",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            "Comienza creando tu primera tarifa\npara empezar a gestionar precios",
+            fontSize = 15.sp,
+            color = TextSecondary,
+            textAlign = TextAlign.Center,
+            lineHeight = 22.sp
+        )
+    }
+}
+
+@Composable
+fun GarageSelectionDialog(
+    garages: List<Pair<String, String>>,
+    onDismiss: () -> Unit,
+    onGarageSelected: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Outlined.Warehouse,
+                contentDescription = null,
+                tint = PrimaryRed,
+                modifier = Modifier.size(32.dp)
+            )
+        },
+        title = {
+            Text(
+                "Selecciona un Garage",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "¿A qué garage deseas agregar la tarifa?",
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                garages.forEach { (garageId, garageName) ->
+                    Surface(
+                        onClick = { onGarageSelected(garageId) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = SurfaceColor,
+                        shadowElevation = 1.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(PrimaryRed.copy(alpha = 0.1f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Warehouse,
+                                    contentDescription = null,
+                                    tint = PrimaryRed,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Text(
+                                garageName,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TextPrimary,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            Icon(
+                                Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = TextSecondary.copy(alpha = 0.5f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = TextSecondary)
+            }
+        }
+    )
+}
+
+@Composable
+fun ModernBottomBarAdmin(
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = SurfaceColor,
+        shadowElevation = 12.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BottomBarItemAdmin(
+                icon = Icons.Outlined.AttachMoney,
+                selectedIcon = Icons.Default.AttachMoney,
+                label = "Tarifas",
+                isSelected = selectedIndex == 0,
+                onClick = { onItemSelected(0) }
+            )
+            BottomBarItemAdmin(
+                icon = Icons.Outlined.Dashboard,
+                selectedIcon = Icons.Default.Dashboard,
+                label = "Dashboard",
+                isSelected = selectedIndex == 1,
+                onClick = { onItemSelected(1) }
+            )
+            BottomBarItemAdmin(
+                icon = Icons.Outlined.BookmarkBorder,
+                selectedIcon = Icons.Default.Bookmark,
+                label = "Reservas",
+                isSelected = selectedIndex == 2,
+                onClick = { onItemSelected(2) }
+            )
+            BottomBarItemAdmin(
+                icon = Icons.Outlined.Person,
+                selectedIcon = Icons.Default.Person,
+                label = "Perfil",
+                isSelected = selectedIndex == 3,
+                onClick = { onItemSelected(3) }
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomBarItemAdmin(
+    icon: ImageVector,
+    selectedIcon: ImageVector,
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val animatedColor by animateColorAsState(
+        targetValue = if (isSelected) PrimaryRed else TextSecondary,
+        animationSpec = tween(300)
+    )
+
+    Surface(
+        onClick = onClick,
+        color = Color.Transparent,
+        modifier = Modifier.size(64.dp, 56.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(
+                if (isSelected) selectedIcon else icon,
+                contentDescription = label,
+                tint = animatedColor,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                label,
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = animatedColor
+            )
+        }
+    }
 }

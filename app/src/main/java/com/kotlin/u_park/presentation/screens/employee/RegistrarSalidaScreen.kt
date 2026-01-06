@@ -45,10 +45,9 @@ import java.io.ByteArrayOutputStream
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.kotlin.u_park.ui.theme.*
 
-private val RedSoft = Color(0xFFE60023)
 private val GreenSoft = Color(0xFF4CAF50)
-private val BackgroundColor = Color(0xFFF5F5F5)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)

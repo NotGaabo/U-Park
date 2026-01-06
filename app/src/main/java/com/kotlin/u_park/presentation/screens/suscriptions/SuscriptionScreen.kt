@@ -29,18 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import com.kotlin.u_park.ui.theme.*
 
-// 🎨 Color System (matching Home)
-private val PrimaryRed = Color(0xFFE60023)
-private val DarkRed = Color(0xFFB8001C)
-private val LightRed = Color(0xFFFFE5E9)
-private val BackgroundColor = Color(0xFFFAFAFA)
-private val SurfaceColor = Color(0xFFFFFFFF)
-private val TextPrimary = Color(0xFF0D0D0D)
-private val TextSecondary = Color(0xFF6E6E73)
-private val BorderColor = Color(0xFFE5E5EA)
-private val SuccessGreen = Color(0xFF34C759)
-private val WarningOrange = Color(0xFFFF9500)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

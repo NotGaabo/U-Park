@@ -18,13 +18,10 @@ fun SettingsScreenDueno(
     onSignOut: () -> Unit
 ) {
     val context = LocalContext.current.applicationContext as Application
-
-    // Crear el ViewModel usando el mismo que usa SettingsScreen
     val viewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModelFactory(context, supabase)
     )
 
-    // Reutilizar la misma UI pero con la flag isDuenoView = true
     SettingsScreenContent(
         navController = navController,
         viewModel = viewModel,

@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kotlin.u_park.domain.model.SubscriptionRequestWithDetails
+import com.kotlin.u_park.ui.theme.*
 
 @Composable
 fun GarageSuscripcionesScreen(
