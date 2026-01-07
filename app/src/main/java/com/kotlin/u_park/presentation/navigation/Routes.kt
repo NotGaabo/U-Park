@@ -6,7 +6,7 @@ sealed class Routes(val route: String) {
         fun createRoute(garageId: String) = "empleados/$garageId"
     }
     // 📌 Ruta con parámetro
-    object AgregarEmpleado : Routes("agregar_empleado/{garageId}") {
+    object AgregarEmpleado : Routes ("agregar_empleado/{garageId}") {
         fun createRoute(garageId: String) = "agregar_empleado/$garageId"
     }
     object RegistrarEntrada : Routes("registrarEntrada/{garageId}") {
@@ -50,9 +50,14 @@ sealed class Routes(val route: String) {
         fun createRoute(garageId: String) = "subscription/$garageId"
     }
 
+    object GarageDashboard : Routes( "garage_dashboard/{garageId}/{garageName}")
+
+
     // En Routes.kt, agrega:
-    object GarageManagement : Routes("garage_management/{garageId}") {
-        fun createRoute(garageId: String) = "garage_management/$garageId"
+    object GarageManagement : Routes("garage_management/{garageId}/{garageName}") {
+        fun createRoute(garageId: String, garageName: String): String {
+            return "garage_management/$garageId/$garageName"
+        }
     }
 
     object GarageSuscripciones : Routes("garage_suscripciones/{garageId}") {

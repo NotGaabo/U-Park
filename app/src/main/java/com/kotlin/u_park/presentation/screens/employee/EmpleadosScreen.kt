@@ -23,20 +23,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kotlin.u_park.domain.model.EmpleadoGarage
 
-
-// ——————————————————————————————
-//     COLORES
-// ——————————————————————————————
-private val RedPrimary = Color(0xFFE60023)
+// 🎨 Color System
+private val PrimaryRed = Color(0xFFE60023)
 private val RedLight = Color(0xFFFF6B6B)
 private val TextPrimary = Color(0xFF0F172A)
 private val TextSecondary = Color(0xFF64748B)
 private val BackgroundGray = Color(0xFFF5F7FA)
+private val SurfaceColor = Color(0xFFFFFFFF)
+private val SuccessGreen = Color(0xFF34C759)
+private val InfoBlue = Color(0xFF007AFF)
 
-
-// ——————————————————————————————
-//     PANTALLA PRINCIPAL (SIN SCAFFOLD)
-// ——————————————————————————————
 @Composable
 fun EmpleadosScreen(
     garageId: String,
@@ -45,8 +41,6 @@ fun EmpleadosScreen(
 ) {
     val empleados by viewModel.empleados.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-
-    LaunchedEffect(garageId) { viewModel.loadEmpleados(garageId) }
 
     Box(
         modifier = Modifier
@@ -71,9 +65,13 @@ fun EmpleadosScreen(
         ) {
             FloatingActionButton(
                 onClick = onAgregarEmpleado,
-                containerColor = RedPrimary,
+                containerColor = PrimaryRed,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(14.dp),
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 4.dp,
+                    pressedElevation = 8.dp
+                )
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
             }
@@ -81,10 +79,6 @@ fun EmpleadosScreen(
     }
 }
 
-
-// ——————————————————————————————
-//     LISTA
-// ——————————————————————————————
 @Composable
 private fun EmpleadosList(
     empleados: List<EmpleadoGarage>,
@@ -92,31 +86,58 @@ private fun EmpleadosList(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header con título
+        // Header Section
         item {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     "Empleados",
-                    fontSize = 24.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = TextPrimary,
+                    letterSpacing = (-0.5).sp
                 )
                 Text(
-                    "Gestiona tu equipo de trabajo",
+                    "${empleados.size} ${if (empleados.size == 1) "empleado registrado" else "empleados registrados"}",
                     fontSize = 14.sp,
-                    color = TextSecondary
+                    color = TextSecondary,
+                    fontWeight = FontWeight.Medium
                 )
-                Spacer(Modifier.height(16.dp))
             }
         }
 
-        item { HeaderCard(empleados.size) }
+        // Stats Card
+        item {
+            StatsCard(empleados.size)
+        }
 
+        // Section Header
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Icon(
+                    Icons.Outlined.Group,
+                    contentDescription = null,
+                    tint = TextPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    "Tu Equipo",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+            }
+        }
+
+        // Employees List
         items(empleados, key = { it.empleado_id }) { empleado ->
-            CompactEmpleadoCard(
+            ModernEmpleadoCard(
                 empleado = empleado,
                 onDelete = { onDelete(empleado.empleado_id) }
             )
@@ -126,80 +147,146 @@ private fun EmpleadosList(
     }
 }
 
-
-// ——————————————————————————————
-//     CARD CONTADOR
-// ——————————————————————————————
 @Composable
-fun HeaderCard(total: Int) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = RedPrimary.copy(alpha = 0.08f)
-        )
+private fun StatsCard(total: Int) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = SurfaceColor,
+        shadowElevation = 2.dp
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(RedPrimary.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    Icons.Default.People,
+                    Icons.Outlined.Analytics,
                     contentDescription = null,
-                    tint = RedPrimary,
-                    modifier = Modifier.size(24.dp)
+                    tint = PrimaryRed,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    "Resumen del Equipo",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
                 )
             }
 
-            Spacer(Modifier.width(12.dp))
-
-            Column {
-                Text(
-                    "Total de Empleados",
-                    fontSize = 12.sp,
-                    color = TextSecondary
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatItem(
+                    icon = Icons.Outlined.Group,
+                    value = "$total",
+                    label = "Empleados",
+                    color = PrimaryRed
                 )
-                Text(
-                    "$total ${if (total == 1) "empleado" else "empleados"}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = RedPrimary
+
+                StatItem(
+                    icon = Icons.Outlined.CheckCircle,
+                    value = "$total",
+                    label = "Activos",
+                    color = SuccessGreen
+                )
+
+                StatItem(
+                    icon = Icons.Outlined.Badge,
+                    value = "$total",
+                    label = "Registrados",
+                    color = InfoBlue
                 )
             }
         }
     }
 }
 
-
-// ——————————————————————————————
-//     CARD EMPLEADO (CORREGIDA)
-// ——————————————————————————————
 @Composable
-fun CompactEmpleadoCard(
+private fun StatItem(
+    icon: ImageVector,
+    value: String,
+    label: String,
+    color: Color
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(color.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        Text(
+            value,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary
+        )
+
+        Text(
+            label,
+            fontSize = 12.sp,
+            color = TextSecondary,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun ModernEmpleadoCard(
     empleado: EmpleadoGarage,
     onDelete: () -> Unit
 ) {
     val user = empleado.users
     var expanded by remember { mutableStateOf(false) }
-    var dialog by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
 
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = SurfaceColor,
+        shadowElevation = 2.dp
     ) {
         Column(Modifier.padding(16.dp)) {
-
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Avatar(user?.nombre)
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            brush = Brush.linearGradient(
+                                listOf(PrimaryRed, RedLight)
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        (user?.nombre?.firstOrNull()?.uppercase() ?: "?"),
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
                 Spacer(Modifier.width(12.dp))
 
+                // Employee Info
                 Column(Modifier.weight(1f)) {
                     Text(
                         user?.nombre ?: "Nombre no disponible",
@@ -207,34 +294,48 @@ fun CompactEmpleadoCard(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
+
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // ID Badge
                         Surface(
-                            color = RedPrimary.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(4.dp)
+                            color = PrimaryRed.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 "ID: ${empleado.empleado_id}",
                                 fontSize = 11.sp,
-                                color = RedPrimary,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                color = PrimaryRed,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
-//
-//                        // Badge de rol
-//                        Surface(
-//                            color = Color(0xFF00B894).copy(alpha = 0.1f),
-//                            shape = RoundedCornerShape(4.dp)
-//                        ) {
-//                            Text(
-//                                empleado. ?: "Empleado",
-//                                fontSize = 11.sp,
-//                                color = Color(0xFF00B894),
-//                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-//                            )
-//                        }
+
+                        // Status Badge
+                        Surface(
+                            color = SuccessGreen.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(SuccessGreen, CircleShape)
+                                )
+                                Text(
+                                    "Activo",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SuccessGreen
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -251,6 +352,7 @@ fun CompactEmpleadoCard(
                 }
             }
 
+            // Expanded Content
             AnimatedVisibility(expanded) {
                 Column {
                     Spacer(Modifier.height(12.dp))
@@ -265,7 +367,7 @@ fun CompactEmpleadoCard(
                     Spacer(Modifier.height(12.dp))
 
                     OutlinedButton(
-                        onClick = { dialog = true },
+                        onClick = { showDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
@@ -285,56 +387,32 @@ fun CompactEmpleadoCard(
         }
     }
 
-    if (dialog) DeleteDialog(
-        name = user?.nombre,
-        onDismiss = { dialog = false },
-        onConfirm = {
-            onDelete()
-            dialog = false
-        }
-    )
-}
-
-
-// ——————————————————————————————
-//     SUBCOMPONENTES
-// ——————————————————————————————
-@Composable
-fun Avatar(name: String?) {
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(
-                brush = Brush.linearGradient(
-                    listOf(RedPrimary, RedLight)
-                )
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            (name?.firstOrNull()?.uppercase() ?: "?"),
-            color = Color.White,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
+    if (showDialog) {
+        DeleteDialog(
+            name = user?.nombre,
+            onDismiss = { showDialog = false },
+            onConfirm = {
+                onDelete()
+                showDialog = false
+            }
         )
     }
 }
 
 @Composable
-fun InfoRow(icon: ImageVector, label: String, value: String?) {
+private fun InfoRow(icon: ImageVector, label: String, value: String?) {
     if (value.isNullOrBlank()) return
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             icon,
             null,
-            tint = RedPrimary.copy(alpha = 0.7f),
+            tint = PrimaryRed.copy(alpha = 0.7f),
             modifier = Modifier.size(20.dp)
         )
         Spacer(Modifier.width(12.dp))
@@ -355,12 +433,12 @@ fun InfoRow(icon: ImageVector, label: String, value: String?) {
     }
 }
 
-
-// ——————————————————————————————
-//     DIALOG
-// ——————————————————————————————
 @Composable
-fun DeleteDialog(name: String?, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+private fun DeleteDialog(
+    name: String?,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
@@ -393,12 +471,8 @@ fun DeleteDialog(name: String?, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     )
 }
 
-
-// ——————————————————————————————
-//     EMPTY & LOADING
-// ——————————————————————————————
 @Composable
-fun EmptyState(onAgregarEmpleado: () -> Unit) {
+private fun EmptyState(onAgregarEmpleado: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
@@ -410,13 +484,13 @@ fun EmptyState(onAgregarEmpleado: () -> Unit) {
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(RedPrimary.copy(alpha = 0.1f)),
+                .background(PrimaryRed.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Outlined.PersonOff,
                 contentDescription = null,
-                tint = RedPrimary,
+                tint = PrimaryRed,
                 modifier = Modifier.size(50.dp)
             )
         }
@@ -433,18 +507,24 @@ fun EmptyState(onAgregarEmpleado: () -> Unit) {
         Spacer(Modifier.height(8.dp))
 
         Text(
-            "Agrega tu primer empleado para comenzar",
+            "Agrega tu primer empleado para\ncomenzar a gestionar tu equipo",
             color = TextSecondary,
-            fontSize = 14.sp
+            fontSize = 14.sp,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            lineHeight = 20.sp
         )
 
         Spacer(Modifier.height(24.dp))
 
         Button(
             onClick = onAgregarEmpleado,
-            colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed),
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.height(50.dp)
+            modifier = Modifier.height(50.dp),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 4.dp,
+                pressedElevation = 8.dp
+            )
         ) {
             Icon(
                 Icons.Default.Add,
@@ -452,7 +532,7 @@ fun EmptyState(onAgregarEmpleado: () -> Unit) {
                 modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.width(8.dp))
-            Text("Agregar Empleado", fontSize = 15.sp)
+            Text("Agregar Empleado", fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -464,8 +544,16 @@ fun LoadingState() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        CircularProgressIndicator(color = RedPrimary)
+        CircularProgressIndicator(
+            color = PrimaryRed,
+            strokeWidth = 3.dp,
+            modifier = Modifier.size(48.dp)
+        )
         Spacer(Modifier.height(16.dp))
-        Text("Cargando empleados...", color = TextSecondary, fontSize = 14.sp)
+        Text(
+            "Cargando empleados...",
+            color = TextSecondary,
+            fontSize = 14.sp
+        )
     }
 }

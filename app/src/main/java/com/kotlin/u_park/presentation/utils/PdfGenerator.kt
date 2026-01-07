@@ -8,10 +8,14 @@ import android.graphics.pdf.PdfDocument
 import android.graphics.Color
 import android.graphics.DashPathEffect
 import android.os.Build
+import android.os.Environment
 import androidx.annotation.RequiresApi
+import com.kotlin.u_park.domain.model.IncomeReport
+import com.kotlin.u_park.domain.model.OccupancyReport
 import com.kotlin.u_park.domain.model.SalidaResponse
 import java.io.File
 import java.io.FileOutputStream
+import java.io.OutputStream
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -30,6 +34,87 @@ object PdfGenerator {
             raw.replace("T", " ")
         }
     }
+    private fun generateSimpleReport(
+        context: Context,
+        title: String,
+        garageName: String,
+        period: String,
+        rows: List<Pair<String, String>>
+    ): File {
+
+        val file = File(
+            context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),
+            "${title}_${System.currentTimeMillis()}.pdf"
+        )
+
+        val pdf = PdfDocument()
+        val page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, 1).create())
+        val canvas = page.canvas
+        val paint = Paint()
+
+        var y = 60
+
+        paint.textSize = 20f
+        paint.isFakeBoldText = true
+        canvas.drawText(title, 40f, y.toFloat(), paint)
+
+        y += 30
+        paint.textSize = 14f
+        paint.isFakeBoldText = false
+        canvas.drawText("Garage: $garageName", 40f, y.toFloat(), paint)
+
+        y += 20
+        canvas.drawText("Periodo: $period", 40f, y.toFloat(), paint)
+
+        y += 40
+
+        rows.forEach { (label, value) ->
+            canvas.drawText("$label: $value", 40f, y.toFloat(), paint)
+            y += 24
+        }
+
+        pdf.finishPage(page)
+        pdf.writeTo(FileOutputStream(file))
+        pdf.close()
+
+        return file
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun generateOccupancyReport(
+        context: Context,
+        report: OccupancyReport
+    ): File {
+
+        return generateSimpleReport(
+            context = context,
+            title = "Reporte de Ocupación",
+            garageName = report.garageName,
+            period = "${report.startDate.toLocalDate()} → ${report.endDate.toLocalDate()}",
+            rows = listOf(
+                "Total de vehículos" to report.totalVehicles.toString(),
+                "Tiempo promedio" to (report.averageStayMinutes?.toInt()?.toString() ?: "N/A") + " min"
+            )
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun generateIncomeReport(
+        context: Context,
+        report: IncomeReport
+    ): File {
+
+        return generateSimpleReport(
+            context = context,
+            title = "Reporte de Ingresos",
+            garageName = report.garageName,
+            period = "${report.startDate.toLocalDate()} → ${report.endDate.toLocalDate()}",
+            rows = listOf(
+                "Total de ingresos" to "$${String.format("%.2f", report.totalIncome)}",
+                "Transacciones" to report.dailyIncome.sumOf { it.transactionCount }.toString()
+            )
+        )
+    }
 
     // --- Formateo de duración ---
     private fun formatDuration(hours: Double): String {
@@ -37,6 +122,52 @@ object PdfGenerator {
         val m = ((hours - h) * 60).toInt()
         return "%02d:%02d hrs".format(h, m)
     }
+
+    private fun createPdfInDownloads(
+        context: Context,
+        fileName: String
+    ): Pair<OutputStream, File> {
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // ✅ ANDROID 10+
+            val resolver = context.contentResolver
+
+            val contentValues = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+                put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/U-Park")
+            }
+
+            val uri = resolver.insert(
+                android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                contentValues
+            ) ?: throw IllegalStateException("No se pudo crear el PDF")
+
+            val outputStream = resolver.openOutputStream(uri)
+                ?: throw IllegalStateException("No se pudo abrir OutputStream")
+
+            // File "virtual" solo para compartir
+            val file = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "U-Park/$fileName"
+            )
+
+            Pair(outputStream, file)
+
+        } else {
+            // ✅ ANDROID 7–9
+            val dir = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "U-Park"
+            )
+
+            if (!dir.exists()) dir.mkdirs()
+
+            val file = File(dir, fileName)
+            Pair(FileOutputStream(file), file)
+        }
+    }
+
 
     // -------------------------------------------------------
     // ⚡ GENERAR PDF CON DISEÑO MODERNO
@@ -50,23 +181,17 @@ object PdfGenerator {
         saveToDownloads: Boolean = false
     ): File {
 
-        // Si quiere descargar, guarda en Documentos/U-Park
-        // Si solo quiere compartir, guarda en caché temporal
-        val dir = if (saveToDownloads) {
-            File(
-                android.os.Environment.getExternalStoragePublicDirectory(
-                    android.os.Environment.DIRECTORY_DOCUMENTS
-                ),
-                "U-Park"
-            )
+        val fileName = "Ticket_${ticket.parking_id.take(8)}.pdf"
+
+        val (outStream, file) = if (saveToDownloads) {
+            createPdfInDownloads(context, fileName)
         } else {
-            File(context.cacheDir, "facturas")
+            val dir = File(context.cacheDir, "facturas")
+            if (!dir.exists()) dir.mkdirs()
+            val file = File(dir, fileName)
+            Pair(FileOutputStream(file), file)
         }
-
-        if (!dir.exists()) dir.mkdirs()
-
-        val file = File(dir, "Ticket_${ticket.parking_id.take(8)}.pdf")
-        if (file.exists()) file.delete()
+        Pair(FileOutputStream(file), file.absolutePath)
 
         val pdf = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
@@ -221,12 +346,10 @@ object PdfGenerator {
 
         pdf.finishPage(page)
 
-        val out = FileOutputStream(file)
-        pdf.writeTo(out)
-        out.close()
+        pdf.writeTo(outStream)
+        outStream.close()
         pdf.close()
 
-        // 🔔 Si se guardó en Descargas, notificar al usuario
         if (saveToDownloads) {
             notifyFileSaved(context, file)
         }

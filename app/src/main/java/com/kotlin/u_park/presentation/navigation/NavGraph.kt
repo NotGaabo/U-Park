@@ -131,20 +131,21 @@ fun NavGraph(
             )
         }
 
-        // -------------------- EMPLEADOS --------------------
         // -------------------- GESTIÓN DE GARAGE (EMPLEADOS + SUSCRIPCIONES) --------------------
         composable(
-            route = Routes.Empleados.route,
-            arguments = listOf(navArgument("garageId") { type = NavType.StringType })
+            route = Routes.GarageManagement.route,
+            arguments = listOf(
+                navArgument("garageId") { type = NavType.StringType },
+                navArgument("garageName") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
 
             val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+            val garageName = backStackEntry.arguments?.getString("garageName") ?: ""
 
-            // Repositorios
             val empleadoRepo = remember { EmpleadoGarageRepositoryImpl(supabase) }
             val parkingRepo = remember { ParkingRepositoryImpl(supabase) }
 
-            // ViewModels
             val empleadosViewModel: EmpleadosViewModel = viewModel(
                 backStackEntry,
                 factory = EmpleadosViewModelFactory(
@@ -158,7 +159,7 @@ fun NavGraph(
                 factory = SubscriptionViewModelFactory(subscriptionRepository)
             )
 
-            // Cargar datos
+            // ⚠️ Cargar SOLO aquí
             LaunchedEffect(garageId) {
                 if (garageId.isNotBlank()) {
                     empleadosViewModel.loadEmpleados(garageId)
@@ -167,14 +168,47 @@ fun NavGraph(
                 }
             }
 
-            // Pantalla con tabs
             GarageManagementScreen(
                 navController = navController,
                 garageId = garageId,
+                garageName = garageName,
                 empleadosViewModel = empleadosViewModel,
                 subscriptionViewModel = subscriptionViewModel
             )
         }
+
+        composable(
+            route = Routes.GarageDashboard.route,
+            arguments = listOf(
+                navArgument("garageId") { type = NavType.StringType },
+                navArgument("garageName") { type = NavType.StringType }
+            )
+        ) { backStack ->
+
+            val garageId = backStack.arguments?.getString("garageId") ?: ""
+            val garageName = backStack.arguments?.getString("garageName") ?: ""
+
+            GarageDashboardScreen(
+                garageId = garageId,
+                garageName = garageName,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEmployees = {
+                    navController.navigate(
+                        Routes.GarageManagement.createRoute(garageId, garageName)
+                    ) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSubscriptions = {
+                    navController.navigate(
+                        Routes.GarageManagement.createRoute(garageId, garageName)
+                    ) {
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
 
         // -------------------- AGREGAR EMPLEADOS --------------------
         composable(Routes.AgregarEmpleado.route) { backStackEntry ->
