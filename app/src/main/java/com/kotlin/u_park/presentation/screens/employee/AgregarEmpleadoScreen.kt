@@ -12,9 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kotlin.u_park.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +48,7 @@ fun AgregarEmpleadoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Agregar Empleado", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.agregar_empleado), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
                         Icon(Icons.Default.Close, contentDescription = "Cerrar")
@@ -98,7 +100,7 @@ fun AgregarEmpleadoScreen(
                 Spacer(Modifier.height(24.dp))
 
                 Text(
-                    "Nuevo Empleado",
+                    stringResource(R.string.nuevo_empleado),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1A1A1A)
@@ -107,7 +109,7 @@ fun AgregarEmpleadoScreen(
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    "Ingresa la cédula del empleado para agregarlo al garage",
+                    stringResource(R.string.ingresa_la_c_dula_del_empleado_para_agregarlo_al_garage),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     modifier = Modifier.padding(horizontal = 16.dp)
@@ -126,8 +128,8 @@ fun AgregarEmpleadoScreen(
                         OutlinedTextField(
                             value = cedulaText,
                             onValueChange = { cedulaText = it },
-                            label = { Text("Cédula del Empleado") },
-                            placeholder = { Text("Ej: 40212345678") },
+                            label = { Text(stringResource(R.string.c_dula_del_empleado)) },
+                            placeholder = { Text(stringResource(R.string.ej_40212345678)) },
                             isError = cedulaError != null,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
@@ -173,7 +175,7 @@ fun AgregarEmpleadoScreen(
                                 )
                             } else {
                                 Text(
-                                    "Agregar Empleado",
+                                    stringResource(R.string.agregar_empleado2),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -185,7 +187,7 @@ fun AgregarEmpleadoScreen(
                 Spacer(Modifier.height(16.dp))
 
                 TextButton(onClick = onClose) {
-                    Text("Cancelar", color = Color.Gray, fontSize = 15.sp)
+                    Text(stringResource(R.string.cancelar), color = Color.Gray, fontSize = 15.sp)
                 }
             }
         }

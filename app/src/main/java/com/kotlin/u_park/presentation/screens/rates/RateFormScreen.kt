@@ -1,11 +1,12 @@
 package com.kotlin.u_park.presentation.screens.rates
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -13,22 +14,35 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 
-private val RedSoft = Color(0xFFE60023)
-private val BackgroundColor = Color(0xFFF5F5F5)
+// 🎨 Modern Color System
+private val PrimaryRed = Color(0xFFE60023)
+private val DarkRed = Color(0xFFB8001C)
+private val LightRed = Color(0xFFFFE5E9)
+private val BackgroundColor = Color(0xFFFAFAFA)
+private val SurfaceColor = Color(0xFFFFFFFF)
+private val TextPrimary = Color(0xFF0D0D0D)
+private val TextSecondary = Color(0xFF6E6E73)
+private val BorderColor = Color(0xFFE5E5EA)
+private val SuccessGreen = Color(0xFF34C759)
+private val InfoBlue = Color(0xFF007AFF)
+private val WarningOrange = Color(0xFFFF9500)
+private val ErrorRed = Color(0xFFFF3B30)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RateFormScreen(
     navController: NavController,
     viewModel: RatesViewModel,
-    userId: String, // 🔥 NUEVO: necesitamos el userId
+    userId: String,
     garageId: String,
     rateId: String,
     onSaved: () -> Unit
@@ -39,23 +53,22 @@ fun RateFormScreen(
     val saving by viewModel.saving
     val saveSuccess by viewModel.saveSuccess
 
-    // 🔥 NUEVO: Observar cuando termine de guardar exitosamente
+    // Auto-navigate on success
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
-            viewModel.saveSuccess.value = false // Reset
+            viewModel.saveSuccess.value = false
             onSaved()
         }
     }
 
-    // Load needed data
+    // Load data
     LaunchedEffect(userId) {
         viewModel.loadVehicleTypes()
-        viewModel.loadGarages(userId) // 🔥 Cargar con userId
+        viewModel.loadGarages(userId)
     }
 
     LaunchedEffect(rateId) {
         if (rateId != "new") {
-            // 🔥 Buscar en groupedRates
             val allRates = viewModel.groupedRates.value.values.flatten()
             val found = allRates.firstOrNull { it.id == rateId }
             viewModel.setEditing(found)
@@ -64,192 +77,135 @@ fun RateFormScreen(
         }
     }
 
-    // Dropdown expands
+    // Form state
     var expandedUnit by remember { mutableStateOf(false) }
     var expandedVehicleType by remember { mutableStateOf(false) }
     var expandedGarage by remember { mutableStateOf(false) }
 
-    // Fields
     var baseRateText by remember(editing) { mutableStateOf(editing?.baseRate?.toString() ?: "") }
 
     val units = listOf("hora", "día", "semana", "mes")
     var selectedUnit by remember(editing) { mutableStateOf(editing?.timeUnit ?: "hora") }
 
     var selectedVehicleType by remember(editing) { mutableStateOf<Int?>(editing?.vehicleTypeId) }
-
     var selectedGarageId by remember(editing) { mutableStateOf(editing?.garageId ?: garageId) }
 
-    val dias = listOf("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+    val dias = listOf(stringResource(R.string.lunes),
+        stringResource(R.string.martes),
+        stringResource(R.string.mi_rcoles),
+        stringResource(R.string.jueves), stringResource(R.string.viernes),
+        stringResource(R.string.s_bado), stringResource(R.string.domingo)
+    )
     var selectedDays by remember(editing) { mutableStateOf(editing?.diasAplicables ?: dias) }
 
-    // 🔥 NUEVO: Validación
     var showError by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = BackgroundColor,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            if (rateId == "new") "Nueva Tarifa" else "Editar Tarifa",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-                        Text(
-                            "Configuración de precios",
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = RedSoft,
-                    titleContentColor = Color.White
-                )
-            )
-        }
-    ) { padding ->
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(BackgroundColor)
-                .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-
-            // -------------------------
-            // HEADER CARD
-            // -------------------------
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                shape = RoundedCornerShape(16.dp)
+            Surface(
+                color = SurfaceColor,
+                shadowElevation = 2.dp
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    RedSoft.copy(alpha = 0.1f),
-                                    Color.White
-                                )
-                            )
-                        )
-                        .padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Surface(
-                        modifier = Modifier.size(60.dp),
+                        onClick = { navController.popBackStack() },
                         shape = CircleShape,
-                        color = RedSoft.copy(alpha = 0.2f)
+                        color = BackgroundColor
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.size(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
-                                imageVector = Icons.Outlined.AttachMoney,
-                                contentDescription = null,
-                                tint = RedSoft,
-                                modifier = Modifier.size(32.dp)
+                                Icons.Default.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = TextPrimary,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
 
-                    Spacer(Modifier.width(16.dp))
-
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            if (rateId == "new") "Crear nueva tarifa" else "Modificar tarifa",
-                            fontSize = 18.sp,
+                            if (rateId == "new") stringResource(R.string.nueva_tarifa) else stringResource(
+                                R.string.editar_tarifa
+                            ),
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1A1A)
+                            color = TextPrimary
                         )
-                        Spacer(Modifier.height(4.dp))
                         Text(
-                            "Completa la información requerida",
-                            fontSize = 14.sp,
-                            color = Color.Gray
+                            stringResource(R.string.configuraci_n_de_precios),
+                            fontSize = 13.sp,
+                            color = TextSecondary,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
             }
+        }
+    ) { padding ->
 
-            // 🔥 NUEVO: Mostrar errores
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+
+            // Error Banner
             if (showError) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFEBEE)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Outlined.Warning,
-                            null,
-                            tint = Color(0xFFD32F2F)
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            "Por favor completa todos los campos requeridos",
-                            color = Color(0xFFD32F2F)
-                        )
-                    }
+                item {
+                    ErrorBanner()
                 }
             }
 
-            // -------------------------
-            // SECTION: GARAGE
-            // -------------------------
-            SectionHeader(
-                icon = Icons.Outlined.Warehouse,
-                title = "Información del Garage"
-            )
+            // Garage Section
+            item {
+                SectionHeaderModern(
+                    icon = Icons.Outlined.Warehouse,
+                    title = stringResource(R.string.informaci_n_del_garage)
+                )
+            }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
+            item {
+                FormCard {
                     ExposedDropdownMenuBox(
                         expanded = expandedGarage,
                         onExpandedChange = { expandedGarage = it }
                     ) {
                         OutlinedTextField(
                             value = garages.firstOrNull { it.first == selectedGarageId }?.second
-                                ?: "Seleccionar Garage",
+                                ?: stringResource(R.string.seleccionar_garage),
                             onValueChange = {},
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth(),
                             readOnly = true,
-                            label = { Text("Garage") },
+                            label = { Text(stringResource(R.string.garage2)) },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.Warehouse,
                                     contentDescription = null,
-                                    tint = RedSoft
+                                    tint = if (showError && selectedGarageId.isEmpty()) ErrorRed else PrimaryRed
                                 )
                             },
                             trailingIcon = {
                                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGarage)
                             },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = RedSoft,
-                                focusedLabelColor = RedSoft
+                                focusedBorderColor = PrimaryRed,
+                                focusedLabelColor = PrimaryRed,
+                                unfocusedBorderColor = BorderColor,
+                                errorBorderColor = ErrorRed
                             ),
                             shape = RoundedCornerShape(12.dp),
                             isError = showError && selectedGarageId.isEmpty()
@@ -270,7 +226,7 @@ fun RateFormScreen(
                                         Icon(
                                             Icons.Outlined.CheckCircle,
                                             contentDescription = null,
-                                            tint = if (selectedGarageId == id) RedSoft else Color.Transparent
+                                            tint = if (selectedGarageId == id) PrimaryRed else Color.Transparent
                                         )
                                     }
                                 )
@@ -280,367 +236,389 @@ fun RateFormScreen(
                 }
             }
 
-            // -------------------------
-            // SECTION: TARIFA
-            // -------------------------
-            SectionHeader(
-                icon = Icons.Outlined.PriceChange,
-                title = "Configuración de Tarifa"
-            )
+            // Rate Configuration Section
+            item {
+                SectionHeaderModern(
+                    icon = Icons.Outlined.PriceChange,
+                    title = stringResource(R.string.configuraci_n_de_tarifa)
+                )
+            }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-
-                    // PRECIO BASE
-                    OutlinedTextField(
-                        value = baseRateText,
-                        onValueChange = { baseRateText = it },
-                        label = { Text("Precio Base (RD$)") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.AttachMoney,
-                                contentDescription = null,
-                                tint = RedSoft
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = RedSoft,
-                            focusedLabelColor = RedSoft
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        isError = showError && (baseRateText.toDoubleOrNull() == null || baseRateText.isEmpty())
-                    )
-
-                    // UNIDAD (SELECT)
-                    ExposedDropdownMenuBox(
-                        expanded = expandedUnit,
-                        onExpandedChange = { expandedUnit = it }
-                    ) {
+            item {
+                FormCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        // Base Rate
                         OutlinedTextField(
-                            value = selectedUnit,
-                            onValueChange = {},
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            readOnly = true,
-                            label = { Text("Unidad de tiempo") },
+                            value = baseRateText,
+                            onValueChange = { baseRateText = it },
+                            label = { Text(stringResource(R.string.precio_base_rd)) },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.Schedule,
+                                    Icons.Outlined.AttachMoney,
                                     contentDescription = null,
-                                    tint = RedSoft
+                                    tint = if (showError && (baseRateText.toDoubleOrNull() == null || baseRateText.isEmpty())) ErrorRed else PrimaryRed
                                 )
                             },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedUnit)
-                            },
+                            modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = RedSoft,
-                                focusedLabelColor = RedSoft
+                                focusedBorderColor = PrimaryRed,
+                                focusedLabelColor = PrimaryRed,
+                                unfocusedBorderColor = BorderColor,
+                                errorBorderColor = ErrorRed
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            isError = showError && (baseRateText.toDoubleOrNull() == null || baseRateText.isEmpty())
                         )
 
-                        ExposedDropdownMenu(
+                        // Time Unit
+                        ExposedDropdownMenuBox(
                             expanded = expandedUnit,
-                            onDismissRequest = { expandedUnit = false }
+                            onExpandedChange = { expandedUnit = it }
                         ) {
-                            units.forEach { unit ->
-                                DropdownMenuItem(
-                                    text = { Text(unit.replaceFirstChar { it.uppercase() }) },
-                                    onClick = {
-                                        selectedUnit = unit
-                                        expandedUnit = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.CheckCircle,
-                                            contentDescription = null,
-                                            tint = if (selectedUnit == unit) RedSoft else Color.Transparent
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    // VEHICLE TYPE SELECT
-                    ExposedDropdownMenuBox(
-                        expanded = expandedVehicleType,
-                        onExpandedChange = { expandedVehicleType = it }
-                    ) {
-                        OutlinedTextField(
-                            value = vehicleTypes.firstOrNull { it.first == selectedVehicleType }?.second
-                                ?: "Cualquiera",
-                            onValueChange = {},
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            readOnly = true,
-                            label = { Text("Tipo de vehículo") },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.DirectionsCar,
-                                    contentDescription = null,
-                                    tint = RedSoft
-                                )
-                            },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedVehicleType)
-                            },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = RedSoft,
-                                focusedLabelColor = RedSoft
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-
-                        ExposedDropdownMenu(
-                            expanded = expandedVehicleType,
-                            onDismissRequest = { expandedVehicleType = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Cualquiera") },
-                                onClick = {
-                                    selectedVehicleType = null
-                                    expandedVehicleType = false
-                                },
+                            OutlinedTextField(
+                                value = selectedUnit.capitalize(),
+                                onValueChange = {},
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                readOnly = true,
+                                label = { Text(stringResource(R.string.unidad_de_tiempo)) },
                                 leadingIcon = {
                                     Icon(
-                                        Icons.Outlined.CheckCircle,
+                                        Icons.Outlined.Schedule,
                                         contentDescription = null,
-                                        tint = if (selectedVehicleType == null) RedSoft else Color.Transparent
+                                        tint = PrimaryRed
                                     )
-                                }
+                                },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedUnit)
+                                },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = PrimaryRed,
+                                    focusedLabelColor = PrimaryRed,
+                                    unfocusedBorderColor = BorderColor
+                                ),
+                                shape = RoundedCornerShape(12.dp)
                             )
 
-                            vehicleTypes.forEach { (id, name) ->
+                            ExposedDropdownMenu(
+                                expanded = expandedUnit,
+                                onDismissRequest = { expandedUnit = false }
+                            ) {
+                                units.forEach { unit ->
+                                    DropdownMenuItem(
+                                        text = { Text(unit.capitalize()) },
+                                        onClick = {
+                                            selectedUnit = unit
+                                            expandedUnit = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.CheckCircle,
+                                                contentDescription = null,
+                                                tint = if (selectedUnit == unit) PrimaryRed else Color.Transparent
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Vehicle Type
+                        ExposedDropdownMenuBox(
+                            expanded = expandedVehicleType,
+                            onExpandedChange = { expandedVehicleType = it }
+                        ) {
+                            OutlinedTextField(
+                                value = vehicleTypes.firstOrNull { it.first == selectedVehicleType }?.second
+                                    ?: stringResource(R.string.cualquiera),
+                                onValueChange = {},
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                readOnly = true,
+                                label = { Text(stringResource(R.string.tipo_de_veh_culo)) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.DirectionsCar,
+                                        contentDescription = null,
+                                        tint = PrimaryRed
+                                    )
+                                },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedVehicleType)
+                                },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = PrimaryRed,
+                                    focusedLabelColor = PrimaryRed,
+                                    unfocusedBorderColor = BorderColor
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+
+                            ExposedDropdownMenu(
+                                expanded = expandedVehicleType,
+                                onDismissRequest = { expandedVehicleType = false }
+                            ) {
                                 DropdownMenuItem(
-                                    text = { Text(name) },
+                                    text = { Text(stringResource(R.string.cualquiera2)) },
                                     onClick = {
-                                        selectedVehicleType = id
+                                        selectedVehicleType = null
                                         expandedVehicleType = false
                                     },
                                     leadingIcon = {
                                         Icon(
                                             Icons.Outlined.CheckCircle,
                                             contentDescription = null,
-                                            tint = if (selectedVehicleType == id) RedSoft else Color.Transparent
+                                            tint = if (selectedVehicleType == null) PrimaryRed else Color.Transparent
                                         )
                                     }
                                 )
-                            }
-                        }
-                    }
-                }
-            }
 
-            // -------------------------
-            // SECTION: DÍAS
-            // -------------------------
-            SectionHeader(
-                icon = Icons.Outlined.CalendarMonth,
-                title = "Días Aplicables"
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    dias.forEach { dia ->
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (selectedDays.contains(dia)) {
-                                RedSoft.copy(alpha = 0.08f)
-                            } else {
-                                Color.Transparent
-                            }
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = selectedDays.contains(dia),
-                                    onCheckedChange = { checked ->
-                                        selectedDays =
-                                            if (checked) selectedDays + dia else selectedDays - dia
-                                    },
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = RedSoft,
-                                        checkmarkColor = Color.White
+                                vehicleTypes.forEach { (id, name) ->
+                                    DropdownMenuItem(
+                                        text = { Text(name) },
+                                        onClick = {
+                                            selectedVehicleType = id
+                                            expandedVehicleType = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.CheckCircle,
+                                                contentDescription = null,
+                                                tint = if (selectedVehicleType == id) PrimaryRed else Color.Transparent
+                                            )
+                                        }
                                     )
-                                )
-                                Text(
-                                    dia.replaceFirstChar { it.uppercase() },
-                                    fontSize = 15.sp,
-                                    color = if (selectedDays.contains(dia)) {
-                                        Color(0xFF1A1A1A)
-                                    } else {
-                                        Color.Gray
-                                    },
-                                    fontWeight = if (selectedDays.contains(dia)) {
-                                        FontWeight.Medium
-                                    } else {
-                                        FontWeight.Normal
-                                    }
-                                )
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // -------------------------
-            // ACTIONS
-            // -------------------------
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // LIMPIAR FORMULARIO
-                OutlinedButton(
-                    onClick = {
-                        baseRateText = ""
-                        selectedUnit = "hora"
-                        selectedVehicleType = null
-                        selectedDays = dias
-                        showError = false
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = RedSoft
-                    ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        width = 1.5.dp
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = !saving
-                ) {
-                    Icon(
-                        Icons.Outlined.RestartAlt,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("Limpiar", fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                }
+            // Days Section
+            item {
+                SectionHeaderModern(
+                    icon = Icons.Outlined.CalendarMonth,
+                    title = stringResource(R.string.d_as_aplicables)
+                )
+            }
 
-                // GUARDAR
-                Button(
-                    onClick = {
-                        // 🔥 Validación
-                        val price = baseRateText.toDoubleOrNull()
-                        if (price == null || price <= 0 || selectedGarageId.isEmpty()) {
-                            showError = true
-                            return@Button
+            item {
+                FormCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        dias.forEach { dia ->
+                            val isSelected = selectedDays.contains(dia)
+
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) PrimaryRed.copy(alpha = 0.08f) else Color.Transparent
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = { checked ->
+                                            selectedDays = if (checked) selectedDays + dia else selectedDays - dia
+                                        },
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = PrimaryRed,
+                                            checkmarkColor = SurfaceColor
+                                        )
+                                    )
+                                    Text(
+                                        dia.capitalize(),
+                                        fontSize = 15.sp,
+                                        color = if (isSelected) TextPrimary else TextSecondary,
+                                        fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+                                    )
+                                }
+                            }
                         }
+                    }
+                }
+            }
 
-                        showError = false
-
-                        println("🔥 Guardando con garageId: $selectedGarageId") // DEBUG
-
-                        viewModel.saveRate(
-                            garageId = selectedGarageId,
-                            baseRate = price,
-                            timeUnit = selectedUnit,
-                            vehicleTypeId = selectedVehicleType,
-                            diasAplicables = selectedDays,
-                            specialRate = null
-                        )
-                        // 🔥 Ya NO llamamos a onSaved() aquí
-                        // Se llamará automáticamente cuando saveSuccess sea true
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = RedSoft,
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 4.dp,
-                        pressedElevation = 8.dp
-                    ),
-                    enabled = !saving
+            // Action Buttons
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    if (saving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
+                    // Clear Button
+                    OutlinedButton(
+                        onClick = {
+                            baseRateText = ""
+                            selectedUnit = "hora"
+                            selectedVehicleType = null
+                            selectedDays = dias
+                            showError = false
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = PrimaryRed
+                        ),
+                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                            width = 1.5.dp
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !saving
+                    ) {
                         Icon(
-                            Icons.Outlined.Save,
+                            Icons.Outlined.RestartAlt,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp)
                         )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.limpiar),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        if (saving) "Guardando..." else "Guardar",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+
+                    // Save Button
+                    Button(
+                        onClick = {
+                            val price = baseRateText.toDoubleOrNull()
+                            if (price == null || price <= 0 || selectedGarageId.isEmpty()) {
+                                showError = true
+                                return@Button
+                            }
+
+                            showError = false
+                            viewModel.saveRate(
+                                garageId = selectedGarageId,
+                                baseRate = price,
+                                timeUnit = selectedUnit,
+                                vehicleTypeId = selectedVehicleType,
+                                diasAplicables = selectedDays,
+                                specialRate = null
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PrimaryRed,
+                            contentColor = SurfaceColor
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 4.dp,
+                            pressedElevation = 8.dp
+                        ),
+                        enabled = !saving
+                    ) {
+                        if (saving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = SurfaceColor,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                Icons.Outlined.Save,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (saving) stringResource(R.string.guardando2) else stringResource(R.string.guardar),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
-
-            // Espacio al final
-            Spacer(Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-fun SectionHeader(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+fun SectionHeaderModern(
+    icon: ImageVector,
     title: String
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 4.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Surface(
-            modifier = Modifier.size(32.dp),
-            shape = CircleShape,
-            color = RedSoft.copy(alpha = 0.15f)
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(PrimaryRed.copy(alpha = 0.1f), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = RedSoft,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = PrimaryRed,
+                modifier = Modifier.size(20.dp)
+            )
         }
-
-        Spacer(Modifier.width(12.dp))
 
         Text(
             title,
-            fontSize = 18.sp,
+            fontSize = 17.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF1A1A1A)
+            color = TextPrimary
         )
     }
+}
+
+@Composable
+fun FormCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = SurfaceColor,
+        shadowElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+fun ErrorBanner() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = ErrorRed.copy(alpha = 0.1f)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                Icons.Outlined.Warning,
+                contentDescription = null,
+                tint = ErrorRed,
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                stringResource(R.string.por_favor_completa_todos_los_campos_requeridos),
+                fontSize = 14.sp,
+                color = ErrorRed,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+fun String.capitalize() = replaceFirstChar {
+    if (it.isLowerCase()) it.titlecase() else it.toString()
 }

@@ -20,14 +20,15 @@ data class ReservaConUsuario(
     val vehicle_id: String? = null,
     val estado: String? = null,
     val hora_reserva: String? = null,
-    val hora_llegada: String? = null,     // ✔ Te faltaba
-    val vehicles: VehicleUser? = null     // ✔ Relación completa
+    val hora_llegada: String? = null,
+    val vehicles: VehicleUser? = null,
+    val users: UsuarioData? = null   // 👈 viene directo ahora
 )
 
 @Serializable
 data class VehicleUser(
     val plate: String? = null,
-    val users: UsuarioData? = null        // ✔ Usuario vinculado
+    val user_id: String? = null
 )
 
 @Serializable

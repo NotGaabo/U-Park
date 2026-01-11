@@ -32,12 +32,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
+import com.kotlin.u_park.domain.model.Rate
 import com.kotlin.u_park.domain.model.ReservaConUsuario
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
@@ -62,6 +65,9 @@ fun RegistrarEntradaScreen(
     val ctx = LocalContext.current
     val scrollState = rememberScrollState()
 
+    val rates by viewModel.rates.collectAsState()
+    val selectedRate by viewModel.selectedRate.collectAsState()
+
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var placa by remember { mutableStateOf("") }
     var modoEntrada by remember { mutableStateOf("Normal") }
@@ -76,11 +82,17 @@ fun RegistrarEntradaScreen(
     val message by viewModel.message.collectAsState()
 
     // Cargar reservas cuando se selecciona modo Reserva
-    LaunchedEffect(modoEntrada) {
+    LaunchedEffect(modoEntrada, reservaSeleccionada) {
         if (modoEntrada == "Reserva") {
             viewModel.loadReservasConUsuario(garageId)
+            placa = reservaSeleccionada?.vehicles?.plate ?: placa
         }
     }
+
+    LaunchedEffect(garageId) {
+        viewModel.loadRatesByGarage(garageId)
+    }
+
 
     LaunchedEffect(ticket) {
         ticket?.let {
@@ -117,12 +129,12 @@ fun RegistrarEntradaScreen(
                 title = {
                     Column {
                         Text(
-                            "Registrar Entrada",
+                            stringResource(R.string.registrar_entrada2),
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp
                         )
                         Text(
-                            "Gestión de acceso vehicular",
+                            stringResource(R.string.gesti_n_de_acceso_vehicular),
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.8f)
                         )
@@ -160,7 +172,7 @@ fun RegistrarEntradaScreen(
                 // Paso 1: Tipo de Entrada
                 StepCard(
                     stepNumber = "1",
-                    title = "Tipo de Entrada",
+                    title = stringResource(R.string.tipo_de_entrada),
                     isCompleted = modoEntrada.isNotEmpty()
                 ) {
                     TipoEntradaSelector(
@@ -180,13 +192,13 @@ fun RegistrarEntradaScreen(
 
                 // Paso 2: Selección de Reserva (si aplica)
                 AnimatedVisibility(
-                    visible = modoEntrada == "Reserva",
+                    visible = modoEntrada == stringResource(R.string.reserva),
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
                     StepCard(
                         stepNumber = "2",
-                        title = "Seleccionar Reserva",
+                        title = stringResource(R.string.seleccionar_reserva),
                         isCompleted = reservaSeleccionada != null
                     ) {
                         ReservaSelector(
@@ -206,7 +218,7 @@ fun RegistrarEntradaScreen(
                 // Paso 3: Placa del Vehículo
                 StepCard(
                     stepNumber = if (modoEntrada == "Reserva") "3" else "2",
-                    title = "Placa del Vehículo",
+                    title = stringResource(R.string.placa_del_veh_culo),
                     isCompleted = placa.isNotBlank()
                 ) {
                     PlacaInput(
@@ -216,10 +228,24 @@ fun RegistrarEntradaScreen(
                     )
                 }
 
+                // Paso X: Seleccionar Tarifa
+                StepCard(
+                    stepNumber = if (modoEntrada == "Reserva") "4" else "3",
+                    title = stringResource(R.string.seleccionar_tarifa),
+                    isCompleted = selectedRate != null
+                ) {
+                    RateSelector(
+                        rates = rates,
+                        selectedRate = selectedRate,
+                        onRateSelected = { viewModel.selectRate(it) }
+                    )
+                }
+
+
                 // Paso 4: Fotografía
                 StepCard(
                     stepNumber = if (modoEntrada == "Reserva") "4" else "3",
-                    title = "Fotografía del Vehículo",
+                    title = stringResource(R.string.fotograf_a_del_veh_culo),
                     isCompleted = bitmap != null
                 ) {
                     FotoSection(
@@ -243,6 +269,12 @@ fun RegistrarEntradaScreen(
                     enabled = placa.isNotBlank() && bitmap != null &&
                             (modoEntrada == "Normal" || reservaSeleccionada != null),
                     onClick = {
+
+                        if (selectedRate == null) {
+                            Toast.makeText(ctx, "Selecciona una tarifa", Toast.LENGTH_SHORT).show()
+                            return@ConfirmButton
+                        }
+
                         if (placa.isBlank()) {
                             Toast.makeText(ctx, "Ingresa la placa", Toast.LENGTH_SHORT).show()
                             return@ConfirmButton
@@ -260,6 +292,7 @@ fun RegistrarEntradaScreen(
                                 garageId = garageId,
                                 vehiclePlate = placa.trim(),
                                 empleadoId = empleadoId,
+                                rateId = selectedRate!!.id!!,
                                 fotosBytes = fotos
                             )
                         } else {
@@ -282,6 +315,92 @@ fun RegistrarEntradaScreen(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RateSelector(
+    rates: List<Rate>,
+    selectedRate: Rate?,
+    onRateSelected: (Rate) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectedRate?.let {
+                "${it.baseRate} / ${it.timeUnit}"
+            } ?: "",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.tarifa)) },
+            placeholder = { Text(stringResource(R.string.selecciona_una_tarifa)) },
+            trailingIcon = {
+                Icon(
+                    if (expanded)
+                        Icons.Default.KeyboardArrowUp
+                    else
+                        Icons.Default.KeyboardArrowDown,
+                    contentDescription = null
+                )
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = PrimaryRed,
+                unfocusedBorderColor = Color(0xFFDEE2E6),
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            rates.forEach { rate ->
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(
+                                text = "${rate.baseRate} / ${rate.timeUnit}",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = buildString {
+                                    append(stringResource(R.string.horario2))
+                                    append(rate.horaInicio ?: "00:00")
+                                    append(" - ")
+                                    append(rate.horaFin ?: "24:00")
+                                },
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    },
+                    onClick = {
+                        onRateSelected(rate)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+
+    if (rates.isEmpty()) {
+        Text(
+            text = stringResource(R.string.no_hay_tarifas_activas_para_este_garaje),
+            fontSize = 12.sp,
+            color = TextSecondary,
+            modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+        )
+    }
+}
+
 
 @Composable
 fun StepCard(
@@ -355,18 +474,18 @@ fun TipoEntradaSelector(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SelectableCard(
-            title = "Entrada Normal",
-            subtitle = "Sin reserva previa",
+            title = stringResource(R.string.entrada_normal),
+            subtitle = stringResource(R.string.sin_reserva_previa),
             icon = Icons.Default.DirectionsCar,
-            isSelected = modoEntrada == "Normal",
+            isSelected = modoEntrada == stringResource(R.string.normal),
             onClick = { onTipoSelected("Normal") }
         )
 
         SelectableCard(
-            title = "Entrada por Reserva",
-            subtitle = "Con reserva confirmada",
+            title = stringResource(R.string.entrada_por_reserva),
+            subtitle = stringResource(R.string.con_reserva_confirmada),
             icon = Icons.Default.EventAvailable,
-            isSelected = modoEntrada == "Reserva",
+            isSelected = modoEntrada == stringResource(R.string.reserva),
             onClick = { onTipoSelected("Reserva") }
         )
     }
@@ -464,11 +583,13 @@ fun ReservaSelector(
             ) {
                 OutlinedTextField(
                     value = reservaSeleccionada?.let {
-                        "${it.vehicles?.users?.nombre ?: "Usuario"} - ${it.vehicles?.plate ?: "Placa"}"
+                        "${it.users?.nombre ?: stringResource(R.string.usuario)} - ${it.vehicles?.plate ?: stringResource(
+                            R.string.sin_placa
+                        )}"
                     } ?: "",
                     onValueChange = {},
                     readOnly = true,
-                    placeholder = { Text("Selecciona una reserva", color = TextSecondary) },
+                    placeholder = { Text(stringResource(R.string.selecciona_una_reserva), color = TextSecondary) },
                     trailingIcon = {
                         Icon(
                             if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
@@ -497,7 +618,9 @@ fun ReservaSelector(
                             text = {
                                 Column {
                                     Text(
-                                        "${reserva.vehicles?.users?.nombre} - ${reserva.vehicles?.plate}",
+                                        "${reserva.users?.nombre ?: stringResource(R.string.usuario)} - ${reserva.vehicles?.plate ?: stringResource(
+                                            R.string.sin_placa
+                                        )}",
                                         fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
@@ -521,7 +644,12 @@ fun ReservaSelector(
             }
 
             Text(
-                "${reservas.size} reserva${if (reservas.size != 1) "s" else ""} disponible${if (reservas.size != 1) "s" else ""}",
+                stringResource(
+                    R.string.reserva_disponible,
+                    reservas.size,
+                    if (reservas.size != 1) "s" else "",
+                    if (reservas.size != 1) "s" else ""
+                ),
                 fontSize = 12.sp,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 8.dp, start = 4.dp)
@@ -551,7 +679,7 @@ fun EmptyReservasCard() {
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                "No hay reservas disponibles",
+                stringResource(R.string.no_hay_reservas_disponibles),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = WarningOrange,
@@ -559,7 +687,7 @@ fun EmptyReservasCard() {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "No se encontraron reservas activas para este estacionamiento",
+                stringResource(R.string.no_se_encontraron_reservas_activas_para_este_estacionamiento),
                 fontSize = 13.sp,
                 color = TextSecondary,
                 textAlign = TextAlign.Center
@@ -578,8 +706,8 @@ fun PlacaInput(
     OutlinedTextField(
         value = placa,
         onValueChange = onPlacaChange,
-        label = { Text("Placa del vehículo") },
-        placeholder = { Text("Ej: ABC-1234", color = TextSecondary) },
+        label = { Text(stringResource(R.string.placa_del_veh_culo)) },
+        placeholder = { Text(stringResource(R.string.ej_abc_1234), color = TextSecondary) },
         leadingIcon = {
             Icon(
                 Icons.Default.DirectionsCar,
@@ -602,7 +730,7 @@ fun PlacaInput(
 
     if (!enabled) {
         Text(
-            "La placa se completará automáticamente desde la reserva",
+            stringResource(R.string.la_placa_se_completar_autom_ticamente_desde_la_reserva),
             fontSize = 12.sp,
             color = TextSecondary,
             modifier = Modifier.padding(top = 8.dp, start = 4.dp)
@@ -630,7 +758,7 @@ fun FotoSection(
                 Box(modifier = Modifier.fillMaxSize()) {
                     Image(
                         bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "Foto del vehículo",
+                        contentDescription = stringResource(R.string.foto_del_veh_culo),
                         modifier = Modifier.fillMaxSize()
                     )
 
@@ -643,7 +771,7 @@ fun FotoSection(
                     ) {
                         Icon(
                             Icons.Default.Refresh,
-                            contentDescription = "Retomar foto",
+                            contentDescription = stringResource(R.string.retomar_foto),
                             tint = Color.White
                         )
                     }
@@ -681,14 +809,14 @@ fun FotoSection(
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        "Toca para tomar foto",
+                        stringResource(R.string.toca_para_tomar_foto),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
 
                     Text(
-                        "Captura el vehículo completo",
+                        stringResource(R.string.captura_el_veh_culo_completo),
                         fontSize = 13.sp,
                         color = TextSecondary
                     )
@@ -727,11 +855,11 @@ fun ConfirmButton(
                 strokeWidth = 2.dp
             )
             Spacer(Modifier.width(12.dp))
-            Text("Procesando...", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.procesando), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         } else {
             Icon(Icons.Default.Check, contentDescription = null)
             Spacer(Modifier.width(12.dp))
-            Text("Confirmar Entrada", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.confirmar_entrada), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }

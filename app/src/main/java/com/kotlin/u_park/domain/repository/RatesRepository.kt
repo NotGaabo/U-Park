@@ -5,14 +5,14 @@ import com.kotlin.u_park.domain.model.SalidaResponse
 
 interface RatesRepository {
 
-    // RPC functions
-    suspend fun asignarTarifa(garageId: String, vehicleId: String): String
-    suspend fun calcularSalida(parkingId: String): SalidaResponse
+    // RPC PREVIEW (solo lectura)
+    suspend fun calcularSalidaPreview(parkingId: String): SalidaResponse
+    suspend fun confirmarSalida(parkingId: String)
 
     // Vehicle types
     suspend fun getVehicleTypes(): List<Pair<Int, String>>
 
-    // 🔥 ACTUALIZADO: Garages con filtro opcional por userId
+    // Garages
     suspend fun getGarages(userId: String? = null): List<Pair<String, String>>
 
     // Rates CRUD
@@ -22,7 +22,7 @@ interface RatesRepository {
     suspend fun deleteRate(id: String)
     suspend fun toggleActive(id: String, active: Boolean): Rate
 
-    // Helper functions
+    // Helpers
     suspend fun getVehicleNameById(id: String): String
     suspend fun getVehicleIdByPlate(plate: String): String?
     suspend fun getGarageNameById(id: String): String

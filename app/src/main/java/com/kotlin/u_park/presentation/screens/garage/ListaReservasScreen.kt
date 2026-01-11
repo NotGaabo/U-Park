@@ -2,10 +2,13 @@ package com.kotlin.u_park.presentation.screens.garage
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,22 +17,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.repository.GarageRepository
+import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
-
-// Colores del diseño
-private val redPrimary = Color(0xFFE74C3C)
-private val greenSuccess = Color(0xFF27AE60)
-private val orangeWarning = Color(0xFFF39C12)
-private val blueInfo = Color(0xFF3498DB)
-private val grayLight = Color(0xFFF8F9FA)
-private val grayMedium = Color(0xFFECF0F1)
-private val darkText = Color(0xFF2C3E50)
+import com.kotlin.u_park.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -38,9 +37,9 @@ fun ListaReservasScreen(
     viewModel: ParkingViewModel,
     garageId: String,
     userId: String,
-    garageRepository: GarageRepository
+    garageRepository: GarageRepository,
+    navController: NavController
 ) {
-    // 🔥 Ahora sí: reservas con usuario incluido
     val reservas by viewModel.reservasConUsuario.collectAsState()
 
     LaunchedEffect(garageId) {
@@ -48,37 +47,58 @@ fun ListaReservasScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Reservas",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = darkText
-                )
+        containerColor = BackgroundColor,
+        bottomBar = {
+            ModernBottomBarAdmin(
+                selectedIndex = 2,
+                onItemSelected = { index ->
+                    when (index) {
+                        0 -> navController.navigate(Routes.Rates.route)
+                        1 -> navController.navigate(Routes.DuenoGarage.route)
+                        3 -> navController.navigate(Routes.SettingsDueno.route)
+                    }
+                }
             )
-        },
-        containerColor = grayLight
+        }
     ) { padding ->
-        if (reservas.isEmpty()) {
-            EmptyStateReservas(Modifier.padding(padding))
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // Header Section
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.reservas),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        letterSpacing = (-0.5).sp
+                    )
+                    Text(
+                        "${reservas.size} ${if (reservas.size == 1) stringResource(R.string.reserva_activa) else stringResource(
+                            R.string.reservas_activas
+                        )}",
+                        fontSize = 14.sp,
+                        color = TextSecondary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            // Empty State or Reservas List
+            if (reservas.isEmpty()) {
+                item {
+                    EmptyStateReservas()
+                }
+            } else {
                 items(reservas) { reserva ->
-                    ReservaCard(
+                    ModernReservaCard(
                         vehicleId = reserva.vehicles?.plate ?: reserva.vehicle_id ?: "Sin placa",
-                        usuario = reserva.vehicles?.users?.nombre ?: "Usuario desconocido",
+                        usuario = reserva.users?.nombre ?: "Usuario desconocido",
                         estado = reserva.estado ?: "",
                         fecha = reserva.hora_reserva ?: "",
                         onActivar = { reserva.id?.let { viewModel.activarReserva(it) } },
@@ -89,54 +109,70 @@ fun ListaReservasScreen(
         }
     }
 }
+
 @Composable
-private fun EmptyStateReservas(modifier: Modifier = Modifier) {
+private fun EmptyStateReservas() {
     Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 60.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            imageVector = Icons.Outlined.BookmarkBorder,
-            contentDescription = null,
-            modifier = Modifier.size(120.dp),
-            tint = grayMedium
-        )
-        Spacer(Modifier.height(16.dp))
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .background(BackgroundColor, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Outlined.BookmarkBorder,
+                contentDescription = null,
+                modifier = Modifier.size(50.dp),
+                tint = TextSecondary.copy(alpha = 0.5f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         Text(
-            "No hay reservas",
+            stringResource(R.string.sin_reservas_activas),
             fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = darkText.copy(alpha = 0.6f)
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Text(
-            "Las reservas aparecerán aquí",
-            fontSize = 14.sp,
-            color = darkText.copy(alpha = 0.4f)
+            stringResource(R.string.las_reservas_aparecer_n_aqu_cuando_los_usuarios_las_realicen),
+            fontSize = 15.sp,
+            color = TextSecondary,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            lineHeight = 22.sp
         )
     }
 }
 
 @Composable
-fun ReservaCard(
+fun ModernReservaCard(
     vehicleId: String,
     usuario: String,
     estado: String,
     fecha: String,
     onActivar: () -> Unit,
     onCancelar: () -> Unit
-)
- {
-    Card(
+) {
+    Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        color = SurfaceColor,
+        shadowElevation = 2.dp
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header con estado
+            // Header con placa y estado
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -144,46 +180,93 @@ fun ReservaCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.DirectionsCar,
-                        contentDescription = null,
-                        tint = redPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        vehicleId,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = darkText
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(PrimaryRed.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.DirectionsCar,
+                            contentDescription = null,
+                            tint = PrimaryRed,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            vehicleId,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            stringResource(R.string.veh_culo),
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
+                    }
                 }
 
-                EstadoChip(estado)
+                ModernEstadoChip(estado)
             }
 
-            Spacer(Modifier.height(16.dp))
+            Divider(color = BorderColor, thickness = 1.dp)
+
+            // Información del usuario
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Person,
+                    contentDescription = null,
+                    tint = TextSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        stringResource(R.string.cliente),
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+                    Text(
+                        usuario,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                }
+            }
 
             // Información de fecha
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(
                     imageVector = Icons.Outlined.AccessTime,
                     contentDescription = null,
-                    tint = darkText.copy(alpha = 0.6f),
+                    tint = TextSecondary,
                     modifier = Modifier.size(20.dp)
                 )
-                Text(
-                    fecha,
-                    fontSize = 14.sp,
-                    color = darkText.copy(alpha = 0.7f)
-                )
+                Column {
+                    Text(
+                        stringResource(R.string.fecha_de_reserva),
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+                    Text(
+                        fecha,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                }
             }
-
-            Spacer(Modifier.height(20.dp))
 
             // Botones de acción
             Row(
@@ -195,11 +278,11 @@ fun ReservaCard(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = redPrimary
+                        contentColor = PrimaryRed
                     ),
                     border = ButtonDefaults.outlinedButtonBorder.copy(
                         width = 1.5.dp,
-                        brush = androidx.compose.ui.graphics.SolidColor(redPrimary)
+                        brush = androidx.compose.ui.graphics.SolidColor(PrimaryRed)
                     )
                 ) {
                     Icon(
@@ -208,7 +291,7 @@ fun ReservaCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Cancelar", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.cancelar), fontWeight = FontWeight.SemiBold)
                 }
 
                 Button(
@@ -216,7 +299,10 @@ fun ReservaCard(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = greenSuccess
+                        containerColor = SuccessGreen
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 2.dp
                     )
                 ) {
                     Icon(
@@ -225,7 +311,7 @@ fun ReservaCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Activar", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.activar), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -233,20 +319,20 @@ fun ReservaCard(
 }
 
 @Composable
-private fun EstadoChip(estado: String) {
+private fun ModernEstadoChip(estado: String) {
     val (color, icon) = when (estado.lowercase()) {
-        "activa", "activo" -> greenSuccess to Icons.Filled.CheckCircle
-        "pendiente" -> orangeWarning to Icons.Filled.Schedule
-        "cancelada", "cancelado" -> redPrimary to Icons.Filled.Cancel
-        else -> blueInfo to Icons.Filled.Info
+        stringResource(R.string.activa), "activo" -> SuccessGreen to Icons.Filled.CheckCircle
+        stringResource(R.string.pendiente) -> WarningOrange to Icons.Filled.Schedule
+        stringResource(R.string.cancelada), "cancelado" -> PrimaryRed to Icons.Filled.Cancel
+        else -> InfoBlue to Icons.Filled.Info
     }
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = color.copy(alpha = 0.15f)
+        color = color.copy(alpha = 0.1f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -257,10 +343,102 @@ private fun EstadoChip(estado: String) {
                 modifier = Modifier.size(16.dp)
             )
             Text(
-                estado.capitalize(),
-                fontSize = 12.sp,
+                estado.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                },
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = color
+            )
+        }
+    }
+}
+
+@Composable
+fun ModernBottomBarAdmin(
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = SurfaceColor,
+        shadowElevation = 12.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BottomBarItemAdmin(
+                icon = Icons.Outlined.AttachMoney,
+                selectedIcon = Icons.Default.AttachMoney,
+                label = stringResource(R.string.tarifas),
+                isSelected = selectedIndex == 0,
+                onClick = { onItemSelected(0) }
+            )
+            BottomBarItemAdmin(
+                icon = Icons.Outlined.Dashboard,
+                selectedIcon = Icons.Default.Dashboard,
+                label = stringResource(R.string.dashboard),
+                isSelected = selectedIndex == 1,
+                onClick = { onItemSelected(1) }
+            )
+            BottomBarItemAdmin(
+                icon = Icons.Outlined.BookmarkBorder,
+                selectedIcon = Icons.Default.Bookmark,
+                label = stringResource(R.string.reservas2),
+                isSelected = selectedIndex == 2,
+                onClick = { onItemSelected(2) }
+            )
+            BottomBarItemAdmin(
+                icon = Icons.Outlined.Person,
+                selectedIcon = Icons.Default.Person,
+                label = stringResource(R.string.perfil),
+                isSelected = selectedIndex == 3,
+                onClick = { onItemSelected(3) }
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomBarItemAdmin(
+    icon: ImageVector,
+    selectedIcon: ImageVector,
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val animatedColor by animateColorAsState(
+        targetValue = if (isSelected) PrimaryRed else TextSecondary,
+        animationSpec = tween(300)
+    )
+
+    Surface(
+        onClick = onClick,
+        color = Color.Transparent,
+        modifier = Modifier.size(64.dp, 56.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(
+                if (isSelected) selectedIcon else icon,
+                contentDescription = label,
+                tint = animatedColor,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                label,
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = animatedColor
             )
         }
     }
