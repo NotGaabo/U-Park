@@ -18,6 +18,10 @@ import com.kotlin.u_park.presentation.utils.PdfGenerator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import com.kotlin.u_park.data.remote.SessionManager
+import com.kotlin.u_park.data.remote.supabase
+import com.kotlin.u_park.domain.model.Rate
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.rpc
 import java.io.File
 import java.time.OffsetDateTime
 
@@ -29,6 +33,41 @@ class ParkingViewModel(
 
     private val _ticket = MutableStateFlow<ParkingTicket?>(null)
     val ticket = _ticket.asStateFlow()
+
+    private val _rates = MutableStateFlow<List<Rate>>(emptyList())
+    val rates = _rates.asStateFlow()
+
+    private val _selectedRate = MutableStateFlow<Rate?>(null)
+    val selectedRate = _selectedRate.asStateFlow()
+
+    fun loadRatesByGarage(garageId: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+
+                val result = supabase.postgrest
+                    .rpc(
+                        "get_active_rates_by_garage",
+                        mapOf("p_garage_id" to garageId)
+                    )
+                    .decodeList<Rate>()
+
+                _rates.value = result
+
+            } catch (e: Exception) {
+                _message.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+
+    fun selectRate(rate: Rate) {
+        _selectedRate.value = rate
+    }
+
+
 
     private val _reservasConUsuario = MutableStateFlow<List<ReservaConUsuario>>(emptyList())
     val reservasConUsuario = _reservasConUsuario.asStateFlow()
@@ -44,11 +83,53 @@ class ParkingViewModel(
 
     private val _message = MutableStateFlow<String?>(null)
     val message = _message.asStateFlow()
+
     private val _historial = MutableStateFlow<List<HistorialParking>>(emptyList())
     val historial = _historial.asStateFlow()
 
     private val _parkingActivo = MutableStateFlow<HistorialParking?>(null)
     val parkingActivo = _parkingActivo.asStateFlow()
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun registrarSalidaConPago(
+        parkingId: String,
+        metodoPago: String,
+        comprobanteBytes: ByteArray?
+    ) {
+        viewModelScope.launch {
+            try {
+                if (metodoPago == "TRANSFERENCIA" && comprobanteBytes == null) {
+                    _message.value = "Debe adjuntar comprobante de transferencia"
+                    return@launch
+                }
+
+                _isLoading.value = true
+
+                val horaSalida = OffsetDateTime.now().toString()
+                val empleadoId = sessionManager.getUserId()!!
+
+                println("🔥 CONFIRMANDO SALIDA REAL")
+                println("parkingId=$parkingId | empleado=$empleadoId")
+
+                repository.registrarSalidaConPago(
+                    parkingId = parkingId,
+                    horaSalida = horaSalida,
+                    empleadoId = empleadoId,
+                    metodoPago = metodoPago,
+                    comprobanteBytes = comprobanteBytes
+                )
+
+                actualizarVehiculosDentro()
+
+                _message.value = "Salida registrada y pagada correctamente ✅"
+
+            } catch (e: Exception) {
+                _message.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 
     fun cargarHistorial(userId: String) {
         viewModelScope.launch {
@@ -72,15 +153,22 @@ class ParkingViewModel(
 
     fun actualizarVehiculosDentro() {
         viewModelScope.launch {
-            val dentro = repository.getVehiculosDentro()
-            _vehiculosDentro.value = dentro.mapNotNull { it.vehicles?.plate }
+            try {
+                val dentro = repository.getVehiculosDentro()
+                _vehiculosDentro.value = dentro.mapNotNull { it.vehicles?.plate }
+                println("🔄 Vehículos dentro actualizados: ${_vehiculosDentro.value.size}")
+            } catch (e: Exception) {
+                println("🔥 Error actualizando vehículos: ${e.message}")
+            }
         }
     }
+
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun crearReserva(
         garageId: String,
-        vehicleId: String,   // este SÍ es UUID
+        vehicleId: String,
         fecha: String,
         userId: String
     ) {
@@ -90,7 +178,7 @@ class ParkingViewModel(
 
                 val reserva = Reserva(
                     garage_id = garageId,
-                    vehicle_id = vehicleId,   // UUID
+                    vehicle_id = vehicleId,
                     hora_reserva = fecha,
                     estado = "pendiente",
                     empleado_id = userId
@@ -108,12 +196,12 @@ class ParkingViewModel(
     }
 
 
-    // ---------------------------------------------------------
     @RequiresApi(Build.VERSION_CODES.O)
     fun registrarEntrada(
         garageId: String,
         vehiclePlate: String,
         empleadoId: String,
+        rateId: String,
         fotosBytes: List<ByteArray>
     ) {
         viewModelScope.launch {
@@ -122,25 +210,23 @@ class ParkingViewModel(
 
                 println("🚗 registrando entrada, placa=$vehiclePlate")
 
-                // 1️⃣ Buscar UUID por placa
                 val vehicleUuid = repository.getVehicleIdByPlate(vehiclePlate)
                 if (vehicleUuid == null) {
                     _message.value = "No existe un vehículo con esa placa"
                     return@launch
                 }
 
-                // 2️⃣ Validar si ya está dentro
                 if (repository.estaVehiculoDentro(vehicleUuid)) {
                     _message.value = "El vehículo ya está dentro"
                     return@launch
                 }
 
-                // 3️⃣ Construir Parking
                 val hora = OffsetDateTime.now().toString()
                 val parking = Parking(
                     id = null,
                     garage_id = garageId,
-                    vehicle_id = vehicleUuid,  // ← UUID correcto
+                    vehicle_id = vehicleUuid,
+                    rate_id = rateId,
                     created_by_user_id = empleadoId,
                     hora_entrada = hora,
                     tipo = "entrada",
@@ -148,10 +234,8 @@ class ParkingViewModel(
                     fotos = emptyList()
                 )
 
-                // 4️⃣ Registrar en Supabase
                 val created = repository.registrarEntrada(parking, fotosBytes)
 
-                // 5️⃣ Ticket
                 _ticket.value = ParkingTicket(
                     plate = vehiclePlate,
                     horaEntrada = created.hora_entrada,
@@ -161,6 +245,10 @@ class ParkingViewModel(
                 )
 
                 _message.value = "Entrada registrada correctamente"
+
+                // Actualizar listas
+                actualizarVehiculosDentro()
+                loadActividad(garageId)
 
             } catch (e: Exception) {
                 _message.value = e.message
@@ -175,7 +263,6 @@ class ParkingViewModel(
     }
 
 
-    // ---------------------------------------------------------
     fun loadReservasConUsuario(garageId: String) {
         viewModelScope.launch {
             try {
@@ -183,7 +270,7 @@ class ParkingViewModel(
                 val lista = repository.getReservasConUsuario(garageId)
 
                 _reservasConUsuario.value = lista.filter { r ->
-                    r.estado == "pendiente"     // SOLO reservas pendientes
+                    r.estado == "pendiente"
                 }
 
             } catch (e: Exception) {
@@ -202,32 +289,25 @@ class ParkingViewModel(
             try {
                 _isLoading.value = true
 
-                // 🔥 UUID REAL DEL VEHÍCULO (NO LA PLACA)
                 val vehicleUuid = reserva.vehicle_id ?: run {
                     _message.value = "La reserva no tiene un vehículo válido"
                     return@launch
                 }
 
-                // ✔ Verificar duplicados con UUID
                 if (repository.estaVehiculoDentro(vehicleUuid)) {
                     _message.value = "Este vehículo ya está dentro."
                     return@launch
                 }
 
-                // Registrar entrada
                 val created = repository.registrarEntradaDesdeReserva(
                     reserva,
                     fotosBytes,
                     empleadoId
                 )
 
-                // Actualizar empleado
                 reservasRepository.actualizarEmpleadoReserva(reserva.id!!, empleadoId)
-
-                // Consumir la reserva
                 reservasRepository.cancelarReserva(reserva.id!!)
 
-                // Ticket final
                 _ticket.value = ParkingTicket(
                     plate = reserva.vehicles?.plate ?: "",
                     horaEntrada = created.hora_entrada,
@@ -238,7 +318,6 @@ class ParkingViewModel(
 
                 _message.value = "Entrada registrada desde reserva"
 
-                // Recargar lista
                 loadReservasConUsuario(created.garage_id!!)
 
             } catch (e: Exception) {
@@ -249,7 +328,6 @@ class ParkingViewModel(
         }
     }
 
-    // -------------------
     @RequiresApi(Build.VERSION_CODES.O)
     fun registrarSalida(parkingId: String) {
         viewModelScope.launch {
@@ -260,7 +338,6 @@ class ParkingViewModel(
                 val empleadoId = sessionManager.getUserId()!!
 
                 println("📤 Registrando salida → parkingId=$parkingId, empleadoId=$empleadoId")
-                println("🔍 empleadoId enviado realmente = '$empleadoId'")
 
                 repository.registrarSalida(
                     parkingId = parkingId,
@@ -269,16 +346,18 @@ class ParkingViewModel(
                 )
 
                 actualizarVehiculosDentro()
+
                 _message.value = "Salida registrada correctamente"
 
             } catch (e: Exception) {
-                println("🔥 Error salida VM: ${e.message}")
-                _message.value = e.message ?: "Error desconocido"
-            } finally {
+                _message.value = e.message
+            }
+             finally {
                 _isLoading.value = false
             }
         }
     }
+
     fun cancelarReserva(id: String) {
         viewModelScope.launch {
             try {
@@ -306,14 +385,16 @@ class ParkingViewModel(
     fun loadActividad(garageId: String) {
         viewModelScope.launch {
             try {
-                _actividad.value = repository.getActividadReciente(garageId)
+                val actividadLista = repository.getActividadReciente(garageId)
+                _actividad.value = actividadLista
+                println("🔄 Actividad recargada: ${actividadLista.size} registros")
             } catch (e: Exception) {
                 _message.value = e.message
+                println("🔥 Error cargando actividad: ${e.message}")
             }
         }
     }
 
-    // ---------------------------------------------------------
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun generarPdf(ctx: Context, salida: SalidaResponse, vehiculoNombre: String, garageNombre: String): File {
         return PdfGenerator.generateFacturaSalida(
@@ -322,5 +403,10 @@ class ParkingViewModel(
             vehiculoNombre = vehiculoNombre,
             garageNombre = garageNombre
         )
+    }
+
+    // 🔥 Función para limpiar mensajes
+    fun clearMessage() {
+        _message.value = null
     }
 }

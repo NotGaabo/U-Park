@@ -2,6 +2,9 @@ package com.kotlin.u_park.presentation.screens.employee
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,13 +13,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,11 +31,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
+import com.kotlin.u_park.presentation.screens.profile.BottomBarItemModern
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import com.kotlin.u_park.ui.theme.*
 
-private val RedSoft = Color(0xFFE60023)
-private val BackgroundColor = Color(0xFFF5F5F5)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,47 +48,31 @@ fun EmployeeHomeScreen(
     garageId: String,
     parkingId: String?,
     viewModel: EmpleadosViewModel,
-    parkingViewModel: ParkingViewModel   // 🔥 SE AGREGA ESTO
+    parkingViewModel: ParkingViewModel
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
-
     val empleados by viewModel.empleados.collectAsState()
     val actividadReciente by parkingViewModel.actividad.collectAsState()
-    // 🔥 Recargar actividad al volver a la pantalla
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    // Auto-refresh cuando vuelve la pantalla
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                println("🔄 EmployeeHomeScreen ON_RESUME → refrescando actividad...")
                 parkingViewModel.loadActividad(garageId)
                 viewModel.loadStats(garageId)
             }
         }
-
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val isLoading by viewModel.isLoading.collectAsState()
     val stats by viewModel.stats.collectAsState()
-    val totalEmpleados = empleados.size
     val autosActivos = stats?.autosActivos ?: 0
     val espaciosLibres = stats?.espaciosLibres ?: 0
     val entradasHoy = stats?.entradasHoy ?: 0
     val salidasHoy = stats?.salidasHoy ?: 0
-    LaunchedEffect(garageId) {
-        garageId?.let {
-            viewModel.loadEmpleados(it)
-            viewModel.loadStats(it)
-            parkingViewModel.loadActividad(it)  // 🔥 AQUI SE CARGA LA ACTIVIDAD REAL
-        }
-    }
 
-
-    // Cargar datos al iniciar
     LaunchedEffect(garageId) {
         viewModel.loadEmpleados(garageId)
         viewModel.loadStats(garageId)
@@ -87,111 +80,39 @@ fun EmployeeHomeScreen(
     }
 
     Scaffold(
+        containerColor = BackgroundColor,
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(
-                            "U-Park Employee",
+                            stringResource(R.string.panel_de_control),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                            fontSize = 24.sp,
+                            color = TextPrimary
                         )
                         Text(
-                            "Panel de Control",
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.8f)
+                            getCurrentGreeting(),
+                            fontSize = 14.sp,
+                            color = TextSecondary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = RedSoft,
-                    titleContentColor = Color.White
-                ),
-                actions = {
-                    IconButton(onClick = { /* Notificaciones */ }) {
-                        if (totalEmpleados > 0) {
-                            Badge(
-                                containerColor = Color(0xFFFFD700)
-                            ) {
-                                Text("$totalEmpleados", color = Color.Black, fontSize = 10.sp)
-                            }
-                        }
-                        Icon(
-                            Icons.Default.Notifications,
-                            contentDescription = "Notificaciones",
-                            tint = Color.White
-                        )
-                    }
-                }
+                    containerColor = SurfaceColor
+                )
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = {
-                        Icon(
-                            Icons.Default.Home,
-                            null,
-                            tint = if (selectedTab == 0) RedSoft else Color.Gray
-                        )
-                    },
-                    label = {
-                        Text(
-                            "Home",
-                            color = if (selectedTab == 0) RedSoft else Color.Gray
-                        )
+            ModernBottomBarEmployee(
+                selectedIndex = 0,
+                onItemSelected = { index ->
+                    when (index) {
+                        1 -> navController.navigate(Routes.VehiculosDentro.createRoute(garageId))
+                        2 -> navController.navigate(Routes.EmployeeSettings.route)
                     }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = {
-                        selectedTab = 1
-                        navController.navigate(
-                            Routes.VehiculosDentro.createRoute(garageId)
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            Icons.Default.DirectionsCar,
-                            null,
-                            tint = if (selectedTab == 1) RedSoft else Color.Gray
-                        )
-                    },
-                    label = {
-                        Text(
-                            "Vehículos",
-                            color = if (selectedTab == 1) RedSoft else Color.Gray
-                        )
-                    }
-                )
-
-
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = {
-                        selectedTab = 1
-                        navController.navigate(Routes.EmployeeSettings.route)
-                    },
-                    icon = {
-                        Icon(
-                            Icons.Default.Person,
-                            null,
-                            tint = if (selectedTab == 1) RedSoft else Color.Gray
-                        )
-                    },
-                    label = {
-                        Text(
-                            "Perfil",
-                            color = if (selectedTab == 1) RedSoft else Color.Gray
-                        )
-                    }
-                )
-            }
+                }
+            )
         }
     ) { padding ->
         Box(
@@ -201,46 +122,30 @@ fun EmployeeHomeScreen(
                 .padding(padding)
         ) {
             if (isLoading) {
-                // Estado de carga
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(
-                            color = RedSoft,
-                            strokeWidth = 3.dp,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            "Cargando datos...",
-                            color = Color.Gray,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
+                LoadingState()
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    contentPadding = PaddingValues(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // Saludo personalizado
+                    // Hero Card con estadísticas principales
                     item {
-                        GreetingCard(
-                            empleadoNombre = empleados.firstOrNull()?.users?.nombre ?: "Empleado"
+                        HeroStatsCard(
+                            autosActivos = autosActivos,
+                            espaciosLibres = espaciosLibres,
+                            entradasHoy = entradasHoy,
+                            salidasHoy = salidasHoy
                         )
                     }
 
-                    // Estadísticas principales
+                    // Stats Grid
                     item {
                         Text(
-                            "Estadísticas de Hoy",
+                            stringResource(R.string.estad_sticas_en_tiempo_real),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1A1A),
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            color = TextPrimary
                         )
                     }
 
@@ -249,18 +154,18 @@ fun EmployeeHomeScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            StatCard(
+                            ModernStatCard(
                                 icon = Icons.Default.DirectionsCar,
-                                title = "Autos Dentro",
+                                title = "Dentro",
                                 value = autosActivos.toString(),
-                                color = Color(0xFF4CAF50),
+                                color = SuccessGreen,
                                 modifier = Modifier.weight(1f)
                             )
-                            StatCard(
+                            ModernStatCard(
                                 icon = Icons.Default.CheckCircle,
-                                title = "Espacios Libres",
+                                title = "Libres",
                                 value = espaciosLibres.toString(),
-                                color = Color(0xFF2196F3),
+                                color = InfoBlue,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -271,81 +176,118 @@ fun EmployeeHomeScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            StatCard(
-                                icon = Icons.Default.ArrowUpward,
+                            ModernStatCard(
+                                icon = Icons.Default.Login,
                                 title = "Entradas",
                                 value = entradasHoy.toString(),
-                                color = Color(0xFFFF9800),
+                                color = WarningOrange,
                                 modifier = Modifier.weight(1f)
                             )
-                            StatCard(
-                                icon = Icons.Default.ArrowDownward,
+                            ModernStatCard(
+                                icon = Icons.Default.Logout,
                                 title = "Salidas",
                                 value = salidasHoy.toString(),
-                                color = RedSoft,
+                                color = PrimaryRed,
                                 modifier = Modifier.weight(1f)
                             )
                         }
                     }
 
-                    // Información del equipo
-                    if (empleados.isNotEmpty()) {
-                        item {
+                    // Acción rápida destacada
+                    item {
+                        Card(
+                            onClick = { navController.navigate(Routes.RegistrarEntrada.createRoute(garageId)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = PrimaryRed
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .background(
+                                            Color.White.copy(alpha = 0.2f),
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.AddCircle,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(20.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        stringResource(R.string.registrar_entrada),
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        stringResource(R.string.toca_para_registrar_un_nuevo_veh_culo),
+                                        fontSize = 13.sp,
+                                        color = Color.White.copy(alpha = 0.9f)
+                                    )
+                                }
+                                Icon(
+                                    Icons.Default.ArrowForward,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    // Actividad Reciente
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                "Equipo de Trabajo",
+                                stringResource(R.string.actividad_reciente),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1A1A1A),
-                                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                                color = TextPrimary
                             )
+                            TextButton(
+                                onClick = { navController.navigate(Routes.VehiculosDentro.createRoute(garageId)) }
+                            ) {
+                                Text(stringResource(R.string.ver_todo), color = PrimaryRed)
+                            }
                         }
-
-                        item {
-                            TeamCard(totalEmpleados = totalEmpleados)
-                        }
                     }
 
-                    /* =======================================================
- * 🔥 ACTIVIDAD RECIENTE CORREGIDA Y OPTIMIZADA
- * ======================================================= */
-                    item {
-                        Text(
-                            "Actividad Reciente",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1A1A),
-                            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
-                        )
-                    }
-
-                    val actividadOrdenada = actividadReciente.sortedByDescending { act ->
-                        act.hora_salida ?: act.hora_entrada ?: ""
-                    }
+                    val actividadOrdenada = actividadReciente
+                        .sortedByDescending { it.hora_salida ?: it.hora_entrada ?: "" }
+                        .take(5)
 
                     if (actividadOrdenada.isEmpty()) {
-
                         item {
-                            EmptyStateCard(
-                                message = "No hay actividad reciente",
-                                icon = Icons.Default.Info
-                            )
+                            EmptyActivityState()
                         }
-
                     } else {
-
                         items(actividadOrdenada) { item ->
-
                             val plate = item.vehicles?.plate ?: "Desconocido"
                             val isEntry = item.tipo == "entrada"
-
-                            // Determinar hora correcta según sea entrada o salida:
                             val hora = when {
                                 item.hora_salida != null -> formatearHora(item.hora_salida!!)
                                 item.hora_entrada != null -> formatearHora(item.hora_entrada!!)
                                 else -> "--"
                             }
-
-                            ActivityItem(
+                            ModernActivityItem(
                                 plate = plate,
                                 action = if (isEntry) "Entrada" else "Salida",
                                 time = hora,
@@ -354,31 +296,8 @@ fun EmployeeHomeScreen(
                         }
                     }
 
-                    // Acciones rápidas
-                    item {
-                        Text(
-                            "Acciones Rápidas",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1A1A),
-                            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
-                        )
-                    }
-
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            QuickActionCard(
-                                icon = Icons.Default.Add,
-                                title = "Registrar Entrada",
-                                color = Color(0xFF4CAF50),
-                                modifier = Modifier.weight(1f),
-                                onClick = { navController.navigate(Routes.RegistrarEntrada.createRoute(garageId ?: "")) }
-                            )
-                        }
-                    }
+                    // Espacio inferior
+                    item { Spacer(Modifier.height(20.dp)) }
                 }
             }
         }
@@ -386,216 +305,147 @@ fun EmployeeHomeScreen(
 }
 
 @Composable
-fun GreetingCard(empleadoNombre: String) {
+fun HeroStatsCard(
+    autosActivos: Int,
+    espaciosLibres: Int,
+    entradasHoy: Int,
+    salidasHoy: Int
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = SurfaceColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    brush = Brush.horizontalGradient(
+                    brush = Brush.verticalGradient(
                         colors = listOf(
-                            RedSoft.copy(alpha = 0.1f),
-                            Color.White
+                            LightRed,
+                            SurfaceColor
                         )
                     )
                 )
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(24.dp)
         ) {
-            Surface(
-                modifier = Modifier.size(60.dp),
-                shape = CircleShape,
-                color = RedSoft.copy(alpha = 0.2f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = RedSoft,
-                        modifier = Modifier.size(32.dp)
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(PrimaryRed.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Dashboard,
+                            contentDescription = null,
+                            tint = PrimaryRed,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            stringResource(R.string.estado_del_parqueo),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextSecondary
+                        )
+                        Text(
+                            stringResource(R.string.resumen_de_hoy),
+                            fontSize = 14.sp,
+                            color = TextSecondary.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    QuickStat(
+                        value = autosActivos.toString(),
+                        label = "Activos",
+                        color = SuccessGreen
+                    )
+                    VerticalDivider(
+                        modifier = Modifier
+                            .height(50.dp)
+                            .width(1.dp),
+                        color = BorderColor
+                    )
+                    QuickStat(
+                        value = espaciosLibres.toString(),
+                        label = "Disponibles",
+                        color = InfoBlue
+                    )
+                    VerticalDivider(
+                        modifier = Modifier
+                            .height(50.dp)
+                            .width(1.dp),
+                        color = BorderColor
+                    )
+                    QuickStat(
+                        value = (entradasHoy + salidasHoy).toString(),
+                        label = "Movimientos",
+                        color = WarningOrange
                     )
                 }
-            }
-
-            Spacer(Modifier.width(16.dp))
-
-            Column {
-                Text(
-                    "¡Hola, $empleadoNombre!",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1A1A)
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Listo para gestionar el parking",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
             }
         }
     }
 }
 
 @Composable
-fun AlertCard(
-    title: String,
-    message: String,
-    icon: ImageVector,
+fun QuickStat(
+    value: String,
+    label: String,
     color: Color
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
-        ),
-        shape = RoundedCornerShape(12.dp)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = color
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    message,
-                    fontSize = 13.sp,
-                    color = Color.Gray
-                )
-            }
-        }
+        Text(
+            value,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Text(
+            label,
+            fontSize = 12.sp,
+            color = TextSecondary,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
 @Composable
-fun TeamCard(totalEmpleados: Int) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(56.dp),
-                shape = CircleShape,
-                color = Color(0xFF6200EA).copy(alpha = 0.15f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Group,
-                        contentDescription = null,
-                        tint = Color(0xFF6200EA),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-
-            Spacer(Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Total de Empleados",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "$totalEmpleados ${if (totalEmpleados == 1) "empleado" else "empleados"}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1A1A)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun EmptyStateCard(
-    message: String,
-    icon: ImageVector
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Surface(
-                modifier = Modifier.size(64.dp),
-                shape = CircleShape,
-                color = Color(0xFFE0E0E0)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-            Text(
-                message,
-                fontSize = 14.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
-fun StatCard(
+fun ModernStatCard(
     icon: ImageVector,
     title: String,
     value: String,
     color: Color,
     modifier: Modifier = Modifier
 ) {
+    val progress by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(1000)
+    )
+
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = SurfaceColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(16.dp)
@@ -603,29 +453,27 @@ fun StatCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(20.dp)
         ) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = CircleShape,
-                color = color.copy(alpha = 0.15f)
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(color.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = color,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
             Text(
                 value,
-                fontSize = 28.sp,
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
@@ -634,99 +482,190 @@ fun StatCard(
 
             Text(
                 title,
-                fontSize = 12.sp,
-                color = Color.Gray,
+                fontSize = 13.sp,
+                color = TextSecondary,
                 fontWeight = FontWeight.Medium
             )
         }
     }
 }
 
-/* ---------- COMPONENTES REUSABLES ---------- */
-
 @Composable
-fun ActivityItem(plate: String, action: String, time: String, isEntry: Boolean) {
+fun ModernActivityItem(
+    plate: String,
+    action: String,
+    time: String,
+    isEntry: Boolean
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = SurfaceColor
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = if (isEntry) Color(0xFF4CAF50).copy(alpha = 0.15f) else RedSoft.copy(alpha = 0.15f)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        if (isEntry) SuccessGreen.copy(alpha = 0.15f)
+                        else PrimaryRed.copy(alpha = 0.15f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = if (isEntry) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                        contentDescription = null,
-                        tint = if (isEntry) Color(0xFF4CAF50) else RedSoft
-                    )
-                }
+                Icon(
+                    if (isEntry) Icons.Default.Login else Icons.Default.Logout,
+                    contentDescription = null,
+                    tint = if (isEntry) SuccessGreen else PrimaryRed,
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
 
-            Column(Modifier.weight(1f)) {
-                Text(plate, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(action, fontSize = 13.sp, color = Color.Gray)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    plate,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+                Text(
+                    action,
+                    fontSize = 13.sp,
+                    color = TextSecondary
+                )
             }
 
-            Text(time, fontSize = 13.sp, color = Color.Gray)
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    time,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextPrimary
+                )
+                Text(
+                    stringResource(R.string.hoy),
+                    fontSize = 12.sp,
+                    color = TextSecondary
+                )
+            }
         }
     }
 }
 
 @Composable
-fun QuickActionCard(
-    icon: ImageVector,
-    title: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
+fun EmptyActivityState() {
     Card(
-        onClick = onClick,
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = color
+            containerColor = SurfaceColor
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(48.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
-
-            Spacer(Modifier.height(8.dp))
-
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .background(Color(0xFFF3F4F6), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = null,
+                    tint = Color(0xFF9CA3AF),
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+            Spacer(Modifier.height(16.dp))
             Text(
-                title,
+                stringResource(R.string.sin_actividad_reciente),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = TextPrimary
+            )
+            Text(
+                stringResource(R.string.los_movimientos_aparecer_n_aqu),
                 fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White
+                color = TextSecondary,
+                textAlign = TextAlign.Center
             )
         }
     }
 }
+
+@Composable
+fun ModernBottomBarEmployee(
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = SurfaceColor,
+        shadowElevation = 12.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BottomBarItemModern(
+                icon = Icons.Outlined.Home,
+                selectedIcon = Icons.Default.Home,
+                label = "Home",
+                isSelected = selectedIndex == 0,
+                onClick = { onItemSelected(0) }
+            )
+            BottomBarItemModern(
+                icon = Icons.Outlined.DirectionsCar,
+                selectedIcon = Icons.Default.DirectionsCar,
+                label = "Vehículos",
+                isSelected = selectedIndex == 1,
+                onClick = { onItemSelected(1) }
+            )
+            BottomBarItemModern(
+                icon = Icons.Outlined.Person,
+                selectedIcon = Icons.Default.Person,
+                label = "Perfil",
+                isSelected = selectedIndex == 2,
+                onClick = { onItemSelected(2) }
+            )
+        }
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatearHora(fecha: String): String {
     return try {
         val dt = java.time.OffsetDateTime.parse(fecha)
-        dt.toLocalTime().toString().substring(0,5) // 14:10
+        dt.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"))
     } catch (_: Exception) {
-        fecha
+        fecha.take(5)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getCurrentGreeting(): String {
+    val hour = LocalTime.now().hour
+    return when (hour) {
+        in 0..11 -> "Buenos días"
+        in 12..17 -> "Buenas tardes"
+        else -> "Buenas noches"
     }
 }

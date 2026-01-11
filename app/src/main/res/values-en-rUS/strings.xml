@@ -1,0 +1,471 @@
+<resources>
+    <string name="app_name">U-park</string>
+    <string name="correo_electr_nico" translatable="false">Email</string>
+    <string name="contrase_a" translatable="false">Password</string>
+    <string name="iniciar_sesi_n" translatable="false">Sign in</string>
+    <string name="olvidaste_tu_contrase_a" translatable="false">Forgot your password?</string>
+    <string name="crear_nueva_cuenta" translatable="false">Create new account</string>
+    <string name="siguiente" translatable="false">Next</string>
+    <string name="crear_cuenta" translatable="false">Create account</string>
+    <string name="ya_tienes_cuenta_inicia_sesi_n" translatable="false">Already have an account? Sign in</string>
+    <string name="volver_al_paso_anterior" translatable="false">Go back to previous step</string>
+    <string name="ingresa_tus_datos_personales" translatable="false">Enter your personal information</string>
+    <string name="nombre_completo" translatable="false">Full name</string>
+    <string name="nombre_de_usuario" translatable="false">Username</string>
+    <string name="c_dula" translatable="false">ID number</string>
+    <string name="tel_fono" translatable="false">Phone</string>
+    <string name="correo_electr_nico2" translatable="false">Email</string>
+    <string name="configura_tu_contrase_a" translatable="false">Set up your password</string>
+    <string name="contrase_a2" translatable="false">Password</string>
+    <string name="m_nimo_8_caracteres" translatable="false">Minimum 8 characters</string>
+    <string name="al_menos_una_may_scula" translatable="false">At least one uppercase letter</string>
+    <string name="al_menos_un_n_mero" translatable="false">At least one number</string>
+    <string name="un_car_cter_especial" translatable="false"><![CDATA[One special character (!@#$%&)]]></string>
+    <string name="detalles_del_garage" translatable="false">Garage Details</string>
+    <string name="garage_no_encontrado" translatable="false">Garage not found</string>
+    <string name="volver" translatable="false">Go back</string>
+    <string name="sin_nombre" translatable="false">No name</string>
+    <string name="sin_direcci_n" translatable="false">No address</string>
+    <string name="horario" translatable="false">Schedule</string>
+    <string name="no_especificado" translatable="false">Not specified</string>
+    <string name="reservar" translatable="false">Reserve</string>
+    <string name="suscribirse" translatable="false">Subscribe</string>
+    <string name="ir_al_garage" translatable="false">Go to garage</string>
+    <string name="espacios_disponibles" translatable="false">Available Spaces</string>
+    <string name="agregar_empleado" translatable="false">Add Employee</string>
+    <string name="nuevo_empleado" translatable="false">New Employee</string>
+    <string name="ingresa_la_c_dula_del_empleado_para_agregarlo_al_garage" translatable="false">Enter the employees ID number to add them to the garage</string>
+    <string name="c_dula_del_empleado" translatable="false">Employee ID Number</string>
+    <string name="ej_40212345678" translatable="false">Ex: 40212345678</string>
+    <string name="agregar_empleado2" translatable="false">Add Employee</string>
+    <string name="cancelar" translatable="false">Cancel</string>
+    <string name="empleados" translatable="false">Employees</string>
+    <string name="empleado_registrado" translatable="false">registered employee</string>
+    <string name="empleados_registrados" translatable="false">registered employees</string>
+    <string name="tu_equipo" translatable="false">Your Team</string>
+    <string name="resumen_del_equipo" translatable="false">Team Summary</string>
+    <string name="empleados2" translatable="false">Employees</string>
+    <string name="activos" translatable="false">Active</string>
+    <string name="registrados" translatable="false">Registered</string>
+    <string name="nombre_no_disponible" translatable="false">Name not available</string>
+    <string name="activo" translatable="false">Active</string>
+    <string name="eliminar_empleado" translatable="false">Remove employee</string>
+    <string name="confirmar_eliminaci_n" translatable="false">Confirm Removal</string>
+    <string name="est_s_seguro_de_que_deseas_eliminar_a_esta_acci_n_no_se_puede_deshacer" translatable="false">Are you sure you want to remove %1$s? This action cannot be undone.</string>
+    <string name="este_empleado" translatable="false">this employee</string>
+    <string name="eliminar" translatable="false">Remove</string>
+    <string name="cancelar2" translatable="false">Cancel</string>
+    <string name="no_hay_empleados_registrados" translatable="false">No registered employees</string>
+    <string name="agrega_tu_primer_empleado_para_comenzar_a_gestionar_tu_equipo" translatable="false">Add your first employee to\nstart managing your team</string>
+    <string name="agregar_empleado3" translatable="false">Add Employee</string>
+    <string name="cargando_empleados" translatable="false">Loading employees...</string>
+    <string name="panel_de_control" translatable="false">Control Panel</string>
+    <string name="estad_sticas_en_tiempo_real" translatable="false">Real-Time Statistics</string>
+    <string name="registrar_entrada" translatable="false">Register Entry</string>
+    <string name="toca_para_registrar_un_nuevo_veh_culo" translatable="false">Tap to register a new vehicle</string>
+    <string name="actividad_reciente" translatable="false">Recent Activity</string>
+    <string name="ver_todo" translatable="false">View all</string>
+    <string name="estado_del_parqueo" translatable="false">Parking Status</string>
+    <string name="resumen_de_hoy" translatable="false">Todays Summary</string>
+    <string name="hoy" translatable="false">Today</string>
+    <string name="sin_actividad_reciente" translatable="false">No recent activity</string>
+    <string name="los_movimientos_aparecer_n_aqu" translatable="false">Movements will appear here</string>
+    <string name="registrar_entrada2" translatable="false">Register Entry</string>
+    <string name="gesti_n_de_acceso_vehicular" translatable="false">Vehicle access management</string>
+    <string name="tipo_de_entrada" translatable="false">Entry Type</string>
+    <string name="reserva" translatable="false">Reservation</string>
+    <string name="seleccionar_reserva" translatable="false">Select Reservation</string>
+    <string name="placa_del_veh_culo" translatable="false">Vehicle License Plate</string>
+    <string name="seleccionar_tarifa" translatable="false">Select Rate</string>
+    <string name="fotograf_a_del_veh_culo" translatable="false">Vehicle Photo</string>
+    <string name="tarifa" translatable="false">Rate</string>
+    <string name="selecciona_una_tarifa" translatable="false">Select a rate</string>
+    <string name="horario2" translatable="false">"Schedule: "</string>
+    <string name="no_hay_tarifas_activas_para_este_garaje" translatable="false">No active rates for this garage</string>
+    <string name="entrada_normal" translatable="false">Regular Entry</string>
+    <string name="sin_reserva_previa" translatable="false">No prior reservation</string>
+    <string name="normal" translatable="false">Regular</string>
+    <string name="entrada_por_reserva" translatable="false">Reservation Entry</string>
+    <string name="con_reserva_confirmada" translatable="false">With confirmed reservation</string>
+    <string name="selecciona_una_reserva" translatable="false">Select a reservation</string>
+    <string name="usuario" translatable="false">User</string>
+    <string name="sin_placa" translatable="false">No plate</string>
+    <string name="reserva_disponible" translatable="false">%1$d available reservation%2$s%3$s</string>
+    <string name="no_hay_reservas_disponibles" translatable="false">No reservations available</string>
+    <string name="no_se_encontraron_reservas_activas_para_este_estacionamiento" translatable="false">No active reservations found for this parking lot</string>
+    <string name="ej_abc_1234" translatable="false">Ex: ABC-1234</string>
+    <string name="la_placa_se_completar_autom_ticamente_desde_la_reserva" translatable="false">The plate will be automatically filled from the reservation</string>
+    <string name="foto_del_veh_culo" translatable="false">Vehicle photo</string>
+    <string name="retomar_foto" translatable="false">Retake photo</string>
+    <string name="toca_para_tomar_foto" translatable="false">Tap to take photo</string>
+    <string name="captura_el_veh_culo_completo" translatable="false">Capture the complete vehicle</string>
+    <string name="procesando" translatable="false">Processing...</string>
+    <string name="confirmar_entrada" translatable="false">Confirm Entry</string>
+    <string name="ticket_de_salida" translatable="false">Exit Ticket</string>
+    <string name="cargando_ticket" translatable="false">Loading ticket...</string>
+    <string name="error" translatable="false">Error</string>
+    <string name="error_desconocido" translatable="false">Unknown error</string>
+    <string name="veh_culo" translatable="false">Vehicle</string>
+    <string name="garage" translatable="false">Garage</string>
+    <string name="confirmar_salida" translatable="false">Confirm Exit</string>
+    <string name="generar_comprobante" translatable="false">Generate Receipt</string>
+    <string name="ve" translatable="false">Vehicle</string>
+    <string name="garag" translatable="false">Garage</string>
+    <string name="compartir" translatable="false">Share</string>
+    <string name="descargar" translatable="false">Download</string>
+    <string name="transfer" translatable="false">transfer</string>
+    <string name="efectivo" translatable="false">CASH</string>
+    <string name="cash" translatable="false">cash</string>
+    <string name="transfer2" translatable="false">transfer</string>
+    <string name="transferencia" translatable="false">TRANSFER</string>
+    <string name="permiso_requerido" translatable="false">Permission required</string>
+    <string name="se_necesita_acceso_a_la_c_mara_para_tomar_la_foto_del_comprobante" translatable="false">Camera access is needed to take the receipt photo.</string>
+    <string name="entendido" translatable="false">Understood</string>
+    <string name="salida_registrada" translatable="false">Exit Registered</string>
+    <string name="la_salida_ha_sido_registrada_y_pagada_correctamente" translatable="false">The exit has been registered and paid correctly.</string>
+    <string name="aceptar" translatable="false">Accept</string>
+    <string name="seleccionar_m_todo_de_pago" translatable="false">Select Payment Method</string>
+    <string name="efectivo2" translatable="false">Cash</string>
+    <string name="cash2" translatable="false">cash</string>
+    <string name="transferencia2" translatable="false">Transfer</string>
+    <string name="transfer3" translatable="false">transfer</string>
+    <string name="transfer4" translatable="false">transfer</string>
+    <string name="cash5" translatable="false">cash</string>
+    <string name="transfer6" translatable="false">transfer</string>
+    <string name="confirmar_pago" translatable="false">Confirm Payment</string>
+    <string name="cancelar3" translatable="false">Cancel</string>
+    <string name="informaci_n_del_veh_culo" translatable="false">Vehicle Information</string>
+    <string name="horarios" translatable="false">Schedules</string>
+    <string name="entrada" translatable="false">Entry</string>
+    <string name="salida" translatable="false">Exit</string>
+    <string name="duraci_n" translatable="false">Duration</string>
+    <string name="total_a_pagar" translatable="false">Total to Pay</string>
+    <string name="rd" translatable="false">RD$ %1$s</string>
+    <string name="no_se_encontraron_veh_culos_con_la_placa" translatable="false">No vehicles found with plate \"%1$s\"</string>
+    <string name="sin_resultados" translatable="false">No results</string>
+    <string name="los_veh_culos_aparecer_n_aqu_cuando_ingresen_al_parking" translatable="false">Vehicles will appear here when they enter the parking lot</string>
+    <string name="en_este_momento_no_hay_veh_culos_estacionados_en_el_garage" translatable="false">There are currently no vehicles parked in the garage</string>
+    <string name="no_hay_veh_culos_dentro" translatable="false">No vehicles inside</string>
+    <string name="salida2" translatable="false">Exit</string>
+    <string name="sin_registro" translatable="false">No record</string>
+    <string name="estacionado" translatable="false">Parked</string>
+    <string name="placa" translatable="false">PLATE</string>
+    <string name="activo9" translatable="false">Active</string>
+    <string name="veh_culo3" translatable="false">vehicle</string>
+    <string name="veh_culos" translatable="false">vehicles</string>
+    <string name="resultados_de_b_squeda" translatable="false">Search results</string>
+    <string name="veh_culos_estacionados" translatable="false">Parked Vehicles</string>
+    <string name="de_veh_culos" translatable="false">%1$d of %2$d vehicles</string>
+    <string name="buscar_por_placa" translatable="false">Search by plate...</string>
+    <string name="veh_culo2" translatable="false">vehicle</string>
+    <string name="veh_culos4" translatable="false">vehicles</string>
+    <string name="veh_culos_dentro" translatable="false">Vehicles Inside</string>
+    <string name="ubicaci_n_desconocida" translatable="false">Unknown location</string>
+    <string name="error_obteniendo_direcci_n" translatable="false">Error getting address</string>
+    <string name="no_se_pudo_obtener_ubicaci_n" translatable="false">Could not get location</string>
+    <string name="nuevo_garage" translatable="false">New Garage</string>
+    <string name="completa_la_informaci_n" translatable="false">Complete the information</string>
+    <string name="cambiar_imagen" translatable="false">Change image</string>
+    <string name="agregar_foto_del_garage" translatable="false">Add garage photo</string>
+    <string name="toca_para_seleccionar" translatable="false">Tap to select</string>
+    <string name="nombre_del_garage" translatable="false">Garage name</string>
+    <string name="ej_garage_central" translatable="false">Ex: Central Garage</string>
+    <string name="direcci_n" translatable="false">Address</string>
+    <string name="cargando_ubicaci_n" translatable="false">Loading location...</string>
+    <string name="capacidad" translatable="false">Capacity</string>
+    <string name="_50" translatable="false">50</string>
+    <string name="horario4" translatable="false">Schedule</string>
+    <string name="_8am_8pm" translatable="false">8am-8pm</string>
+    <string name="guardando" translatable="false">Saving...</string>
+    <string name="guardar_garage" translatable="false">Save Garage</string>
+    <string name="empleados3" translatable="false">Employees</string>
+    <string name="suscripciones" translatable="false">Subscriptions</string>
+    <string name="empleados4" translatable="false">Employees</string>
+    <string name="reservas" translatable="false">Reservations</string>
+    <string name="reserva_activa" translatable="false">active reservation</string>
+    <string name="reservas_activas" translatable="false">active reservations</string>
+    <string name="sin_reservas_activas" translatable="false">No active reservations</string>
+    <string name="las_reservas_aparecer_n_aqu_cuando_los_usuarios_las_realicen" translatable="false">Reservations will appear here\nwhen users make them</string>
+    <string name="cliente" translatable="false">Customer</string>
+    <string name="fecha_de_reserva" translatable="false">Reservation date</string>
+    <string name="cancelar5" translatable="false">Cancel</string>
+    <string name="activar" translatable="false">Activate</string>
+    <string name="activa" translatable="false">active</string>
+    <string name="pendiente" translatable="false">pending</string>
+    <string name="cancelada" translatable="false">canceled</string>
+    <string name="tarifas" translatable="false">Rates</string>
+    <string name="dashboard" translatable="false">Dashboard</string>
+    <string name="reservas2" translatable="false">Reservations</string>
+    <string name="perfil" translatable="false">Profile</string>
+    <string name="cancelar6" translatable="false">Cancel</string>
+    <string name="aceptar3" translatable="false">Accept</string>
+    <string name="implementa_aqu_tu_daterangepicker" translatable="false">Implement your DateRangePicker here</string>
+    <string name="seleccionar_rango_de_fechas" translatable="false">Select date range</string>
+    <string name="generar_pdf" translatable="false">Generate PDF</string>
+    <string name="_2_per_odo_del_reporte" translatable="false">2. Report period</string>
+    <string name="ingresos" translatable="false">Revenue</string>
+    <string name="ocupaci_n" translatable="false">Occupancy</string>
+    <string name="_1_tipo_de_reporte" translatable="false">1. Report type</string>
+    <string name="generar_reporte" translatable="false">Generate Report</string>
+    <string name="cargando_garages" translatable="false">Loading garages...</string>
+    <string name="mis_garages" translatable="false">My Garages</string>
+    <string name="garage_registrado" translatable="false">registered garage</string>
+    <string name="garages_registrados" translatable="false">registered garages</string>
+    <string name="tus_garages" translatable="false">Your Garages</string>
+    <string name="agregar_garage" translatable="false">Add garage</string>
+    <string name="resumen_general" translatable="false">General Summary</string>
+    <string name="espacios" translatable="false">Spaces</string>
+    <string name="garages" translatable="false">Garages</string>
+    <string name="activos3" translatable="false">Active</string>
+    <string name="sin_direcci_n2" translatable="false">No address</string>
+    <string name="sin_garages_registrados" translatable="false">No registered garages</string>
+    <string name="agrega_tu_primer_garage_para_comenzar_a_gestionar_tus_espacios" translatable="false">Add your first garage to\nstart managing your spaces</string>
+    <string name="agregar_garage2" translatable="false">Add Garage</string>
+    <string name="tarifas2" translatable="false">Rates</string>
+    <string name="dashboard2" translatable="false">Dashboard</string>
+    <string name="reservas3" translatable="false">Reservations</string>
+    <string name="perfil2" translatable="false">Profile</string>
+    <string name="todos" translatable="false">All</string>
+    <string name="econ_micos" translatable="false">Economical</string>
+    <string name="disponibles" translatable="false">Available</string>
+    <string name="vehicles" translatable="false">vehicles</string>
+    <string name="settings" translatable="false">settings</string>
+    <string name="descubre" translatable="false">Discover</string>
+    <string name="santo_domingo" translatable="false">Santo Domingo</string>
+    <string name="buscar_garajes_ubicaciones" translatable="false">Search garages, locations...</string>
+    <string name="intenta_cambiar_tu_ubicaci_n_o_ajusta_los_filtros" translatable="false">Try changing your location or adjust the filters</string>
+    <string name="no_hay_garajes_cercanos" translatable="false">No nearby garages</string>
+    <string name="actualizar_ubicaci_n" translatable="false">Update location</string>
+    <string name="sin_resultados2" translatable="false">No results</string>
+    <string name="no_encontramos_garajes_con" translatable="false">We didnt find garages with \"%1$s\"</string>
+    <string name="garajes_disponibles" translatable="false">%1$d available garages</string>
+    <string name="inicio" translatable="false">Home</string>
+    <string name="veh_culos2" translatable="false">Vehicles</string>
+    <string name="historial" translatable="false">History</string>
+    <string name="perfil3" translatable="false">Profile</string>
+    <string name="nueva_reserva" translatable="false">New Reservation</string>
+    <string name="completa_los_detalles" translatable="false">Complete the details</string>
+    <string name="veh_culo7" translatable="false">Vehicle</string>
+    <string name="seleccionar_veh_culo" translatable="false">Select vehicle</string>
+    <string name="fecha" translatable="false">Date</string>
+    <string name="seleccionar_fecha" translatable="false">Select date</string>
+    <string name="hora_de_llegada" translatable="false">Arrival time</string>
+    <string name="seleccionar_hora" translatable="false">Select time</string>
+    <string name="confirmar_reserva" translatable="false">Confirm Reservation</string>
+    <string name="confirmar" translatable="false">Confirm</string>
+    <string name="cancelar9" translatable="false">Cancel</string>
+    <string name="seleccionar_hora2" translatable="false">Select time</string>
+    <string name="resumen_de_reserva" translatable="false">Reservation summary</string>
+    <string name="veh_culo4" translatable="false">Vehicle</string>
+    <string name="fecha4" translatable="false">Date</string>
+    <string name="hora" translatable="false">Time</string>
+    <string name="seleccionar_veh_culo2" translatable="false">Select vehicle</string>
+    <string name="no_tienes_veh_culos_registrados" translatable="false">You have no registered vehicles</string>
+    <string name="sin_modelo" translatable="false">No model</string>
+    <string name="reserva_confirmada" translatable="false">Reservation confirmed!</string>
+    <string name="tu_espacio_ha_sido_reservado_exitosamente_te_esperamos_en_el_garaje" translatable="false">Your space has been successfully reserved. Were waiting for you at the garage.</string>
+    <string name="mi_historial" translatable="false">My History</string>
+    <string name="revisa_tus_parkings" translatable="false">Review your parkings</string>
+    <string name="cargando_historial" translatable="false">Loading history...</string>
+    <string name="parking_activo" translatable="false">Active Parking</string>
+    <string name="historial2" translatable="false">History</string>
+    <string name="garaje" translatable="false">Garage</string>
+    <string name="en_progreso" translatable="false">In progress</string>
+    <string name="veh_culo5" translatable="false">Vehicle</string>
+    <string name="entrada2" translatable="false">Entry</string>
+    <string name="salida_estimada" translatable="false">Estimated exit</string>
+    <string name="completada" translatable="false">completed</string>
+    <string name="cancelada3" translatable="false">canceled</string>
+    <string name="garaje2" translatable="false">Garage</string>
+    <string name="entrada3" translatable="false">Entry</string>
+    <string name="salida6" translatable="false">Exit</string>
+    <string name="sin_historial" translatable="false">No history</string>
+    <string name="a_n_no_has_realizado_ning_n_parking_comienza_a_usar_u_park_hoy" translatable="false">You havent made any parkings yet.\nStart using U-Park today.</string>
+    <string name="inicio2" translatable="false">Home</string>
+    <string name="veh_culos8" translatable="false">Vehicles</string>
+    <string name="historial3" translatable="false">History</string>
+    <string name="perfil5" translatable="false">Profile</string>
+    <string name="foto_de_perfil" translatable="false">Profile photo</string>
+    <string name="usuario2" translatable="false">User</string>
+    <string name="administra_tu_parqueo" translatable="false">Manage your parking</string>
+    <string name="optimiza_tus_espacios_y_gana_dinero_f_cilmente" translatable="false">Optimize your spaces and earn money easily.</string>
+    <string name="detalles_de_cuenta" translatable="false">Account details</string>
+    <string name="correo_electr_nico3" translatable="false">Email</string>
+    <string name="no_disponible" translatable="false">Not available</string>
+    <string name="tel_fono2" translatable="false">Phone</string>
+    <string name="no_disponible2" translatable="false">Not available</string>
+    <string name="usuario3" translatable="false">User</string>
+    <string name="no_disponible3" translatable="false">Not available</string>
+    <string name="configuraci_n" translatable="false">Settings</string>
+    <string name="informaci_n_personal" translatable="false">Personal information</string>
+    <string name="privacidad_y_seguridad" translatable="false">Privacy and security</string>
+    <string name="notificaciones" translatable="false">Notifications</string>
+    <string name="acerca_de_u_park" translatable="false">About U-Park</string>
+    <string name="cambiar_de_rol" translatable="false">Switch role</string>
+    <string name="gestionar_suscripci_n" translatable="false">Manage subscription</string>
+    <string name="cerrar_sesi_n" translatable="false">Sign out</string>
+    <string name="cambiar_de_rol2" translatable="false">Switch Role</string>
+    <string name="selecciona_c_mo_quieres_usar_u_park" translatable="false">Select how you want to use U-Park</string>
+    <string name="administra_tus_garages" translatable="false">Manage your garages</string>
+    <string name="gestiona_reservas" translatable="false">Manage reservations</string>
+    <string name="busca_estacionamientos" translatable="false">Search parking lots</string>
+    <string name="acceso_est_ndar" translatable="false">Standard access</string>
+    <string name="home" translatable="false">Home</string>
+    <string name="veh_culos3" translatable="false">Vehicles</string>
+    <string name="perfil6" translatable="false">Profile</string>
+    <string name="tarifas3" translatable="false">Rates</string>
+    <string name="dashboard5" translatable="false">Dashboard</string>
+    <string name="reservas6" translatable="false">Reservations</string>
+    <string name="perfil8" translatable="false">Profile</string>
+    <string name="inicio3" translatable="false">Home</string>
+    <string name="veh_culos99" translatable="false">Vehicles</string>
+    <string name="historial22" translatable="false">History</string>
+    <string name="perfil22" translatable="false">Profile</string>
+    <string name="lunes" translatable="false">monday</string>
+    <string name="martes" translatable="false">tuesday</string>
+    <string name="mi_rcoles" translatable="false">wednesday</string>
+    <string name="jueves" translatable="false">thursday</string>
+    <string name="viernes" translatable="false">friday</string>
+    <string name="s_bado" translatable="false">saturday</string>
+    <string name="domingo" translatable="false">sunday</string>
+    <string name="nueva_tarifa" translatable="false">New Rate</string>
+    <string name="editar_tarifa" translatable="false">Edit Rate</string>
+    <string name="configuraci_n_de_precios" translatable="false">Pricing configuration</string>
+    <string name="informaci_n_del_garage" translatable="false">Garage Information</string>
+    <string name="seleccionar_garage" translatable="false">Select Garage</string>
+    <string name="garage2" translatable="false">Garage</string>
+    <string name="configuraci_n_de_tarifa" translatable="false">Rate Configuration</string>
+    <string name="precio_base_rd" translatable="false">Base Price (RD$)</string>
+    <string name="unidad_de_tiempo" translatable="false">Time unit</string>
+    <string name="cualquiera" translatable="false">Any</string>
+    <string name="tipo_de_veh_culo" translatable="false">Vehicle type</string>
+    <string name="cualquiera2" translatable="false">Any</string>
+    <string name="d_as_aplicables" translatable="false">Applicable Days</string>
+    <string name="limpiar" translatable="false">Clear</string>
+    <string name="guardando2" translatable="false">Saving...</string><string name="guardar" translatable="false">Save</string>
+    <string name="por_favor_completa_todos_los_campos_requeridos" translatable="false">Please complete all required fields</string>
+    <string name="perfil88" translatable="false">Profile</string>
+    <string name="reservas22" translatable="false">Reservations</string>
+    <string name="dashboard22" translatable="false">Dashboard</string>
+    <string name="tarifas22" translatable="false">Rates</string>
+    <string name="cancelar22" translatable="false">Cancel</string>
+    <string name="a_qu_garage_deseas_agregar_la_tarifa" translatable="false">Which garage do you want to add the rate to?</string>
+    <string name="selecciona_un_garage" translatable="false">Select a Garage</string>
+    <string name="comienza_creando_tu_primera_tarifa_para_empezar_a_gestionar_precios" translatable="false">Start by creating your first rate\nto begin managing prices</string>
+    <string name="sin_tarifas_registradas" translatable="false">No registered rates</string>
+    <string name="no_hay_tarifas_en_este_garage" translatable="false">There are no rates in this garage</string>
+    <string name="eliminar222" translatable="false">Delete</string>
+    <string name="cancelar222" translatable="false">Cancel</string>
+    <string name="esta_acci_n_no_se_puede_deshacer_la_tarifa_ser_eliminada_permanentemente" translatable="false">This action cannot be undone. The rate will be permanently deleted.</string>
+    <string name="eliminar_tarifa" translatable="false">Delete rate?</string>
+    <string name="tarifa_especial" translatable="false">Special rate: %1$s</string>
+    <string name="d_as_aplicables2" translatable="false">Applicable days</string>
+    <string name="cualquiera33" translatable="false">Any</string>
+    <string name="tipo_de_veh_culo2" translatable="false">Vehicle type</string>
+    <string name="eliminar23" translatable="false">Delete</string>
+    <string name="editar" translatable="false">Edit</string>
+    <string name="por" translatable="false">per %1$s</string>
+    <string name="rd2" translatable="false">RD$ %1$s</string>
+    <string name="tarifa2" translatable="false">%1drated rate%2drates</string>
+    <string name="sin_tarifas2" translatable="false">No rates</string>
+    <string name="gesti_n_de_precios_por_garage" translatable="false">Price management per garage</string>
+    <string name="mis_tarifas" translatable="false">My Rates</string>
+    <string name="solicitudes_de_suscripci_n" translatable="false">Subscription Requests</string>
+    <string name="gestiona_las_solicitudes_de_tus_clientes" translatable="false">Manage your customers requests</string>
+    <string name="usuario9" translatable="false">User</string>
+    <string name="pendiente99" translatable="false">pending</string>
+    <string name="aprobada" translatable="false">approved</string>
+    <string name="plan" translatable="false">Plan</string>
+    <string name="rechazar" translatable="false">Reject</string>
+    <string name="aprobar" translatable="false">Approve</string>
+    <string name="no_hay_solicitudes" translatable="false">No requests</string>
+    <string name="las_solicitudes_aparecer_n_aqu" translatable="false">Requests will appear here</string>
+    <string name="tu_suscripci_n_ha_sido_cancelada_exitosamente" translatable="false">Your subscription has been successfully canceled</string>
+    <string name="mi_suscripci_n" translatable="false">My Subscription</string>
+    <string name="administra_tu_plan" translatable="false">Manage your plan</string>
+    <string name="planes_disponibles" translatable="false">Available plans</string>
+    <string name="suscripci_n_activa" translatable="false">Active Subscription</string>
+    <string name="renovaci_n_mensual" translatable="false">Monthly renewal</string>
+    <string name="plan_premium" translatable="false">Premium Plan</string>
+    <string name="activa2" translatable="false">Active</string>
+    <string name="veh_culos22" translatable="false">Vehicles</string>
+    <string name="precio_mensual" translatable="false">Monthly price</string>
+    <string name="cancelar_suscripci_n" translatable="false">Cancel subscription</string>
+    <string name="beneficios_incluidos" translatable="false">Included benefits</string>
+    <string name="estacionamiento_garantizado" translatable="false">Guaranteed parking</string>
+    <string name="m_ltiples_veh_culos_permitidos" translatable="false">Multiple vehicles allowed</string>
+    <string name="acceso_24_7_al_garaje" translatable="false">24/7 garage access</string>
+    <string name="soporte_prioritario" translatable="false">Priority support</string>
+    <string name="sin_suscripci_n_activa" translatable="false">No active subscription</string>
+    <string name="suscr_bete_para_obtener_beneficios_exclusivos" translatable="false">Subscribe to get exclusive benefits</string>
+    <string name="plan_mensual" translatable="false">Monthly plan</string>
+    <string name="veh_culos98" translatable="false">%1$d vehicles</string>
+    <string name="_30_d_as" translatable="false">30 days</string>
+    <string name="precio_mensual2" translatable="false">Monthly price</string>
+    <string name="solicitar" translatable="false">Request</string>
+    <string name="no_hay_planes_disponibles" translatable="false">No plans available</string>
+    <string name="intenta_m_s_tarde" translatable="false">Try later</string>
+    <string name="cancelar_suscripci_n2" translatable="false">Cancel subscription?</string>
+    <string name="perder_s_todos_los_beneficios_de_tu_plan_actual_esta_acci_n_no_se_puede_deshacer" translatable="false">You will lose all the benefits of your current plan. This action cannot be undone.</string>
+    <string name="s_cancelar" translatable="false">Yes, cancel</string>
+    <string name="no_mantener" translatable="false">No, keep it</string>
+    <string name="completado" translatable="false">Completed!</string>
+    <string name="suscripci_n" translatable="false">Subscription</string>
+    <string name="elige_tu_plan_mensual" translatable="false">Choose your monthly plan</string>
+    <string name="planes_disponibles2" translatable="false">Available plans</string>
+    <string name="confirmar_suscripci_n" translatable="false">Confirm subscription</string>
+    <string name="espacios_disponibles23" translatable="false">Available spaces</string>
+    <string name="capacidad_limitada" translatable="false">Limited capacity</string>
+    <string name="espacios_libres_en_este_garaje" translatable="false">%1$d free spaces in this garage</string>
+    <string name="no_hay_espacios_disponibles" translatable="false">No spaces available</string>
+    <string name="informaci_n_del_titular" translatable="false">Holder information</string>
+    <string name="c_dula2" translatable="false">ID number</string>
+    <string name="no_disponible23" translatable="false">Not available</string>
+    <string name="nombre_completo23" translatable="false">Full name</string>
+    <string name="no_disponible223" translatable="false">Not available</string>
+    <string name="tel_fono2323" translatable="false">Phone</string>
+    <string name="no_disponible323" translatable="false">Not available</string>
+    <string name="plan_mensual23" translatable="false">Monthly plan</string>
+    <string name="veh_culos32" translatable="false">%1$d vehicles</string>
+    <string name="_30_d_as32" translatable="false">30 days</string>
+    <string name="precio_mensual3" translatable="false">Monthly price</string>
+    <string name="seleccionado" translatable="false">Selected</string>
+    <string name="no_hay_planes_disponibles23" translatable="false">No plans available</string>
+    <string name="este_garaje_no_tiene_espacios_suficientes" translatable="false">This garage doesnt have enough spaces</string>
+    <string name="solicitud_enviada" translatable="false">Request sent!</string>
+    <string name="tu_solicitud_de_suscripci_n_ha_sido_enviada_exitosamente_te_notificaremos_cuando_sea_aprobada" translatable="false">Your subscription request has been sent successfully. Well notify you when its approved.</string>
+    <string name="mis_veh_culos" translatable="false">My Vehicles</string>
+    <string name="administra_tu_flota" translatable="false">Manage your fleet</string>
+    <string name="agregar_veh_culo" translatable="false">Add vehicle</string>
+    <string name="cargando_veh_culos" translatable="false">Loading vehicles...</string>
+    <string name="activos2323" translatable="false">Active</string>
+    <string name="no_tienes_veh_culos" translatable="false">You have no vehicles</string>
+    <string name="agrega_tu_primer_veh_culo_para_comenzar_a_usar_u_park_y_reservar_espacios" translatable="false">Add your first vehicle to start using U-Park and reserve spaces</string>
+    <string name="agregar_veh_culo2" translatable="false">Add Vehicle</string>
+    <string name="sin_modelo3" translatable="false">No model</string>
+    <string name="este_veh_culo" translatable="false">this vehicle</string>
+    <string name="eliminar_veh_culo" translatable="false">Delete vehicle?</string>
+    <string name="se_eliminar_permanentemente_esta_acci_n_no_se_puede_deshacer" translatable="false">%1$s will be permanently deleted. This action cannot be undone.</string>
+    <string name="s_eliminar" translatable="false">Yes, delete</string>
+    <string name="cancelar23" translatable="false">Cancel</string>
+    <string name="nuevo_veh_culo" translatable="false">New Vehicle</string>
+    <string name="completa_la_informaci_n3" translatable="false">Complete the information</string>
+    <string name="tu_veh_culo" translatable="false">Your vehicle</string>
+    <string name="placa23" translatable="false">Plate *</string>
+    <string name="abc_123432" translatable="false">ABC-1234</string>
+    <string name="modelo" translatable="false">Model *</string>
+    <string name="toyota_corolla" translatable="false">Toyota Corolla</string>
+    <string name="color" translatable="false">Color *</string>
+    <string name="rojo" translatable="false">Red</string>
+    <string name="a_o" translatable="false">Year</string>
+    <string name="_2024" translatable="false">2024</string>
+    <string name="tipo_de_veh_culo3" translatable="false">Vehicle Type *</string>
+    <string name="selecciona_un_tipo" translatable="false">Select a type</string>
+    <string name="guardar_veh_culo" translatable="false">Save Vehicle</string>
+    <string name="veh_culo_agregado" translatable="false">Vehicle added!</string>
+    <string name="tu_veh_culo_ha_sido_registrado_exitosamente" translatable="false">Your vehicle has been successfully registered</string>
+    <string name="inicio23" translatable="false">Home</string>
+    <string name="veh_culos23" translatable="false">Vehicles</string>
+    <string name="historial3232" translatable="false">History</string>
+    <string name="perfil12" translatable="false">Profile</string>
+</resources>

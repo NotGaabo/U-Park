@@ -34,6 +34,8 @@ import com.kotlin.u_park.domain.model.Garage
 import kotlinx.coroutines.launch
 import java.io.File
 import android.location.Geocoder
+import androidx.compose.ui.res.stringResource
+import com.kotlin.u_park.R
 import com.kotlin.u_park.presentation.utils.LocationHelper
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -78,13 +80,13 @@ fun GarageAddScreen(
                     if (!addressList.isNullOrEmpty()) {
                         direccion = addressList[0].getAddressLine(0) ?: ""
                     } else {
-                        direccion = "Ubicación desconocida"
+                        direccion = context.getString(R.string.ubicaci_n_desconocida)
                     }
                 } catch (e: Exception) {
-                    direccion = "Error obteniendo dirección"
+                    direccion = context.getString(R.string.error_obteniendo_direcci_n)
                 }
             } ?: run {
-                direccion = "No se pudo obtener ubicación"
+                direccion = context.getString(R.string.no_se_pudo_obtener_ubicaci_n)
             }
         }
     }
@@ -150,13 +152,13 @@ fun GarageAddScreen(
             ) {
                 Column {
                     Text(
-                        text = "Nuevo Garage",
+                        text = stringResource(R.string.nuevo_garage),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2D3436)
                     )
                     Text(
-                        text = "Completa la información",
+                        text = stringResource(R.string.completa_la_informaci_n),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
                         fontSize = 14.sp
@@ -218,7 +220,7 @@ fun GarageAddScreen(
                                     modifier = Modifier.size(32.dp)
                                 )
                                 Text(
-                                    "Cambiar imagen",
+                                    stringResource(R.string.cambiar_imagen),
                                     color = Color.White,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium
@@ -237,12 +239,12 @@ fun GarageAddScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                "Agregar foto del garage",
+                                stringResource(R.string.agregar_foto_del_garage),
                                 color = Color.Gray,
                                 fontSize = 14.sp
                             )
                             Text(
-                                "Toca para seleccionar",
+                                stringResource(R.string.toca_para_seleccionar),
                                 color = Color.Gray.copy(alpha = 0.7f),
                                 fontSize = 12.sp
                             )
@@ -256,7 +258,7 @@ fun GarageAddScreen(
             // Nombre del garage
             Column {
                 Text(
-                    "Nombre del garage",
+                    stringResource(R.string.nombre_del_garage),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color(0xFF2D3436)
@@ -268,7 +270,7 @@ fun GarageAddScreen(
                         nombre = it
                         showError = false
                     },
-                    placeholder = { Text("Ej: Garage Central", color = Color.Gray.copy(alpha = 0.6f)) },
+                    placeholder = { Text(stringResource(R.string.ej_garage_central), color = Color.Gray.copy(alpha = 0.6f)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -293,7 +295,7 @@ fun GarageAddScreen(
             // Dirección
             Column {
                 Text(
-                    "Dirección",
+                    stringResource(R.string.direcci_n),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color(0xFF2D3436)
@@ -302,7 +304,7 @@ fun GarageAddScreen(
                 OutlinedTextField(
                     value = direccion,
                     onValueChange = { }, // No editable
-                    placeholder = { Text("Cargando ubicación...", color = Color.Gray.copy(alpha = 0.6f)) },
+                    placeholder = { Text(stringResource(R.string.cargando_ubicaci_n), color = Color.Gray.copy(alpha = 0.6f)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     enabled = false, // 👈 Solo lectura
@@ -333,7 +335,7 @@ fun GarageAddScreen(
                 // Capacidad
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Capacidad",
+                        stringResource(R.string.capacidad),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF2D3436)
@@ -347,7 +349,7 @@ fun GarageAddScreen(
                                 showError = false
                             }
                         },
-                        placeholder = { Text("50", color = Color.Gray.copy(alpha = 0.6f)) },
+                        placeholder = { Text(stringResource(R.string._50), color = Color.Gray.copy(alpha = 0.6f)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -371,7 +373,7 @@ fun GarageAddScreen(
                 // Horario
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Horario",
+                        stringResource(R.string.horario4),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF2D3436)
@@ -383,7 +385,7 @@ fun GarageAddScreen(
                             horario = it
                             showError = false
                         },
-                        placeholder = { Text("8am-8pm", color = Color.Gray.copy(alpha = 0.6f)) },
+                        placeholder = { Text(stringResource(R.string._8am_8pm), color = Color.Gray.copy(alpha = 0.6f)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -502,7 +504,7 @@ fun GarageAddScreen(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        "Guardando...",
+                        stringResource(R.string.guardando),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -514,7 +516,7 @@ fun GarageAddScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "Guardar Garage",
+                        stringResource(R.string.guardar_garage),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )

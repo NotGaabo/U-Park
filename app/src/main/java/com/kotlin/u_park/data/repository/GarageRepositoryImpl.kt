@@ -2,6 +2,7 @@ package com.kotlin.u_park.data.repository
 
 import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.domain.model.GarageInsert
+import com.kotlin.u_park.domain.model.Role
 import com.kotlin.u_park.domain.repository.GarageRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
@@ -78,7 +79,30 @@ class GarageRepositoryImpl(
                 user_id = garage.userId
             )
 
+            // Insertar el garaje
             supabase.from("garages").insert(insert)
+
+            // ASIGNAR ROL DE DUEÑO GARAGE
+            garage.userId?.let { userId ->
+                // 1. Obtener el role_id del rol "dueno_garage"
+                val role = supabase.from("roles")
+                    .select {
+                        filter { eq("nombre", "dueno_garage") }
+                    }
+                    .decodeSingleOrNull<Role>()
+
+                role?.let { r ->
+                    // 2. Insertar en user_roles (usar upsert para evitar duplicados)
+                    supabase.from("user_roles").upsert(
+                        mapOf(
+                            "user_id" to userId,
+                            "role_id" to r.id
+                        )
+                    )
+                } ?: run {
+                    println("ERROR: No se encontró el rol 'dueno_garage' en la base de datos")
+                }
+            }
 
             true
 

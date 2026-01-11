@@ -1,11 +1,16 @@
 package com.kotlin.u_park.presentation.screens.home
 
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,38 +18,43 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.VehiclesRepositoryImpl
 import com.kotlin.u_park.domain.model.Vehicle
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModel
 import com.kotlin.u_park.presentation.screens.vehicles.VehiclesViewModelFactory
+import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.Instant
+import java.time.format.DateTimeFormatter
 
-// Colores del diseño
-private val redPrimary = Color(0xFFE74C3C)
-private val greenSuccess = Color(0xFF27AE60)
-private val grayLight = Color(0xFFF8F9FA)
-private val grayMedium = Color(0xFFECF0F1)
-private val darkText = Color(0xFF2C3E50)
+// 🎨 Color System (matching Home)
+private val PrimaryRed = Color(0xFFE60023)
+private val DarkRed = Color(0xFFB8001C)
+private val LightRed = Color(0xFFFFE5E9)
+private val BackgroundColor = Color(0xFFFAFAFA)
+private val SurfaceColor = Color(0xFFFFFFFF)
+private val TextPrimary = Color(0xFF0D0D0D)
+private val TextSecondary = Color(0xFF6E6E73)
+private val BorderColor = Color(0xFFE5E5EA)
+private val SuccessGreen = Color(0xFF34C759)
+private val WarningOrange = Color(0xFFFF9500)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,23 +67,21 @@ fun RegistrarReservaScreen(
 ) {
     val ctx = LocalContext.current
 
-    // ---- VEHICULOS ----
+    // Vehicle setup
     val vehicleRepo = remember { VehiclesRepositoryImpl(supabase) }
-    val vm: VehiclesViewModel = viewModel(factory = VehiclesViewModelFactory(vehicleRepo))
+    val vehiclesViewModel: VehiclesViewModel = viewModel(factory = VehiclesViewModelFactory(vehicleRepo))
 
     LaunchedEffect(Unit) {
-        vm.loadVehicles(userId)
+        vehiclesViewModel.loadVehicles(userId)
     }
 
-    val vehicles by vm.vehicles.collectAsState()
+    val vehicles by vehiclesViewModel.vehicles.collectAsState()
     var selectedVehicle by remember { mutableStateOf<Vehicle?>(null) }
-    var expanded by remember { mutableStateOf(false) }
+    var showVehicleSheet by remember { mutableStateOf(false) }
 
-    // ---- FECHA ----
+    // Date & Time
     val datePickerState = rememberDatePickerState()
     var showDatePicker by remember { mutableStateOf(false) }
-
-    // ---- HORA ----
     val timeState = rememberTimePickerState()
     var showTimePicker by remember { mutableStateOf(false) }
     var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
@@ -81,387 +89,331 @@ fun RegistrarReservaScreen(
     val loading by viewModel.isLoading.collectAsState()
     val msg by viewModel.message.collectAsState()
 
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var showErrorSnackbar by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    // Handle messages
     LaunchedEffect(msg) {
         msg?.let {
-
             if (it == "Reserva creada") {
-                Toast.makeText(ctx, "Reserva creada", Toast.LENGTH_SHORT).show()
-
-                // Navegar al home y limpiar backstack
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = true }
-                }
+                showSuccessDialog = true
             } else {
-                Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show()
+                errorMessage = it
+                showErrorSnackbar = true
             }
         }
     }
 
+    // Success Dialog with Auto-Return
+    if (showSuccessDialog) {
+        SuccessReservationDialog(
+            onDismiss = {
+                showSuccessDialog = false
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                }
+            }
+        )
+    }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(showErrorSnackbar) {
+        if (showErrorSnackbar) {
+            snackbarHostState.showSnackbar(
+                message = errorMessage,
+                duration = SnackbarDuration.Short
+            )
+            showErrorSnackbar = false
+        }
+    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Crear Reserva",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = darkText
+        containerColor = BackgroundColor,
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = Color(0xFFFEECEB),
+                    contentColor = Color(0xFFD32F2F),
+                    shape = RoundedCornerShape(12.dp)
                 )
-            )
+            }
         },
-        containerColor = grayLight
+        topBar = {
+            Surface(
+                color = SurfaceColor,
+                shadowElevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        onClick = { navController.popBackStack() },
+                        shape = CircleShape,
+                        color = BackgroundColor,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = TextPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column {
+                        Text(
+                            stringResource(R.string.nueva_reserva),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            stringResource(R.string.completa_los_detalles),
+                            fontSize = 13.sp,
+                            color = TextSecondary
+                        )
+                    }
+                }
+            }
+        }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .verticalScroll(rememberScrollState())
         ) {
-            // Card principal con formulario
-            Card(
+
+            // 🚗 Vehicle Selection Card
+            SectionCard(
+                title = stringResource(R.string.veh_culo7),
+                icon = Icons.Outlined.DirectionsCar,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                SelectionButton(
+                    value = selectedVehicle?.let { "${it.plate} - ${it.model ?: ""}" } ?: stringResource(
+                        R.string.seleccionar_veh_culo
+                    ),
+                    icon = Icons.Outlined.DirectionsCar,
+                    placeholder = selectedVehicle == null,
+                    onClick = { showVehicleSheet = true }
+                )
+            }
+
+            // 📅 Date Selection Card
+            SectionCard(
+                title = stringResource(R.string.fecha),
+                icon = Icons.Outlined.CalendarToday,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                SelectionButton(
+                    value = datePickerState.selectedDateMillis?.let {
+                        val date = Instant.ofEpochMilli(it)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                        date.format(DateTimeFormatter.ofPattern("dd 'de' MMMM, yyyy"))
+                    } ?: stringResource(R.string.seleccionar_fecha),
+                    icon = Icons.Outlined.CalendarToday,
+                    placeholder = datePickerState.selectedDateMillis == null,
+                    onClick = { showDatePicker = true }
+                )
+            }
+
+            // ⏰ Time Selection Card
+            SectionCard(
+                title = stringResource(R.string.hora_de_llegada),
+                icon = Icons.Outlined.AccessTime,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                SelectionButton(
+                    value = selectedTime?.format(DateTimeFormatter.ofPattern("hh:mm a"))
+                        ?: stringResource(R.string.seleccionar_hora),
+                    icon = Icons.Outlined.AccessTime,
+                    placeholder = selectedTime == null,
+                    onClick = { showTimePicker = true }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 📋 Summary Card
+            AnimatedVisibility(
+                visible = selectedVehicle != null && datePickerState.selectedDateMillis != null && selectedTime != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                ReservationSummary(
+                    vehicle = selectedVehicle,
+                    date = datePickerState.selectedDateMillis,
+                    time = selectedTime
+                )
+            }
+
+            Spacer(modifier = Modifier.height(100.dp))
+        }
+
+        // 🎯 Floating Action Button
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    .padding(20.dp),
+                shape = RoundedCornerShape(16.dp),
+                shadowElevation = 8.dp,
+                color = SurfaceColor
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Button(
+                    onClick = {
+                        val fechaMillis = datePickerState.selectedDateMillis
+
+                        if (selectedVehicle == null) {
+                            errorMessage = "Selecciona un vehículo"
+                            showErrorSnackbar = true
+                            return@Button
+                        }
+                        if (fechaMillis == null) {
+                            errorMessage = "Selecciona la fecha"
+                            showErrorSnackbar = true
+                            return@Button
+                        }
+                        if (selectedTime == null) {
+                            errorMessage = "Selecciona la hora"
+                            showErrorSnackbar = true
+                            return@Button
+                        }
+
+                        val hoy = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
+                        val fechaSeleccionada = Instant.ofEpochMilli(fechaMillis)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+
+                        if (fechaSeleccionada.isBefore(hoy)) {
+                            errorMessage = "No puedes seleccionar una fecha pasada"
+                            showErrorSnackbar = true
+                            return@Button
+                        }
+
+                        if (fechaSeleccionada.isEqual(hoy)) {
+                            val ahora = LocalTime.now()
+                            if (selectedTime!!.isBefore(ahora)) {
+                                errorMessage = "La hora no puede ser en el pasado"
+                                showErrorSnackbar = true
+                                return@Button
+                            }
+                        }
+
+                        val fechaFinal = fechaSeleccionada
+                            .atTime(selectedTime!!)
+                            .atZone(ZoneId.systemDefault())
+                            .toOffsetDateTime()
+                            .toString()
+
+                        viewModel.crearReserva(
+                            garageId = garageId,
+                            vehicleId = selectedVehicle!!.id ?: "",
+                            fecha = fechaFinal,
+                            userId = userId
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    enabled = !loading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryRed,
+                        disabledContainerColor = BorderColor
+                    ),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
-                    // Icono decorativo
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = redPrimary.copy(alpha = 0.1f),
-                        modifier = Modifier.size(80.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Filled.EventAvailable,
-                                contentDescription = null,
-                                tint = redPrimary,
-                                modifier = Modifier.size(40.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(24.dp))
-
-                    Text(
-                        "Completa los datos",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = darkText
-                    )
-                    Text(
-                        "Selecciona tu vehículo y horario",
-                        fontSize = 14.sp,
-                        color = darkText.copy(alpha = 0.6f)
-                    )
-
-                    Spacer(Modifier.height(32.dp))
-
-                    // -------------------------
-                    // SELECT DE VEHICULOS
-                    // -------------------------
-                    Text(
-                        "Vehículo",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = darkText,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-                    Spacer(Modifier.height(8.dp))
-
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedVehicle?.plate ?: "",
-                            onValueChange = {},
-                            readOnly = true,
-                            placeholder = { Text("Selecciona un vehículo") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.DirectionsCar,
-                                    contentDescription = null,
-                                    tint = redPrimary
-                                )
-                            },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedBorderColor = grayMedium,
-                                focusedBorderColor = redPrimary
-                            )
+                    if (loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
                         )
-
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            vehicles.forEach { v ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.DirectionsCar,
-                                                contentDescription = null,
-                                                tint = redPrimary,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Text("${v.plate} - ${v.model ?: ""}")
-                                        }
-                                    },
-                                    onClick = {
-                                        selectedVehicle = v
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(24.dp))
-
-                    // -------------------------
-                    // FECHA
-                    // -------------------------
-                    Text(
-                        "Fecha",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = darkText,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-                    Spacer(Modifier.height(8.dp))
-
-                    OutlinedButton(
-                        onClick = { showDatePicker = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color.White,
-                            contentColor = darkText
-                        ),
-                        border = ButtonDefaults.outlinedButtonBorder.copy(
-                            width = 1.dp,
-                            brush = SolidColor(grayMedium)
-                        )
-                    ) {
+                    } else {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.CalendarToday,
-                                    contentDescription = null,
-                                    tint = redPrimary
-                                )
-                                Text(
-                                    datePickerState.selectedDateMillis?.let {
-                                        Instant.ofEpochMilli(it)
-                                            .atZone(ZoneId.systemDefault())
-                                            .toLocalDate()
-                                            .toString()
-                                    } ?: "Seleccionar fecha",
-                                    fontWeight = FontWeight.Normal
-                                )
-                            }
                             Icon(
-                                imageVector = Icons.Filled.ArrowDropDown,
+                                Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = darkText.copy(alpha = 0.5f)
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Text(
+                                stringResource(R.string.confirmar_reserva),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-
-                    // -------------------------
-                    // HORA
-                    // -------------------------
-                    Text(
-                        "Hora",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = darkText,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-                    Spacer(Modifier.height(8.dp))
-
-                    OutlinedButton(
-                        onClick = { showTimePicker = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color.White,
-                            contentColor = darkText
-                        ),
-                        border = ButtonDefaults.outlinedButtonBorder.copy(
-                            width = 1.dp,
-                            brush = androidx.compose.ui.graphics.SolidColor(grayMedium)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.AccessTime,
-                                    contentDescription = null,
-                                    tint = redPrimary
-                                )
-                                Text(
-                                    selectedTime?.toString() ?: "Seleccionar hora",
-                                    fontWeight = FontWeight.Normal
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Filled.ArrowDropDown,
-                                contentDescription = null,
-                                tint = darkText.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(32.dp))
-
-                    // Botón de crear
-                    Button(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        onClick = {
-                            val fechaMillis = datePickerState.selectedDateMillis
-
-                            if (selectedVehicle == null) {
-                                Toast.makeText(ctx, "Selecciona un vehículo", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-                            if (fechaMillis == null) {
-                                Toast.makeText(ctx, "Selecciona la fecha", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-                            if (selectedTime == null) {
-                                Toast.makeText(ctx, "Selecciona la hora", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-
-                            val hoy = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
-                            val fechaSeleccionada = Instant.ofEpochMilli(fechaMillis)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-
-                            // ❌ No permitir fecha pasada
-                            if (fechaSeleccionada.isBefore(hoy)) {
-                                Toast.makeText(ctx, "No puedes seleccionar una fecha pasada", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-
-                            // ❌ Si es hoy, no permitir hora pasada
-                            if (fechaSeleccionada.isEqual(hoy)) {
-                                val ahora = LocalTime.now()
-                                if (selectedTime!!.isBefore(ahora)) {
-                                    Toast.makeText(ctx, "La hora no puede ser en el pasado", Toast.LENGTH_SHORT).show()
-                                    return@Button
-                                }
-                            }
-
-                            val fechaFinal = fechaSeleccionada
-                                .atTime(selectedTime!!)
-                                .atZone(ZoneId.systemDefault())
-                                .toOffsetDateTime()
-                                .toString()
-
-                            viewModel.crearReserva(
-                                garageId = garageId,
-                                vehicleId = selectedVehicle!!.id ?: "",
-                                fecha = fechaFinal,
-                                userId = userId
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = redPrimary
-                        ),
-                        enabled = !loading
-                    ) {
-                        if (loading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = Color.White,
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(Modifier.width(12.dp))
-                        } else {
-                            Icon(Icons.Filled.Check, null)
-                            Spacer(Modifier.width(8.dp))
-                        }
-                        Text(if (loading) "Guardando..." else "Crear Reserva")
                     }
                 }
             }
         }
     }
 
-    // Date Picker
+    // Vehicle Bottom Sheet
+    if (showVehicleSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showVehicleSheet = false },
+            containerColor = SurfaceColor,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            VehicleSelectionSheet(
+                vehicles = vehicles,
+                selectedVehicle = selectedVehicle,
+                onVehicleSelected = { vehicle ->
+                    selectedVehicle = vehicle
+                    showVehicleSheet = false
+                }
+            )
+        }
+    }
+
+    // Date Picker Dialog
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("OK", color = redPrimary, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.confirmar), color = PrimaryRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar", color = darkText.copy(alpha = 0.6f))
+                    Text(stringResource(R.string.cancelar9), color = TextSecondary)
                 }
             }
         ) {
             DatePicker(
                 state = datePickerState,
                 colors = DatePickerDefaults.colors(
-                    selectedDayContainerColor = redPrimary,
-                    todayContentColor = redPrimary,
-                    todayDateBorderColor = redPrimary
+                    selectedDayContainerColor = PrimaryRed,
+                    todayContentColor = PrimaryRed,
+                    todayDateBorderColor = PrimaryRed
                 )
             )
         }
     }
 
-    // Time Picker
+    // Time Picker Dialog
     if (showTimePicker) {
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
@@ -470,18 +422,19 @@ fun RegistrarReservaScreen(
                     selectedTime = LocalTime.of(timeState.hour, timeState.minute)
                     showTimePicker = false
                 }) {
-                    Text("OK", color = redPrimary, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.confirmar), color = PrimaryRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) {
-                    Text("Cancelar", color = darkText.copy(alpha = 0.6f))
+                    Text(stringResource(R.string.cancelar), color = TextSecondary)
                 }
             },
             title = {
                 Text(
-                    "Seleccionar hora",
-                    fontWeight = FontWeight.Bold
+                    stringResource(R.string.seleccionar_hora2),
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
                 )
             },
             text = {
@@ -489,12 +442,375 @@ fun RegistrarReservaScreen(
                     state = timeState,
                     colors = TimePickerDefaults.colors(
                         clockDialSelectedContentColor = Color.White,
-                        selectorColor = redPrimary,
-                        timeSelectorSelectedContainerColor = redPrimary
+                        selectorColor = PrimaryRed,
+                        timeSelectorSelectedContainerColor = PrimaryRed
                     )
                 )
             },
-            shape = RoundedCornerShape(20.dp)
+            containerColor = SurfaceColor,
+            shape = RoundedCornerShape(24.dp)
         )
     }
+}
+
+@Composable
+fun SectionCard(
+    title: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = PrimaryRed,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+        }
+        content()
+    }
+}
+
+@Composable
+fun SelectionButton(
+    value: String,
+    icon: ImageVector,
+    placeholder: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = SurfaceColor,
+        border = BorderStroke(1.dp, BorderColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(BackgroundColor, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = if (placeholder) TextSecondary else PrimaryRed,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Text(
+                    value,
+                    fontSize = 15.sp,
+                    fontWeight = if (placeholder) FontWeight.Normal else FontWeight.SemiBold,
+                    color = if (placeholder) TextSecondary else TextPrimary
+                )
+            }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextSecondary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun ReservationSummary(
+    vehicle: Vehicle?,
+    date: Long?,
+    time: LocalTime?
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = LightRed
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(PrimaryRed.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Receipt,
+                        contentDescription = null,
+                        tint = PrimaryRed,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Text(
+                    stringResource(R.string.resumen_de_reserva),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+            }
+
+            Divider(color = PrimaryRed.copy(alpha = 0.2f))
+
+            SummaryRow(
+                label = stringResource(R.string.veh_culo4),
+                value = "${vehicle?.plate} - ${vehicle?.model ?: ""}"
+            )
+
+            SummaryRow(
+                label = stringResource(R.string.fecha4),
+                value = date?.let {
+                    Instant.ofEpochMilli(it)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                } ?: ""
+            )
+
+            SummaryRow(
+                label = stringResource(R.string.hora),
+                value = time?.format(DateTimeFormatter.ofPattern("hh:mm a")) ?: ""
+            )
+        }
+    }
+}
+
+@Composable
+fun SummaryRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            label,
+            fontSize = 14.sp,
+            color = TextSecondary,
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            value,
+            fontSize = 14.sp,
+            color = TextPrimary,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+fun VehicleSelectionSheet(
+    vehicles: List<Vehicle>,
+    selectedVehicle: Vehicle?,
+    onVehicleSelected: (Vehicle) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 20.dp)
+    ) {
+        Text(
+            stringResource(R.string.seleccionar_veh_culo2),
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+        )
+
+        if (vehicles.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    Icons.Outlined.DirectionsCar,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = TextSecondary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    stringResource(R.string.no_tienes_veh_culos_registrados),
+                    fontSize = 15.sp,
+                    color = TextSecondary
+                )
+            }
+        } else {
+            vehicles.forEach { vehicle ->
+                VehicleItem(
+                    vehicle = vehicle,
+                    isSelected = selectedVehicle?.id == vehicle.id,
+                    onClick = { onVehicleSelected(vehicle) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun VehicleItem(
+    vehicle: Vehicle,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(14.dp),
+        color = if (isSelected) LightRed else SurfaceColor,
+        border = BorderStroke(1.dp, if (isSelected) PrimaryRed else BorderColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        if (isSelected) PrimaryRed.copy(alpha = 0.15f) else BackgroundColor,
+                        RoundedCornerShape(12.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.DirectionsCar,
+                    contentDescription = null,
+                    tint = if (isSelected) PrimaryRed else TextSecondary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    vehicle.plate,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+                Text(
+                    vehicle.model ?: stringResource(R.string.sin_modelo),
+                    fontSize = 13.sp,
+                    color = TextSecondary
+                )
+            }
+
+            if (isSelected) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = PrimaryRed,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SuccessReservationDialog(onDismiss: () -> Unit) {
+    var progress by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(Unit) {
+        while (progress < 1f) {
+            delay(30)
+            progress += 0.02f
+        }
+        delay(500)
+        onDismiss()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = SurfaceColor,
+        shape = RoundedCornerShape(24.dp),
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(vertical = 20.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(SuccessGreen.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = SuccessGreen,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    stringResource(R.string.reserva_confirmada),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    stringResource(R.string.tu_espacio_ha_sido_reservado_exitosamente_te_esperamos_en_el_garaje),
+                    fontSize = 14.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                LinearProgressIndicator(
+                    progress = progress,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = SuccessGreen,
+                    trackColor = SuccessGreen.copy(alpha = 0.2f)
+                )
+            }
+        },
+        confirmButton = {}
+    )
 }

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -183,7 +184,9 @@ fun RegisterScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = redPrimary)
                 ) {
                     Text(
-                        text = if (currentStep == 1) "Siguiente" else "Crear cuenta",
+                        text = if (currentStep == 1) stringResource(R.string.siguiente) else stringResource(
+                            R.string.crear_cuenta
+                        ),
                         color = Color.White,
                         fontSize = 16.sp
                     )
@@ -191,12 +194,13 @@ fun RegisterScreen(
 
                 // 🔹 Texto debajo del botón
                 TextButton(onClick = { navController.navigate("login") }) {
-                    Text("¿Ya tienes cuenta? Inicia sesión", color = redPrimary)
+                    Text(stringResource(R.string.ya_tienes_cuenta_inicia_sesi_n), color = redPrimary)
                 }
 
                 if (currentStep == 2) {
                     TextButton(onClick = { currentStep = 1 }) {
-                        Text("Volver al paso anterior", color = redPrimary)
+                        Text(stringResource(R.string.volver_al_paso_anterior)
+                            , color = redPrimary)
                     }
                 }
 
@@ -262,18 +266,21 @@ fun StepOne(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            "Ingresa tus datos personales",
+            stringResource(R.string.ingresa_tus_datos_personales),
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFFE60023),
             fontSize = 18.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
-        RoundedInputField(nombre, onNombreChange, "Nombre completo")
-        RoundedInputField(usuario, onUsuarioChange, "Nombre de usuario")
-        RoundedInputField(cedula, onCedulaChange, "Cédula", KeyboardType.Number)
-        RoundedInputField(telefono, onTelefonoChange, "Teléfono", KeyboardType.Phone)
-        RoundedInputField(correo, onCorreoChange, "Correo electrónico", KeyboardType.Email)
+        RoundedInputField(nombre, onNombreChange, stringResource(R.string.nombre_completo))
+        RoundedInputField(usuario, onUsuarioChange, stringResource(R.string.nombre_de_usuario))
+        RoundedInputField(cedula, onCedulaChange,
+            stringResource(R.string.c_dula), KeyboardType.Number)
+        RoundedInputField(telefono, onTelefonoChange,
+            stringResource(R.string.tel_fono), KeyboardType.Phone)
+        RoundedInputField(correo, onCorreoChange,
+            stringResource(R.string.correo_electr_nico2), KeyboardType.Email)
     }
 }
 
@@ -294,7 +301,7 @@ fun StepTwo(
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(
-            "Configura tu contraseña",
+            stringResource(R.string.configura_tu_contrase_a),
             fontWeight = FontWeight.SemiBold,
             color = redPrimary,
             fontSize = 18.sp,
@@ -305,7 +312,7 @@ fun StepTwo(
         OutlinedTextField(
             value = contrasena,
             onValueChange = onPasswordChange,
-            label = { Text("Contraseña") },
+            label = { Text(stringResource(R.string.contrase_a2)) },
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -328,10 +335,10 @@ fun StepTwo(
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            PasswordRequirementRow("Mínimo 8 caracteres", hasLength)
-            PasswordRequirementRow("Al menos una mayúscula", hasUppercase)
-            PasswordRequirementRow("Al menos un número", hasNumber)
-            PasswordRequirementRow("Un carácter especial (!@#\$%&)", hasSpecial)
+            PasswordRequirementRow(stringResource(R.string.m_nimo_8_caracteres), hasLength)
+            PasswordRequirementRow(stringResource(R.string.al_menos_una_may_scula), hasUppercase)
+            PasswordRequirementRow(stringResource(R.string.al_menos_un_n_mero), hasNumber)
+            PasswordRequirementRow(stringResource(R.string.un_car_cter_especial), hasSpecial)
         }
     }
 }
