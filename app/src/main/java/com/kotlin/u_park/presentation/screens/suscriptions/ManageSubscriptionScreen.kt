@@ -21,10 +21,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.Subscription
 import com.kotlin.u_park.domain.model.SubscriptionPlan
 import kotlinx.coroutines.delay
@@ -62,7 +64,7 @@ fun ManageSubscriptionScreen(
     // Success Dialog
     if (showSuccessDialog) {
         SuccessActionDialog(
-            message = "Tu suscripción ha sido cancelada exitosamente",
+            message = stringResource(R.string.tu_suscripci_n_ha_sido_cancelada_exitosamente),
             onDismiss = {
                 showSuccessDialog = false
                 onBack()
@@ -103,13 +105,13 @@ fun ManageSubscriptionScreen(
 
                     Column {
                         Text(
-                            "Mi Suscripción",
+                            stringResource(R.string.mi_suscripci_n),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
-                            "Administra tu plan",
+                            stringResource(R.string.administra_tu_plan),
                             fontSize = 13.sp,
                             color = TextSecondary
                         )
@@ -162,7 +164,7 @@ fun ManageSubscriptionScreen(
                 // Available Plans
                 item {
                     Text(
-                        "Planes disponibles",
+                        stringResource(R.string.planes_disponibles),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -205,7 +207,7 @@ fun ActiveSubscriptionSection(
         ) {
             PulsingDot()
             Text(
-                "Suscripción Activa",
+                stringResource(R.string.suscripci_n_activa),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
@@ -265,13 +267,13 @@ fun ActiveSubscriptionSection(
 
                             Column {
                                 Text(
-                                    subscription.plan?.name ?: "Plan Premium",
+                                    subscription.plan?.name ?: stringResource(R.string.plan_premium),
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary
                                 )
                                 Text(
-                                    "Renovación mensual",
+                                    stringResource(R.string.renovaci_n_mensual),
                                     fontSize = 13.sp,
                                     color = TextSecondary
                                 )
@@ -283,7 +285,7 @@ fun ActiveSubscriptionSection(
                             color = SuccessGreen.copy(alpha = 0.15f)
                         ) {
                             Text(
-                                "Activa",
+                                stringResource(R.string.activa2),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -301,12 +303,12 @@ fun ActiveSubscriptionSection(
                     ) {
                         PlanDetailItem(
                             icon = Icons.Outlined.DirectionsCar,
-                            label = "Vehículos",
+                            label = stringResource(R.string.veh_culos22),
                             value = "${subscription.plan?.max_vehicles ?: 0}"
                         )
                         PlanDetailItem(
                             icon = Icons.Outlined.Payments,
-                            label = "Precio mensual",
+                            label = stringResource(R.string.precio_mensual),
                             value = "RD$ ${subscription.plan?.price ?: 0}"
                         )
                     }
@@ -330,7 +332,7 @@ fun ActiveSubscriptionSection(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Cancelar suscripción",
+                            stringResource(R.string.cancelar_suscripci_n),
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -369,7 +371,7 @@ fun BenefitsSection(plan: SubscriptionPlan?) {
                     )
                 }
                 Text(
-                    "Beneficios incluidos",
+                    stringResource(R.string.beneficios_incluidos),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -380,19 +382,15 @@ fun BenefitsSection(plan: SubscriptionPlan?) {
 
             BenefitItem(
                 icon = Icons.Outlined.CheckCircle,
-                text = "Estacionamiento garantizado"
+                text = stringResource(R.string.estacionamiento_garantizado)
             )
             BenefitItem(
                 icon = Icons.Outlined.CheckCircle,
-                text = "Múltiples vehículos permitidos"
+                text = stringResource(R.string.acceso_24_7_al_garaje)
             )
             BenefitItem(
                 icon = Icons.Outlined.CheckCircle,
-                text = "Acceso 24/7 al garaje"
-            )
-            BenefitItem(
-                icon = Icons.Outlined.CheckCircle,
-                text = "Soporte prioritario"
+                text = stringResource(R.string.soporte_prioritario)
             )
         }
     }
@@ -447,13 +445,13 @@ fun NoSubscriptionHeader() {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "Sin suscripción activa",
+                    stringResource(R.string.sin_suscripci_n_activa),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
                 Text(
-                    "Suscríbete para obtener beneficios exclusivos",
+                    stringResource(R.string.suscr_bete_para_obtener_beneficios_exclusivos),
                     fontSize = 13.sp,
                     color = TextSecondary,
                     lineHeight = 18.sp
@@ -491,7 +489,7 @@ fun AvailablePlanCard(
                         color = TextPrimary
                     )
                     Text(
-                        "Plan mensual",
+                        stringResource(R.string.plan_mensual),
                         fontSize = 13.sp,
                         color = TextSecondary
                     )
@@ -520,11 +518,11 @@ fun AvailablePlanCard(
             ) {
                 PlanFeatureChip(
                     icon = Icons.Outlined.DirectionsCar,
-                    text = "${plan.max_vehicles} vehículos"
+                    text = stringResource(R.string.veh_culos98, plan.max_vehicles)
                 )
                 PlanFeatureChip(
                     icon = Icons.Outlined.CalendarMonth,
-                    text = "30 días"
+                    text = stringResource(R.string._30_d_as)
                 )
             }
 
@@ -535,7 +533,7 @@ fun AvailablePlanCard(
             ) {
                 Column {
                     Text(
-                        "Precio mensual",
+                        stringResource(R.string.precio_mensual2),
                         fontSize = 12.sp,
                         color = TextSecondary
                     )
@@ -573,7 +571,7 @@ fun AvailablePlanCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        "Solicitar",
+                        stringResource(R.string.solicitar),
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -693,14 +691,14 @@ fun EmptyPlansStates() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            "No hay planes disponibles",
+            stringResource(R.string.no_hay_planes_disponibles),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
         )
 
         Text(
-            "Intenta más tarde",
+            stringResource(R.string.intenta_m_s_tarde),
             fontSize = 14.sp,
             color = TextSecondary,
             modifier = Modifier.padding(top = 8.dp)
@@ -734,7 +732,7 @@ fun CancelSubscriptionDialog(
         },
         title = {
             Text(
-                "¿Cancelar suscripción?",
+                stringResource(R.string.cancelar_suscripci_n2),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
@@ -743,7 +741,7 @@ fun CancelSubscriptionDialog(
         },
         text = {
             Text(
-                "Perderás todos los beneficios de tu plan actual. Esta acción no se puede deshacer.",
+                stringResource(R.string.perder_s_todos_los_beneficios_de_tu_plan_actual_esta_acci_n_no_se_puede_deshacer),
                 fontSize = 14.sp,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
@@ -759,7 +757,7 @@ fun CancelSubscriptionDialog(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Sí, cancelar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.s_cancelar), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -768,7 +766,7 @@ fun CancelSubscriptionDialog(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("No, mantener", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.no_mantener), color = TextPrimary, fontWeight = FontWeight.SemiBold)
             }
         }
     )
@@ -816,7 +814,7 @@ fun SuccessActionDialog(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    "¡Completado!",
+                    stringResource(R.string.completado),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary

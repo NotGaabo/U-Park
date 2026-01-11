@@ -17,12 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.kotlin.u_park.R
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.GarageRepositoryImpl
 import com.kotlin.u_park.data.repository.EmpleadoGarageRepositoryImpl
@@ -64,7 +66,7 @@ fun DetallesScreen(navController: NavController, garageId: String) {
             TopAppBar(
                 title = {
                     Text(
-                        "Detalles del Garage",
+                        stringResource(R.string.detalles_del_garage),
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF212121)
                     )
@@ -108,7 +110,7 @@ fun DetallesScreen(navController: NavController, garageId: String) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Garage no encontrado",
+                        stringResource(R.string.garage_no_encontrado),
                         fontSize = 16.sp,
                         color = Color.Gray
                     )
@@ -117,7 +119,7 @@ fun DetallesScreen(navController: NavController, garageId: String) {
                         onClick = { navController.navigateUp() },
                         colors = ButtonDefaults.buttonColors(containerColor = RedSoft)
                     ) {
-                        Text("Volver")
+                        Text(stringResource(R.string.volver))
                     }
                 }
             }
@@ -156,7 +158,7 @@ fun DetallesScreen(navController: NavController, garageId: String) {
 
                 // Título y dirección
                 Text(
-                    text = g.nombre ?: "Sin nombre",
+                    text = g.nombre ?: stringResource(R.string.sin_nombre),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF212121)
@@ -173,7 +175,7 @@ fun DetallesScreen(navController: NavController, garageId: String) {
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = g.direccion ?: "Sin dirección",
+                        text = g.direccion ?: stringResource(R.string.sin_direcci_n),
                         color = Color.Gray,
                         fontSize = 14.sp
                     )
@@ -208,13 +210,13 @@ fun DetallesScreen(navController: NavController, garageId: String) {
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
-                                "Horario",
+                                stringResource(R.string.horario),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = Color(0xFF212121)
                             )
                             Text(
-                                g.horario ?: "No especificado",
+                                g.horario ?: stringResource(R.string.no_especificado),
                                 color = Color.Gray,
                                 fontSize = 14.sp
                             )
@@ -240,7 +242,7 @@ fun DetallesScreen(navController: NavController, garageId: String) {
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                     ) {
                         Text(
-                            text = "Reservar",
+                            text = stringResource(R.string.reservar),
                             color = Color.White,
                             fontWeight = FontWeight.Medium
                         )
@@ -255,7 +257,7 @@ fun DetallesScreen(navController: NavController, garageId: String) {
                         shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D47A1))
                     ) {
-                        Text("Suscribirse", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.suscribirse), color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -279,7 +281,7 @@ fun DetallesScreen(navController: NavController, garageId: String) {
                 ) {
                     Icon(Icons.Default.Map, contentDescription = "map", tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Ir al garage", color = Color.White, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.ir_al_garage), color = Color.White, fontWeight = FontWeight.Medium)
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -306,7 +308,7 @@ fun EspaciosDisponiblesCard(espacios: Int) {
 
             Column {
                 Text(
-                    "Espacios Disponibles",
+                    stringResource(R.string.espacios_disponibles),
                     color = Color(0xFF0D47A1),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium

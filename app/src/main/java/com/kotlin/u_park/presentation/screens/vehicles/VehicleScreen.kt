@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.Vehicle
 import com.kotlin.u_park.domain.model.VehicleTypeSimple
 import com.kotlin.u_park.presentation.navigation.Routes
@@ -66,14 +68,14 @@ fun VehicleScreen(
                         .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
                     Text(
-                        "Mis Vehículos",
+                        stringResource(R.string.mis_veh_culos),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
                         letterSpacing = (-0.5).sp
                     )
                     Text(
-                        "Administra tu flota",
+                        stringResource(R.string.administra_tu_flota),
                         fontSize = 14.sp,
                         color = TextSecondary,
                         fontWeight = FontWeight.Medium,
@@ -105,7 +107,7 @@ fun VehicleScreen(
                 ) {
                     Icon(
                         Icons.Default.Add,
-                        contentDescription = "Agregar vehículo",
+                        contentDescription = stringResource(R.string.agregar_veh_culo),
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -134,7 +136,7 @@ fun VehicleScreen(
                                 modifier = Modifier.size(48.dp)
                             )
                             Text(
-                                "Cargando vehículos...",
+                                stringResource(R.string.cargando_veh_culos),
                                 fontSize = 15.sp,
                                 color = TextSecondary
                             )
@@ -180,7 +182,7 @@ fun VehicleScreen(
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Text(
-                                            "Activos",
+                                            stringResource(R.string.activos2323),
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = PrimaryRed
@@ -241,7 +243,7 @@ fun EmptyVehiclesState(onAddVehicle: () -> Unit) {
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            "No tienes vehículos",
+            stringResource(R.string.no_tienes_veh_culos),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
@@ -250,7 +252,7 @@ fun EmptyVehiclesState(onAddVehicle: () -> Unit) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            "Agrega tu primer vehículo para comenzar a usar U-Park y reservar espacios",
+            stringResource(R.string.agrega_tu_primer_veh_culo_para_comenzar_a_usar_u_park_y_reservar_espacios),
             fontSize = 15.sp,
             color = TextSecondary,
             textAlign = TextAlign.Center,
@@ -275,7 +277,7 @@ fun EmptyVehiclesState(onAddVehicle: () -> Unit) {
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                "Agregar Vehículo",
+                stringResource(R.string.agregar_veh_culo2),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -320,7 +322,7 @@ fun VehicleCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    vehicle.model ?: "Sin modelo",
+                    vehicle.model ?: stringResource(R.string.sin_modelo3),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -370,7 +372,7 @@ fun VehicleCard(
 
     if (showDeleteDialog) {
         DeleteVehicleDialog(
-            vehicleModel = vehicle.model ?: "este vehículo",
+            vehicleModel = vehicle.model ?: stringResource(R.string.este_veh_culo),
             onConfirm = {
                 onDelete(vehicle.id ?: "")
                 showDeleteDialog = false
@@ -428,7 +430,7 @@ fun DeleteVehicleDialog(
         },
         title = {
             Text(
-                "¿Eliminar vehículo?",
+                stringResource(R.string.eliminar_veh_culo),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
@@ -437,7 +439,10 @@ fun DeleteVehicleDialog(
         },
         text = {
             Text(
-                "Se eliminará $vehicleModel permanentemente. Esta acción no se puede deshacer.",
+                stringResource(
+                    R.string.se_eliminar_permanentemente_esta_acci_n_no_se_puede_deshacer,
+                    vehicleModel
+                ),
                 fontSize = 14.sp,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
@@ -453,7 +458,7 @@ fun DeleteVehicleDialog(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Sí, eliminar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.s_eliminar), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -462,7 +467,7 @@ fun DeleteVehicleDialog(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Cancelar", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.cancelar23), color = TextPrimary, fontWeight = FontWeight.SemiBold)
             }
         }
     )
@@ -540,13 +545,13 @@ fun AddVehicleSheet(
             ) {
                 Column {
                     Text(
-                        "Nuevo Vehículo",
+                        stringResource(R.string.nuevo_veh_culo),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
                     Text(
-                        "Completa la información",
+                        stringResource(R.string.completa_la_informaci_n3),
                         fontSize = 14.sp,
                         color = TextSecondary
                     )
@@ -594,7 +599,7 @@ fun AddVehicleSheet(
                             tint = PrimaryRed.copy(alpha = 0.6f)
                         )
                         Text(
-                            "Tu vehículo",
+                            stringResource(R.string.tu_veh_culo),
                             fontSize = 16.sp,
                             color = TextSecondary,
                             fontWeight = FontWeight.Medium
@@ -607,20 +612,20 @@ fun AddVehicleSheet(
 
             // Form Fields
             FormTextField(
-                label = "Placa *",
+                label = stringResource(R.string.placa23),
                 value = plate,
                 onValueChange = { plate = it.uppercase(); showError = false },
-                placeholder = "ABC-1234",
+                placeholder = stringResource(R.string.abc_123432),
                 icon = Icons.Outlined.Tag
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             FormTextField(
-                label = "Modelo *",
+                label = stringResource(R.string.modelo),
                 value = model,
                 onValueChange = { model = it; showError = false },
-                placeholder = "Toyota Corolla",
+                placeholder = stringResource(R.string.toyota_corolla),
                 icon = Icons.Outlined.CarRepair
             )
 
@@ -632,24 +637,24 @@ fun AddVehicleSheet(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     FormTextField(
-                        label = "Color *",
+                        label = stringResource(R.string.color),
                         value = color,
                         onValueChange = { color = it; showError = false },
-                        placeholder = "Rojo",
+                        placeholder = stringResource(R.string.rojo),
                         icon = Icons.Outlined.Palette
                     )
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
                     FormTextField(
-                        label = "Año",
+                        label = stringResource(R.string.a_o),
                         value = year,
                         onValueChange = {
                             if (it.all { char -> char.isDigit() } && it.length <= 4) {
                                 year = it
                             }
                         },
-                        placeholder = "2024",
+                        placeholder = stringResource(R.string._2024),
                         icon = Icons.Outlined.CalendarToday,
                         keyboardType = KeyboardType.Number
                     )
@@ -661,7 +666,7 @@ fun AddVehicleSheet(
             // Vehicle Type Dropdown
             Column {
                 Text(
-                    "Tipo de Vehículo *",
+                    stringResource(R.string.tipo_de_veh_culo3),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
@@ -676,7 +681,7 @@ fun AddVehicleSheet(
                         value = selectedType?.name ?: "",
                         onValueChange = {},
                         readOnly = true,
-                        placeholder = { Text("Selecciona un tipo", color = TextSecondary) },
+                        placeholder = { Text(stringResource(R.string.selecciona_un_tipo), color = TextSecondary) },
                         modifier = Modifier
                             .menuAnchor()
                             .fillMaxWidth(),
@@ -803,7 +808,7 @@ fun AddVehicleSheet(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "Guardar Vehículo",
+                        stringResource(R.string.guardar_veh_culo),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -894,7 +899,7 @@ fun SuccessVehicleDialog(onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    "¡Vehículo agregado!",
+                    stringResource(R.string.veh_culo_agregado),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -903,7 +908,7 @@ fun SuccessVehicleDialog(onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    "Tu vehículo ha sido registrado exitosamente",
+                    stringResource(R.string.tu_veh_culo_ha_sido_registrado_exitosamente),
                     fontSize = 14.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center
@@ -948,28 +953,28 @@ fun ModernBottomBar(
             BottomBarItem(
                 icon = Icons.Outlined.Home,
                 selectedIcon = Icons.Default.Home,
-                label = "Inicio",
+                label = stringResource(R.string.inicio23),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItem(
                 icon = Icons.Outlined.DirectionsCar,
                 selectedIcon = Icons.Default.DirectionsCar,
-                label = "Vehículos",
+                label = stringResource(R.string.veh_culos23),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )
             BottomBarItem(
                 icon = Icons.Outlined.History,
                 selectedIcon = Icons.Default.History,
-                label = "Historial",
+                label = stringResource(R.string.historial3232),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
             BottomBarItem(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
-                label = "Perfil",
+                label = stringResource(R.string.perfil12),
                 isSelected = selectedIndex == 3,
                 onClick = { onItemSelected(3) }
             )

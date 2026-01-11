@@ -15,8 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.ReportPeriod
 import com.kotlin.u_park.domain.model.ReportType
 import java.time.LocalDate
@@ -54,7 +56,7 @@ fun ReportSelectorBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Generar Reporte",
+                    text = stringResource(R.string.generar_reporte),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -66,7 +68,7 @@ fun ReportSelectorBottomSheet(
             // Paso 1: Tipo de reporte
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "1. Tipo de reporte",
+                    text = stringResource(R.string._1_tipo_de_reporte),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -77,7 +79,7 @@ fun ReportSelectorBottomSheet(
                 ) {
                     ReportTypeCard(
                         modifier = Modifier.weight(1f),
-                        title = "Ocupación",
+                        title = stringResource(R.string.ocupaci_n),
                         icon = Icons.Default.DirectionsCar,
                         isSelected = selectedReportType == ReportType.OCCUPANCY,
                         onClick = { selectedReportType = ReportType.OCCUPANCY }
@@ -85,7 +87,7 @@ fun ReportSelectorBottomSheet(
 
                     ReportTypeCard(
                         modifier = Modifier.weight(1f),
-                        title = "Ingresos",
+                        title = stringResource(R.string.ingresos),
                         icon = Icons.Default.AttachMoney,
                         isSelected = selectedReportType == ReportType.INCOME,
                         onClick = { selectedReportType = ReportType.INCOME }
@@ -97,7 +99,7 @@ fun ReportSelectorBottomSheet(
             if (selectedReportType != null) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "2. Período del reporte",
+                        text = stringResource(R.string._2_per_odo_del_reporte),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -174,7 +176,7 @@ fun ReportSelectorBottomSheet(
                     Icon(Icons.Default.PictureAsPdf, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Generar PDF",
+                        text = stringResource(R.string.generar_pdf),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -187,8 +189,8 @@ fun ReportSelectorBottomSheet(
     if (showDatePicker) {
         AlertDialog(
             onDismissRequest = { showDatePicker = false },
-            title = { Text("Seleccionar rango de fechas") },
-            text = { Text("Implementa aquí tu DateRangePicker") },
+            title = { Text(stringResource(R.string.seleccionar_rango_de_fechas)) },
+            text = { Text(stringResource(R.string.implementa_aqu_tu_daterangepicker)) },
             confirmButton = {
                 TextButton(onClick = {
                     // Establecer fechas ejemplo
@@ -196,12 +198,12 @@ fun ReportSelectorBottomSheet(
                     customEndDate = LocalDate.now()
                     showDatePicker = false
                 }) {
-                    Text("Aceptar")
+                    Text(stringResource(R.string.aceptar3))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.cancelar6))
                 }
             }
         )

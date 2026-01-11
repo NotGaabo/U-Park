@@ -19,11 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.HistorialParking
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.ui.theme.*
@@ -56,14 +58,14 @@ fun ParkingHistoryScreen(
                         .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
                     Text(
-                        "Mi Historial",
+                        stringResource(R.string.mi_historial),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
                         letterSpacing = (-0.5).sp
                     )
                     Text(
-                        "Revisa tus parkings",
+                        stringResource(R.string.revisa_tus_parkings),
                         fontSize = 14.sp,
                         color = TextSecondary,
                         fontWeight = FontWeight.Medium,
@@ -103,7 +105,7 @@ fun ParkingHistoryScreen(
                         modifier = Modifier.size(48.dp)
                     )
                     Text(
-                        "Cargando historial...",
+                        stringResource(R.string.cargando_historial),
                         fontSize = 15.sp,
                         color = TextSecondary
                     )
@@ -125,7 +127,7 @@ fun ParkingHistoryScreen(
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         SectionHeader(
-                            title = "Parking Activo",
+                            title = stringResource(R.string.parking_activo),
                             icon = Icons.Outlined.AccessTime,
                             iconColor = SuccessGreen
                         )
@@ -137,7 +139,7 @@ fun ParkingHistoryScreen(
             // 📅 History Section Header
             item {
                 SectionHeader(
-                    title = "Historial",
+                    title = stringResource(R.string.historial2),
                     icon = Icons.Outlined.History,
                     iconColor = TextSecondary
                 )
@@ -220,13 +222,13 @@ fun ActiveParkingCard(parking: HistorialParking) {
 
                     Column {
                         Text(
-                            parking.garage_nombre ?: "Garaje",
+                            parking.garage_nombre ?: stringResource(R.string.garaje),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
-                            "En progreso",
+                            stringResource(R.string.en_progreso),
                             fontSize = 13.sp,
                             color = TextSecondary
                         )
@@ -242,7 +244,7 @@ fun ActiveParkingCard(parking: HistorialParking) {
             // Vehicle Info
             InfoRow(
                 icon = Icons.Outlined.DirectionsCar,
-                label = "Vehículo",
+                label = stringResource(R.string.veh_culo5),
                 value = "${parking.plate ?: "—"} • ${parking.vehicle_model ?: ""}"
             )
 
@@ -252,12 +254,12 @@ fun ActiveParkingCard(parking: HistorialParking) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 TimeBlock(
-                    label = "Entrada",
+                    label = stringResource(R.string.entrada2),
                     time = parking.hora_entrada ?: "—",
                     icon = Icons.Outlined.Login
                 )
                 TimeBlock(
-                    label = "Salida estimada",
+                    label = stringResource(R.string.salida_estimada),
                     time = parking.hora_salida ?: "—",
                     icon = Icons.Outlined.Logout
                 )
@@ -269,8 +271,8 @@ fun ActiveParkingCard(parking: HistorialParking) {
 @Composable
 fun HistoryParkingCard(parking: HistorialParking) {
     val (statusColor, statusBg) = when (parking.estado) {
-        "completada" -> InfoBlue to InfoBlue.copy(alpha = 0.1f)
-        "cancelada" -> WarningOrange to WarningOrange.copy(alpha = 0.1f)
+        stringResource(R.string.completada) -> InfoBlue to InfoBlue.copy(alpha = 0.1f)
+        stringResource(R.string.cancelada3) -> WarningOrange to WarningOrange.copy(alpha = 0.1f)
         else -> TextSecondary to BackgroundColor
     }
 
@@ -310,7 +312,7 @@ fun HistoryParkingCard(parking: HistorialParking) {
 
                     Column {
                         Text(
-                            parking.garage_nombre ?: "Garaje",
+                            parking.garage_nombre ?: stringResource(R.string.garaje2),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -359,11 +361,11 @@ fun HistoryParkingCard(parking: HistorialParking) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 TimeBlockCompact(
-                    label = "Entrada",
+                    label = stringResource(R.string.entrada3),
                     time = formatHora(parking.hora_entrada)
                 )
                 TimeBlockCompact(
-                    label = "Salida",
+                    label = stringResource(R.string.salida6),
                     time = formatHora(parking.hora_salida)
                 )
             }
@@ -493,7 +495,7 @@ fun PulsingDot() {
                     .background(SuccessGreen.copy(alpha = alpha), CircleShape)
             )
             Text(
-                "Activo",
+                stringResource(R.string.activo),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = SuccessGreen
@@ -527,7 +529,7 @@ fun EmptyHistoryState() {
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            "Sin historial",
+            stringResource(R.string.sin_historial),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
@@ -537,7 +539,7 @@ fun EmptyHistoryState() {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "Aún no has realizado ningún parking.\nComienza a usar U-Park hoy.",
+            stringResource(R.string.a_n_no_has_realizado_ning_n_parking_comienza_a_usar_u_park_hoy),
             fontSize = 15.sp,
             color = TextSecondary,
             textAlign = TextAlign.Center,
@@ -568,28 +570,28 @@ fun ModernBottomBar(
             BottomBarItem(
                 icon = Icons.Outlined.Home,
                 selectedIcon = Icons.Default.Home,
-                label = "Inicio",
+                label = stringResource(R.string.inicio2),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItem(
                 icon = Icons.Outlined.DirectionsCar,
                 selectedIcon = Icons.Default.DirectionsCar,
-                label = "Vehículos",
+                label = stringResource(R.string.veh_culos8),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )
             BottomBarItem(
                 icon = Icons.Outlined.History,
                 selectedIcon = Icons.Default.History,
-                label = "Historial",
+                label = stringResource(R.string.historial3),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
             BottomBarItem(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
-                label = "Perfil",
+                label = stringResource(R.string.perfil5),
                 isSelected = selectedIndex == 3,
                 onClick = { onItemSelected(3) }
             )

@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -110,7 +111,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("Correo electrónico") },
+                    label = { Text(stringResource(R.string.correo_electr_nico)) },
                     leadingIcon = {
                         Icon(Icons.Default.Email, contentDescription = null, tint = iconGray)
                     },
@@ -132,7 +133,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Contraseña") },
+                    label = { Text(stringResource(R.string.contrase_a)) },
                     leadingIcon = {
                         Icon(Icons.Default.Lock, contentDescription = null, tint = iconGray)
                     },
@@ -183,12 +184,12 @@ fun LoginScreen(
                         contentColor = white
                     )
                 ) {
-                    Text("Iniciar sesión", fontSize = 16.sp)
+                    Text(stringResource(R.string.iniciar_sesi_n), fontSize = 16.sp)
                 }
 
                 // 🔁 Olvidar contraseña
                 TextButton(onClick = { /* TODO */ }) {
-                    Text("¿Olvidaste tu contraseña?", color = redPrimary, fontSize = 14.sp)
+                    Text(stringResource(R.string.olvidaste_tu_contrase_a), color = redPrimary, fontSize = 14.sp)
                 }
 
                 // ➕ Crear cuenta
@@ -204,7 +205,7 @@ fun LoginScreen(
                         brush = Brush.horizontalGradient(listOf(redPrimary, Color.LightGray))
                     )
                 ) {
-                    Text("Crear nueva cuenta", fontSize = 15.sp)
+                    Text(stringResource(R.string.crear_nueva_cuenta), fontSize = 15.sp)
                 }
 
                 // 📣 Mensaje de feedback

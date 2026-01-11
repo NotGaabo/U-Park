@@ -27,12 +27,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.garage.GarageAddScreen
@@ -119,7 +121,7 @@ fun DuenoGarageScreen(
                     modifier = Modifier.size(48.dp)
                 )
                 Text(
-                    "Cargando garages...",
+                    stringResource(R.string.cargando_garages),
                     fontSize = 15.sp,
                     color = TextSecondary
                 )
@@ -159,14 +161,16 @@ fun DuenoGarageScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Mis Garages",
+                        stringResource(R.string.mis_garages),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
                         letterSpacing = (-0.5).sp
                     )
                     Text(
-                        "${garages.size} ${if (garages.size == 1) "garage registrado" else "garages registrados"}",
+                        "${garages.size} ${if (garages.size == 1) stringResource(R.string.garage_registrado) else stringResource(
+                            R.string.garages_registrados
+                        )}",
                         fontSize = 14.sp,
                         color = TextSecondary,
                         fontWeight = FontWeight.Medium
@@ -199,7 +203,7 @@ fun DuenoGarageScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            "Tus Garages",
+                            stringResource(R.string.tus_garages),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -218,7 +222,7 @@ fun DuenoGarageScreen(
                         ) {
                             Icon(
                                 Icons.Default.Add,
-                                contentDescription = "Agregar garage",
+                                contentDescription = stringResource(R.string.agregar_garage),
                                 tint = SurfaceColor,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -271,7 +275,7 @@ fun ModernStatsCard(garages: List<Garage>) {
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    "Resumen General",
+                    stringResource(R.string.resumen_general),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -285,21 +289,21 @@ fun ModernStatsCard(garages: List<Garage>) {
                 StatItem(
                     icon = Icons.Outlined.LocalParking,
                     value = garages.sumOf { it.capacidadTotal }.toString(),
-                    label = "Espacios",
+                    label = stringResource(R.string.espacios),
                     color = PrimaryRed
                 )
 
                 StatItem(
                     icon = Icons.Outlined.TrendingUp,
                     value = "${garages.size}",
-                    label = "Garages",
+                    label = stringResource(R.string.garages),
                     color = SuccessGreen
                 )
 
                 StatItem(
                     icon = Icons.Outlined.CheckCircle,
                     value = "${garages.size}",
-                    label = "Activos",
+                    label = stringResource(R.string.activos3),
                     color = InfoBlue
                 )
             }
@@ -416,7 +420,7 @@ fun ModernGarageCard(
                         tint = TextSecondary
                     )
                     Text(
-                        garage.direccion ?: "Sin dirección",
+                        garage.direccion ?: stringResource(R.string.sin_direcci_n2),
                         fontSize = 13.sp,
                         color = TextSecondary,
                         maxLines = 1
@@ -465,7 +469,7 @@ fun ModernGarageCard(
                                     .background(SuccessGreen, CircleShape)
                             )
                             Text(
-                                "Activo",
+                                stringResource(R.string.activo),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = SuccessGreen
@@ -510,7 +514,7 @@ fun ModernEmptyState(onAddClick: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            "Sin garages registrados",
+            stringResource(R.string.sin_garages_registrados),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
@@ -520,7 +524,7 @@ fun ModernEmptyState(onAddClick: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "Agrega tu primer garage para\ncomenzar a gestionar tus espacios",
+            stringResource(R.string.agrega_tu_primer_garage_para_comenzar_a_gestionar_tus_espacios),
             fontSize = 15.sp,
             color = TextSecondary,
             textAlign = TextAlign.Center,
@@ -548,7 +552,7 @@ fun ModernEmptyState(onAddClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                "Agregar Garage",
+                stringResource(R.string.agregar_garage2),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -577,28 +581,28 @@ fun ModernBottomBarAdmin(
             BottomBarItemAdmin(
                 icon = Icons.Outlined.AttachMoney,
                 selectedIcon = Icons.Default.AttachMoney,
-                label = "Tarifas",
+                label = stringResource(R.string.tarifas2),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItemAdmin(
                 icon = Icons.Outlined.Dashboard,
                 selectedIcon = Icons.Default.Dashboard,
-                label = "Dashboard",
+                label = stringResource(R.string.dashboard2),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )
             BottomBarItemAdmin(
                 icon = Icons.Outlined.BookmarkBorder,
                 selectedIcon = Icons.Default.Bookmark,
-                label = "Reservas",
+                label = stringResource(R.string.reservas3),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
             BottomBarItemAdmin(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
-                label = "Perfil",
+                label = stringResource(R.string.perfil2),
                 isSelected = selectedIndex == 3,
                 onClick = { onItemSelected(3) }
             )

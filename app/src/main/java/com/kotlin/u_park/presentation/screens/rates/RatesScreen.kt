@@ -18,11 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.Rate
 import com.kotlin.u_park.presentation.navigation.Routes
 
@@ -105,14 +107,14 @@ fun RatesScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Mis Tarifas",
+                        stringResource(R.string.mis_tarifas),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
                         letterSpacing = (-0.5).sp
                     )
                     Text(
-                        "Gestión de precios por garage",
+                        stringResource(R.string.gesti_n_de_precios_por_garage),
                         fontSize = 14.sp,
                         color = TextSecondary,
                         fontWeight = FontWeight.Medium
@@ -215,8 +217,12 @@ fun GarageHeaderCard(
                     color = SurfaceColor
                 )
                 Text(
-                    if (ratesCount == 0) "Sin tarifas"
-                    else "$ratesCount tarifa${if (ratesCount != 1) "s" else ""}",
+                    if (ratesCount == 0) stringResource(R.string.sin_tarifas2)
+                    else stringResource(
+                        R.string.tarifa2,
+                        ratesCount,
+                        if (ratesCount != 1) "s" else ""
+                    ),
                     fontSize = 13.sp,
                     color = SurfaceColor.copy(alpha = 0.85f),
                     fontWeight = FontWeight.Medium
@@ -273,13 +279,13 @@ fun ModernRateCard(
 
                     Column {
                         Text(
-                            "RD$ ${rate.baseRate}",
+                            stringResource(R.string.rd2, rate.baseRate),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = PrimaryRed
                         )
                         Text(
-                            "por ${rate.timeUnit}",
+                            stringResource(R.string.por, rate.timeUnit),
                             fontSize = 13.sp,
                             color = TextSecondary,
                             fontWeight = FontWeight.Medium
@@ -299,7 +305,7 @@ fun ModernRateCard(
                         ) {
                             Icon(
                                 Icons.Outlined.Edit,
-                                contentDescription = "Editar",
+                                contentDescription = stringResource(R.string.editar),
                                 tint = InfoBlue,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -317,7 +323,7 @@ fun ModernRateCard(
                         ) {
                             Icon(
                                 Icons.Outlined.Delete,
-                                contentDescription = "Eliminar",
+                                contentDescription = stringResource(R.string.eliminar23),
                                 tint = PrimaryRed,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -331,15 +337,15 @@ fun ModernRateCard(
             // Vehicle Type
             InfoRowModern(
                 icon = Icons.Outlined.DirectionsCar,
-                label = "Tipo de vehículo",
-                value = vehicleTypeName ?: "Cualquiera",
+                label = stringResource(R.string.tipo_de_veh_culo2),
+                value = vehicleTypeName ?: stringResource(R.string.cualquiera33),
                 iconColor = TextSecondary
             )
 
             // Days
             InfoRowModern(
                 icon = Icons.Outlined.CalendarToday,
-                label = "Días aplicables",
+                label = stringResource(R.string.d_as_aplicables2),
                 value = rate.diasAplicables.joinToString(", ") { it.capitalize() },
                 iconColor = TextSecondary
             )
@@ -363,7 +369,7 @@ fun ModernRateCard(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            "Tarifa especial: $special",
+                            stringResource(R.string.tarifa_especial, special),
                             fontSize = 13.sp,
                             color = WarningOrange,
                             fontWeight = FontWeight.Bold
@@ -388,13 +394,13 @@ fun ModernRateCard(
             },
             title = {
                 Text(
-                    "¿Eliminar tarifa?",
+                    stringResource(R.string.eliminar_tarifa),
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    "Esta acción no se puede deshacer. La tarifa será eliminada permanentemente.",
+                    stringResource(R.string.esta_acci_n_no_se_puede_deshacer_la_tarifa_ser_eliminada_permanentemente),
                     fontSize = 14.sp,
                     color = TextSecondary
                 )
@@ -409,12 +415,12 @@ fun ModernRateCard(
                         containerColor = PrimaryRed
                     )
                 ) {
-                    Text("Eliminar")
+                    Text(stringResource(R.string.eliminar222))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancelar", color = TextSecondary)
+                    Text(stringResource(R.string.cancelar222), color = TextSecondary)
                 }
             }
         )
@@ -470,7 +476,7 @@ fun EmptyRatesForGarage() {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                "No hay tarifas en este garage",
+                stringResource(R.string.no_hay_tarifas_en_este_garage),
                 fontSize = 14.sp,
                 color = TextSecondary,
                 textAlign = TextAlign.Center
@@ -504,7 +510,7 @@ fun ModernEmptyRatesState() {
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            "Sin tarifas registradas",
+            stringResource(R.string.sin_tarifas_registradas),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
@@ -514,7 +520,7 @@ fun ModernEmptyRatesState() {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "Comienza creando tu primera tarifa\npara empezar a gestionar precios",
+            stringResource(R.string.comienza_creando_tu_primera_tarifa_para_empezar_a_gestionar_precios),
             fontSize = 15.sp,
             color = TextSecondary,
             textAlign = TextAlign.Center,
@@ -541,7 +547,7 @@ fun GarageSelectionDialog(
         },
         title = {
             Text(
-                "Selecciona un Garage",
+                stringResource(R.string.selecciona_un_garage),
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
@@ -552,7 +558,7 @@ fun GarageSelectionDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "¿A qué garage deseas agregar la tarifa?",
+                    stringResource(R.string.a_qu_garage_deseas_agregar_la_tarifa),
                     fontSize = 14.sp,
                     color = TextSecondary
                 )
@@ -609,7 +615,7 @@ fun GarageSelectionDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = TextSecondary)
+                Text(stringResource(R.string.cancelar22), color = TextSecondary)
             }
         }
     )
@@ -636,28 +642,28 @@ fun ModernBottomBarAdmin(
             BottomBarItemAdmin(
                 icon = Icons.Outlined.AttachMoney,
                 selectedIcon = Icons.Default.AttachMoney,
-                label = "Tarifas",
+                label = stringResource(R.string.tarifas22),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItemAdmin(
                 icon = Icons.Outlined.Dashboard,
                 selectedIcon = Icons.Default.Dashboard,
-                label = "Dashboard",
+                label = stringResource(R.string.dashboard22),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )
             BottomBarItemAdmin(
                 icon = Icons.Outlined.BookmarkBorder,
                 selectedIcon = Icons.Default.Bookmark,
-                label = "Reservas",
+                label = stringResource(R.string.reservas22),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
             BottomBarItemAdmin(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
-                label = "Perfil",
+                label = stringResource(R.string.perfil88),
                 isSelected = selectedIndex == 3,
                 onClick = { onItemSelected(3) }
             )

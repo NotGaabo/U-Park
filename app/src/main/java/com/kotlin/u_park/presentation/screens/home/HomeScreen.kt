@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.android.gms.location.*
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.Garage
 import com.kotlin.u_park.presentation.components.GarageCard
 import com.kotlin.u_park.presentation.components.GarageDetailBottomSheet
@@ -120,9 +122,9 @@ fun HomeScreen(
     var selectedLocationLine by remember { mutableStateOf("") }
 
     val filters = listOf(
-        FilterChip("Todos", Icons.Outlined.GridView),
-        FilterChip("Económicos", Icons.Outlined.LocalOffer),
-        FilterChip("Disponibles", Icons.Outlined.CheckCircle)
+        FilterChip(stringResource(R.string.todos), Icons.Outlined.GridView),
+        FilterChip(stringResource(R.string.econ_micos), Icons.Outlined.LocalOffer),
+        FilterChip(stringResource(R.string.disponibles), Icons.Outlined.CheckCircle)
     )
 
     val listState = rememberLazyListState()
@@ -139,9 +141,9 @@ fun HomeScreen(
                     selectedIndex = 0,
                     onItemSelected = { index ->
                         when (index) {
-                            1 -> navController.navigate("vehicles")
+                            1 -> navController.navigate(context.getString(R.string.vehicles))
                             2 -> navController.navigate(Routes.HistorialParking.createRoute(userId))
-                            3 -> navController.navigate("settings")
+                            3 -> navController.navigate(context.getString(R.string.settings))
                         }
                     }
                 )
@@ -174,7 +176,7 @@ fun HomeScreen(
                         ) {
                             Column {
                                 Text(
-                                    "Descubre",
+                                    stringResource(R.string.descubre),
                                     fontSize = 28.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary,
@@ -194,7 +196,7 @@ fun HomeScreen(
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            "Santo Domingo",
+                                            stringResource(R.string.santo_domingo),
                                             fontSize = 14.sp,
                                             color = TextSecondary,
                                             fontWeight = FontWeight.Medium
@@ -210,7 +212,7 @@ fun HomeScreen(
                         SearchBarModern(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = "Buscar garajes, ubicaciones...",
+                            placeholder = stringResource(R.string.buscar_garajes_ubicaciones),
                             isLoading = isGettingLocation
                         )
 
@@ -250,9 +252,9 @@ fun HomeScreen(
                             item {
                                 EmptyState(
                                     icon = Icons.Outlined.SearchOff,
-                                    title = "No hay garajes cercanos",
-                                    subtitle = "Intenta cambiar tu ubicación o ajusta los filtros",
-                                    actionText = "Actualizar ubicación",
+                                    title = stringResource(R.string.no_hay_garajes_cercanos),
+                                    subtitle = stringResource(R.string.intenta_cambiar_tu_ubicaci_n_o_ajusta_los_filtros),
+                                    actionText = stringResource(R.string.actualizar_ubicaci_n),
                                     onAction = {
                                         if (userLocation != null) {
                                             homeViewModel.loadGarages(
@@ -275,15 +277,18 @@ fun HomeScreen(
                                 item {
                                     EmptyState(
                                         icon = Icons.Outlined.SearchOff,
-                                        title = "Sin resultados",
-                                        subtitle = "No encontramos garajes con \"$searchQuery\"",
+                                        title = stringResource(R.string.sin_resultados2),
+                                        subtitle = stringResource(
+                                            R.string.no_encontramos_garajes_con,
+                                            searchQuery
+                                        ),
                                         showAction = false
                                     )
                                 }
                             } else {
                                 item {
                                     Text(
-                                        "${filtered.size} garajes disponibles",
+                                        stringResource(R.string.garajes_disponibles, filtered.size),
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = TextPrimary,
@@ -542,28 +547,28 @@ fun ModernBottomBar(
             BottomBarItem(
                 icon = Icons.Outlined.Home,
                 selectedIcon = Icons.Default.Home,
-                label = "Inicio",
+                label = stringResource(R.string.inicio),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItem(
                 icon = Icons.Outlined.DirectionsCar,
                 selectedIcon = Icons.Default.DirectionsCar,
-                label = "Vehículos",
+                label = stringResource(R.string.veh_culos2),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )
             BottomBarItem(
                 icon = Icons.Outlined.History,
                 selectedIcon = Icons.Default.History,
-                label = "Historial",
+                label = stringResource(R.string.historial),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
             BottomBarItem(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
-                label = "Perfil",
+                label = stringResource(R.string.perfil3),
                 isSelected = selectedIndex == 3,
                 onClick = { onItemSelected(3) }
             )

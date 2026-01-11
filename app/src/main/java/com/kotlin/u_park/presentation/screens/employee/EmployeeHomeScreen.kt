@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -30,6 +31,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 import com.kotlin.u_park.presentation.screens.profile.BottomBarItemModern
@@ -84,7 +86,7 @@ fun EmployeeHomeScreen(
                 title = {
                     Column {
                         Text(
-                            "Panel de Control",
+                            stringResource(R.string.panel_de_control),
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             color = TextPrimary
@@ -140,7 +142,7 @@ fun EmployeeHomeScreen(
                     // Stats Grid
                     item {
                         Text(
-                            "Estadísticas en Tiempo Real",
+                            stringResource(R.string.estad_sticas_en_tiempo_real),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -227,13 +229,13 @@ fun EmployeeHomeScreen(
                                 Spacer(Modifier.width(20.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        "Registrar Entrada",
+                                        stringResource(R.string.registrar_entrada),
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White
                                     )
                                     Text(
-                                        "Toca para registrar un nuevo vehículo",
+                                        stringResource(R.string.toca_para_registrar_un_nuevo_veh_culo),
                                         fontSize = 13.sp,
                                         color = Color.White.copy(alpha = 0.9f)
                                     )
@@ -255,7 +257,7 @@ fun EmployeeHomeScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Actividad Reciente",
+                                stringResource(R.string.actividad_reciente),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
@@ -263,7 +265,7 @@ fun EmployeeHomeScreen(
                             TextButton(
                                 onClick = { navController.navigate(Routes.VehiculosDentro.createRoute(garageId)) }
                             ) {
-                                Text("Ver todo", color = PrimaryRed)
+                                Text(stringResource(R.string.ver_todo), color = PrimaryRed)
                             }
                         }
                     }
@@ -351,13 +353,13 @@ fun HeroStatsCard(
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(
-                            "Estado del Parqueo",
+                            stringResource(R.string.estado_del_parqueo),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = TextSecondary
                         )
                         Text(
-                            "Resumen de hoy",
+                            stringResource(R.string.resumen_de_hoy),
                             fontSize = 14.sp,
                             color = TextSecondary.copy(alpha = 0.7f)
                         )
@@ -551,7 +553,7 @@ fun ModernActivityItem(
                     color = TextPrimary
                 )
                 Text(
-                    "Hoy",
+                    stringResource(R.string.hoy),
                     fontSize = 12.sp,
                     color = TextSecondary
                 )
@@ -590,13 +592,13 @@ fun EmptyActivityState() {
             }
             Spacer(Modifier.height(16.dp))
             Text(
-                "Sin actividad reciente",
+                stringResource(R.string.sin_actividad_reciente),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = TextPrimary
             )
             Text(
-                "Los movimientos aparecerán aquí",
+                stringResource(R.string.los_movimientos_aparecer_n_aqu),
                 fontSize = 14.sp,
                 color = TextSecondary,
                 textAlign = TextAlign.Center

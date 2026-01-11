@@ -44,7 +44,9 @@ import java.io.File
 import java.io.ByteArrayOutputStream
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import com.kotlin.u_park.R
 import com.kotlin.u_park.ui.theme.*
 
 private val GreenSoft = Color(0xFF4CAF50)
@@ -171,7 +173,7 @@ fun RegistrarSalidaScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Ticket de Salida",
+                        stringResource(R.string.ticket_de_salida),
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -205,7 +207,7 @@ fun RegistrarSalidaScreen(
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            "Cargando ticket...",
+                            stringResource(R.string.cargando_ticket),
                             color = Color.Gray,
                             fontSize = 14.sp
                         )
@@ -241,13 +243,13 @@ fun RegistrarSalidaScreen(
                             )
                             Spacer(Modifier.height(16.dp))
                             Text(
-                                "Error",
+                                stringResource(R.string.error),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                error ?: "Error desconocido",
+                                error ?: stringResource(R.string.error_desconocido),
                                 textAlign = TextAlign.Center,
                                 color = Color.Gray
                             )
@@ -273,8 +275,8 @@ fun RegistrarSalidaScreen(
 
                         TicketViewImproved(
                             salida = salida,
-                            vehiculoNombre = vehiculoNombre ?: "Vehículo",
-                            garageNombre = garageNombre ?: "Garage"
+                            vehiculoNombre = vehiculoNombre ?: stringResource(R.string.veh_culo),
+                            garageNombre = garageNombre ?: stringResource(R.string.garage)
                         )
 
                         // 🔥 Botón con loading
@@ -299,7 +301,7 @@ fun RegistrarSalidaScreen(
                                 )
                             } else {
                                 Text(
-                                    "Confirmar Salida",
+                                    stringResource(R.string.confirmar_salida),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -307,7 +309,7 @@ fun RegistrarSalidaScreen(
                         }
 
                         Text(
-                            "Generar Comprobante",
+                            stringResource(R.string.generar_comprobante),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1A1A1A)
@@ -337,8 +339,10 @@ fun RegistrarSalidaScreen(
                                             val pdfFile = PdfGenerator.generateFacturaSalida(
                                                 context = context,
                                                 ticket = salida,
-                                                vehiculoNombre = vehiculoNombre ?: "Vehículo",
-                                                garageNombre = garageNombre ?: "Garage",
+                                                vehiculoNombre = vehiculoNombre ?: context.getString(
+                                                    R.string.ve
+                                                ),
+                                                garageNombre = garageNombre ?: context.getString(R.string.garag),
                                                 saveToDownloads = false
                                             )
                                             PdfGenerator.compartirFactura(context, pdfFile)
@@ -365,7 +369,7 @@ fun RegistrarSalidaScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                Text("Compartir", fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.compartir), fontWeight = FontWeight.SemiBold)
                             }
 
                             Button(
@@ -376,8 +380,8 @@ fun RegistrarSalidaScreen(
                                             PdfGenerator.generateFacturaSalida(
                                                 context = context,
                                                 ticket = salida,
-                                                vehiculoNombre = vehiculoNombre ?: "Vehículo",
-                                                garageNombre = garageNombre ?: "Garage",
+                                                vehiculoNombre = vehiculoNombre ?: context.getString(R.string.veh_culo),
+                                                garageNombre = garageNombre ?: context.getString(R.string.garage),
                                                 saveToDownloads = true
                                             )
                                         } finally {
@@ -403,7 +407,7 @@ fun RegistrarSalidaScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                Text("Descargar", fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.descargar), fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -420,27 +424,27 @@ fun RegistrarSalidaScreen(
                         transferBitmap = transferBitmap,
                         onMethodSelected = { method ->
                             selectedPaymentMethod = method
-                            if (method == "transfer") {
+                            if (method == context.getString(R.string.transfer)) {
                                 launchCamera()
                             }
                         },
                         onConfirm = {
                             scope.launch {
                                 when (selectedPaymentMethod) {
-                                    "cash" -> {
+                                    context.getString(R.string.cash) -> {
                                         parkingViewModel.registrarSalidaConPago(
                                             parkingId = parkingId,
-                                            metodoPago = "EFECTIVO",
+                                            metodoPago = context.getString(R.string.efectivo),
                                             comprobanteBytes = null
                                         )
                                     }
-                                    "transfer" -> {
+                                    context.getString(R.string.transfer2) -> {
                                         val bytes = transferBitmap?.toByteArray()
                                             ?: return@launch
 
                                         parkingViewModel.registrarSalidaConPago(
                                             parkingId = parkingId,
-                                            metodoPago = "TRANSFERENCIA",
+                                            metodoPago = context.getString(R.string.transferencia),
                                             comprobanteBytes = bytes
                                         )
                                     }
@@ -454,11 +458,11 @@ fun RegistrarSalidaScreen(
                 if (showPermissionDialog) {
                     AlertDialog(
                         onDismissRequest = { showPermissionDialog = false },
-                        title = { Text("Permiso requerido") },
-                        text = { Text("Se necesita acceso a la cámara para tomar la foto del comprobante.") },
+                        title = { Text(stringResource(R.string.permiso_requerido)) },
+                        text = { Text(stringResource(R.string.se_necesita_acceso_a_la_c_mara_para_tomar_la_foto_del_comprobante)) },
                         confirmButton = {
                             TextButton(onClick = { showPermissionDialog = false }) {
-                                Text("Entendido")
+                                Text(stringResource(R.string.entendido))
                             }
                         }
                     )
@@ -479,12 +483,12 @@ fun RegistrarSalidaScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("✅ ", fontSize = 24.sp)
-                                Text("Salida Registrada", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.salida_registrada), fontWeight = FontWeight.Bold)
                             }
                         },
                         text = {
                             Text(
-                                "La salida ha sido registrada y pagada correctamente.",
+                                stringResource(R.string.la_salida_ha_sido_registrada_y_pagada_correctamente),
                                 textAlign = TextAlign.Center
                             )
                         },
@@ -499,7 +503,7 @@ fun RegistrarSalidaScreen(
                                     containerColor = GreenSoft
                                 )
                             ) {
-                                Text("Aceptar")
+                                Text(stringResource(R.string.aceptar))
                             }
                         },
                         shape = RoundedCornerShape(20.dp)
@@ -520,27 +524,27 @@ fun PaymentMethodDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Seleccionar Método de Pago", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.seleccionar_m_todo_de_pago), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
                 PaymentMethodCard(
-                    title = "Efectivo",
+                    title = stringResource(R.string.efectivo2),
                     icon = Icons.Default.AccountBalanceWallet,
                     color = GreenSoft,
-                    isSelected = selectedMethod == "cash",
+                    isSelected = selectedMethod == stringResource(R.string.cash2),
                     onClick = { onMethodSelected("cash") }
                 )
 
                 PaymentMethodCard(
-                    title = "Transferencia",
+                    title = stringResource(R.string.transferencia2),
                     icon = Icons.Default.CreditCard,
                     color = Color(0xFF2196F3),
-                    isSelected = selectedMethod == "transfer",
+                    isSelected = selectedMethod == stringResource(R.string.transfer3),
                     onClick = { onMethodSelected("transfer") }
                 )
 
-                if (selectedMethod == "transfer" && transferBitmap != null) {
+                if (selectedMethod == stringResource(R.string.transfer4) && transferBitmap != null) {
                     Image(
                         bitmap = transferBitmap.asImageBitmap(),
                         contentDescription = null,
@@ -555,14 +559,14 @@ fun PaymentMethodDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                enabled = selectedMethod == "cash" ||
-                        (selectedMethod == "transfer" && transferBitmap != null)
+                enabled = selectedMethod == stringResource(R.string.cash5) ||
+                        (selectedMethod == stringResource(R.string.transfer6) && transferBitmap != null)
             ) {
-                Text("Confirmar Pago")
+                Text(stringResource(R.string.confirmar_pago))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancelar3)) }
         },
         shape = RoundedCornerShape(20.dp)
     )
@@ -656,7 +660,7 @@ fun TicketViewImproved(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "TICKET DE SALIDA",
+                    stringResource(R.string.ticket_de_salida),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = RedSoft
@@ -671,23 +675,23 @@ fun TicketViewImproved(
 
             HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
-            InfoSection(title = "Información del Vehículo") {
-                InfoRowImproved("Vehículo", vehiculoNombre)
-                InfoRowImproved("Garage", garageNombre)
+            InfoSection(title = stringResource(R.string.informaci_n_del_veh_culo)) {
+                InfoRowImproved(stringResource(R.string.veh_culo), vehiculoNombre)
+                InfoRowImproved(stringResource(R.string.garage), garageNombre)
             }
 
             HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
-            InfoSection(title = "Horarios") {
-                InfoRowImproved("Entrada", formatDateTime(salida.hora_entrada))
-                InfoRowImproved("Salida", formatDateTime(salida.hora_salida))
+            InfoSection(title = stringResource(R.string.horarios)) {
+                InfoRowImproved(stringResource(R.string.entrada), formatDateTime(salida.hora_entrada))
+                InfoRowImproved(stringResource(R.string.salida), formatDateTime(salida.hora_salida))
 
                 val horasDecimales = salida.duration_hours
                 val minutosTotales = (horasDecimales * 60).toInt()
                 val horas = minutosTotales / 60
                 val minutos = minutosTotales % 60
 
-                InfoRowImproved("Duración", "%02d:%02d horas".format(horas, minutos))
+                InfoRowImproved(stringResource(R.string.duraci_n), "%02d:%02d horas".format(horas, minutos))
             }
 
             HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
@@ -707,13 +711,13 @@ fun TicketViewImproved(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Total a Pagar",
+                        stringResource(R.string.total_a_pagar),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF1A1A1A)
                     )
                     Text(
-                        "RD$ ${"%,.2f".format(salida.total)}",
+                        stringResource(R.string.rd, "%,.2f".format(salida.total)),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = RedSoft

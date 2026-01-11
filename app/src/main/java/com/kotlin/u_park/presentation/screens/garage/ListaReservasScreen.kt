@@ -19,10 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.repository.GarageRepository
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
@@ -70,14 +72,16 @@ fun ListaReservasScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Reservas",
+                        stringResource(R.string.reservas),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
                         letterSpacing = (-0.5).sp
                     )
                     Text(
-                        "${reservas.size} ${if (reservas.size == 1) "reserva activa" else "reservas activas"}",
+                        "${reservas.size} ${if (reservas.size == 1) stringResource(R.string.reserva_activa) else stringResource(
+                            R.string.reservas_activas
+                        )}",
                         fontSize = 14.sp,
                         color = TextSecondary,
                         fontWeight = FontWeight.Medium
@@ -131,7 +135,7 @@ private fun EmptyStateReservas() {
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            "Sin reservas activas",
+            stringResource(R.string.sin_reservas_activas),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
@@ -140,7 +144,7 @@ private fun EmptyStateReservas() {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "Las reservas aparecerán aquí\ncuando los usuarios las realicen",
+            stringResource(R.string.las_reservas_aparecer_n_aqu_cuando_los_usuarios_las_realicen),
             fontSize = 15.sp,
             color = TextSecondary,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -200,7 +204,7 @@ fun ModernReservaCard(
                             color = TextPrimary
                         )
                         Text(
-                            "Vehículo",
+                            stringResource(R.string.veh_culo),
                             fontSize = 12.sp,
                             color = TextSecondary
                         )
@@ -225,7 +229,7 @@ fun ModernReservaCard(
                 )
                 Column {
                     Text(
-                        "Cliente",
+                        stringResource(R.string.cliente),
                         fontSize = 12.sp,
                         color = TextSecondary
                     )
@@ -251,7 +255,7 @@ fun ModernReservaCard(
                 )
                 Column {
                     Text(
-                        "Fecha de reserva",
+                        stringResource(R.string.fecha_de_reserva),
                         fontSize = 12.sp,
                         color = TextSecondary
                     )
@@ -287,7 +291,7 @@ fun ModernReservaCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Cancelar", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.cancelar), fontWeight = FontWeight.SemiBold)
                 }
 
                 Button(
@@ -307,7 +311,7 @@ fun ModernReservaCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Activar", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.activar), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -317,9 +321,9 @@ fun ModernReservaCard(
 @Composable
 private fun ModernEstadoChip(estado: String) {
     val (color, icon) = when (estado.lowercase()) {
-        "activa", "activo" -> SuccessGreen to Icons.Filled.CheckCircle
-        "pendiente" -> WarningOrange to Icons.Filled.Schedule
-        "cancelada", "cancelado" -> PrimaryRed to Icons.Filled.Cancel
+        stringResource(R.string.activa), "activo" -> SuccessGreen to Icons.Filled.CheckCircle
+        stringResource(R.string.pendiente) -> WarningOrange to Icons.Filled.Schedule
+        stringResource(R.string.cancelada), "cancelado" -> PrimaryRed to Icons.Filled.Cancel
         else -> InfoBlue to Icons.Filled.Info
     }
 
@@ -371,28 +375,28 @@ fun ModernBottomBarAdmin(
             BottomBarItemAdmin(
                 icon = Icons.Outlined.AttachMoney,
                 selectedIcon = Icons.Default.AttachMoney,
-                label = "Tarifas",
+                label = stringResource(R.string.tarifas),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItemAdmin(
                 icon = Icons.Outlined.Dashboard,
                 selectedIcon = Icons.Default.Dashboard,
-                label = "Dashboard",
+                label = stringResource(R.string.dashboard),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )
             BottomBarItemAdmin(
                 icon = Icons.Outlined.BookmarkBorder,
                 selectedIcon = Icons.Default.Bookmark,
-                label = "Reservas",
+                label = stringResource(R.string.reservas2),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
             BottomBarItemAdmin(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
-                label = "Perfil",
+                label = stringResource(R.string.perfil),
                 isSelected = selectedIndex == 3,
                 onClick = { onItemSelected(3) }
             )

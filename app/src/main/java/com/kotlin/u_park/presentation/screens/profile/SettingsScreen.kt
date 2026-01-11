@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -101,7 +102,7 @@ internal fun SettingsScreenContent(
             TopAppBar(
                 title = {
                     Text(
-                        "Perfil",
+                        stringResource(R.string.perfil),
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
                         color = TextPrimary
@@ -146,7 +147,7 @@ internal fun SettingsScreenContent(
                             when (index) {
                                 0 -> navController.navigate(Routes.Home.route)
                                 1 -> navController.navigate("vehicles")
-                                2 -> { /* Historial */ }
+                                2 -> navController.navigate(Routes.HistorialParking.route)
                             }
                         }
                     )
@@ -174,7 +175,7 @@ internal fun SettingsScreenContent(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_user_placeholder),
-                    contentDescription = "Foto de perfil",
+                    contentDescription = stringResource(R.string.foto_de_perfil),
                     modifier = Modifier
                         .size(70.dp)
                         .clip(CircleShape)
@@ -182,7 +183,7 @@ internal fun SettingsScreenContent(
                 Spacer(modifier = Modifier.width(20.dp))
                 Column {
                     Text(
-                        text = currentUser?.nombre ?: "Usuario",
+                        text = currentUser?.nombre ?: stringResource(R.string.usuario2),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -227,7 +228,7 @@ internal fun SettingsScreenContent(
                         Spacer(modifier = Modifier.width(20.dp))
                         Column {
                             Text(
-                                text = "Administra tu parqueo",
+                                text = stringResource(R.string.administra_tu_parqueo),
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
                                     color = TextPrimary
@@ -235,7 +236,7 @@ internal fun SettingsScreenContent(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Optimiza tus espacios y gana dinero fácilmente.",
+                                text = stringResource(R.string.optimiza_tus_espacios_y_gana_dinero_f_cilmente),
                                 style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
                             )
                         }
@@ -246,7 +247,7 @@ internal fun SettingsScreenContent(
 
             // Account Details
             Text(
-                "Detalles de cuenta",
+                stringResource(R.string.detalles_de_cuenta),
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = TextPrimary
@@ -257,18 +258,24 @@ internal fun SettingsScreenContent(
                     .clip(RoundedCornerShape(14.dp))
                     .background(SurfaceColor)
             ) {
-                UserInfoLine("Correo electrónico", currentUser?.correo ?: "No disponible")
+                UserInfoLine(stringResource(R.string.correo_electr_nico3), currentUser?.correo ?: stringResource(
+                    R.string.no_disponible
+                ))
                 Divider(color = BorderColor)
-                UserInfoLine("Teléfono", currentUser?.telefono ?: "No disponible")
+                UserInfoLine(stringResource(R.string.tel_fono2), currentUser?.telefono ?: stringResource(
+                    R.string.no_disponible2
+                ))
                 Divider(color = BorderColor)
-                UserInfoLine("Usuario", currentUser?.usuario ?: "No disponible")
+                UserInfoLine(stringResource(R.string.usuario3), currentUser?.usuario ?: stringResource(
+                    R.string.no_disponible3
+                ))
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
             // Settings
             Text(
-                "Configuración",
+                stringResource(R.string.configuraci_n),
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = TextPrimary
@@ -280,17 +287,22 @@ internal fun SettingsScreenContent(
                     .clip(RoundedCornerShape(14.dp))
                     .background(SurfaceColor)
             ) {
-                SettingsItemLine(Icons.Filled.Person, "Información personal", TextSecondary) { }
+                SettingsItemLine(Icons.Filled.Person,
+                    stringResource(R.string.informaci_n_personal), TextSecondary) { }
                 Divider(color = BorderColor)
-                SettingsItemLine(Icons.Filled.Security, "Privacidad y seguridad", TextSecondary) { }
+                SettingsItemLine(Icons.Filled.Security,
+                    stringResource(R.string.privacidad_y_seguridad), TextSecondary) { }
                 Divider(color = BorderColor)
-                SettingsItemLine(Icons.Filled.Notifications, "Notificaciones", TextSecondary) { }
+                SettingsItemLine(Icons.Filled.Notifications,
+                    stringResource(R.string.notificaciones), TextSecondary) { }
                 Divider(color = BorderColor)
-                SettingsItemLine(Icons.Filled.Info, "Acerca de U-Park", TextSecondary) { }
+                SettingsItemLine(Icons.Filled.Info,
+                    stringResource(R.string.acerca_de_u_park), TextSecondary) { }
 
                 if ((currentUser?.roles?.size ?: 0) > 1) {
                     Divider(color = BorderColor)
-                    SettingsItemLine(Icons.Filled.SwapHoriz, "Cambiar de rol", TextSecondary) {
+                    SettingsItemLine(Icons.Filled.SwapHoriz,
+                        stringResource(R.string.cambiar_de_rol), TextSecondary) {
                         showRoleSheet = true
                     }
                 }
@@ -299,7 +311,7 @@ internal fun SettingsScreenContent(
                     Divider(color = BorderColor)
                     SettingsItemLine(
                         icon = Icons.Default.Subscriptions,
-                        title = "Gestionar suscripción",
+                        title = stringResource(R.string.gestionar_suscripci_n),
                         iconColor = Color(0xFF0D47A1)
                     ) {
                         navController.navigate(
@@ -311,7 +323,8 @@ internal fun SettingsScreenContent(
                 }
 
                 Divider(color = BorderColor)
-                SettingsItemLine(Icons.Filled.ExitToApp, "Cerrar sesión", PrimaryRed) {
+                SettingsItemLine(Icons.Filled.ExitToApp,
+                    stringResource(R.string.cerrar_sesi_n), PrimaryRed) {
                     viewModel.signOut(onSignOut)
                 }
             }
@@ -343,13 +356,13 @@ internal fun SettingsScreenContent(
                     .padding(24.dp)
             ) {
                 Text(
-                    "Cambiar de Rol",
+                    stringResource(R.string.cambiar_de_rol2),
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
                     color = TextPrimary
                 )
                 Text(
-                    "Selecciona cómo quieres usar U-Park",
+                    stringResource(R.string.selecciona_c_mo_quieres_usar_u_park),
                     fontSize = 14.sp,
                     color = TextSecondary
                 )
@@ -360,10 +373,10 @@ internal fun SettingsScreenContent(
                     val normalizedRole = rol.lowercase().replace("-", "").replace("_", "")
 
                     val (icon, description) = when (normalizedRole) {
-                        "duenogarage" -> Icons.Default.Business to "Administra tus garages"
-                        "employee" -> Icons.Default.Work to "Gestiona reservas"
-                        "user" -> Icons.Default.Person to "Busca estacionamientos"
-                        else -> Icons.Default.Person to "Acceso estándar"
+                        "duenogarage" -> Icons.Default.Business to stringResource(R.string.administra_tus_garages)
+                        "employee" -> Icons.Default.Work to stringResource(R.string.gestiona_reservas)
+                        "user" -> Icons.Default.Person to stringResource(R.string.busca_estacionamientos)
+                        else -> Icons.Default.Person to stringResource(R.string.acceso_est_ndar)
                     }
 
                     Card(
@@ -477,21 +490,21 @@ fun ModernBottomBarEmployee(
             BottomBarItemModern(
                 icon = Icons.Outlined.Home,
                 selectedIcon = Icons.Default.Home,
-                label = "Home",
+                label = stringResource(R.string.home),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.DirectionsCar,
                 selectedIcon = Icons.Default.DirectionsCar,
-                label = "Vehículos",
+                label = stringResource(R.string.veh_culos3),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
-                label = "Perfil",
+                label = stringResource(R.string.perfil6),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
@@ -521,28 +534,28 @@ fun ModernBottomBarAdmin(
             BottomBarItemModern(
                 icon = Icons.Outlined.AttachMoney,
                 selectedIcon = Icons.Default.AttachMoney,
-                label = "Tarifas",
+                label = stringResource(R.string.tarifas3),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.Dashboard,
                 selectedIcon = Icons.Default.Dashboard,
-                label = "Dashboard",
+                label = stringResource(R.string.dashboard5),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.BookmarkBorder,
                 selectedIcon = Icons.Default.Bookmark,
-                label = "Reservas",
+                label = stringResource(R.string.reservas6),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
-                label = "Perfil",
+                label = stringResource(R.string.perfil8),
                 isSelected = selectedIndex == 3,
                 onClick = { onItemSelected(3) }
             )
@@ -572,28 +585,28 @@ fun ModernBottomBarUser(
             BottomBarItemModern(
                 icon = Icons.Outlined.Home,
                 selectedIcon = Icons.Default.Home,
-                label = "Inicio",
+                label = stringResource(R.string.inicio3),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.DirectionsCar,
                 selectedIcon = Icons.Default.DirectionsCar,
-                label = "Vehículos",
+                label = stringResource(R.string.veh_culos99),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.History,
                 selectedIcon = Icons.Default.History,
-                label = "Historial",
+                label = stringResource(R.string.historial22),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
-                label = "Perfil",
+                label = stringResource(R.string.perfil22),
                 isSelected = selectedIndex == 3,
                 onClick = { onItemSelected(3) }
             )

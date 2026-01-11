@@ -24,10 +24,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kotlin.u_park.R
 import kotlinx.coroutines.delay
 import com.kotlin.u_park.ui.theme.*
 
@@ -99,13 +101,13 @@ fun SubscriptionScreen(
 
                     Column {
                         Text(
-                            "Suscripción",
+                            stringResource(R.string.suscripci_n),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
-                            "Elige tu plan mensual",
+                            stringResource(R.string.elige_tu_plan_mensual),
                             fontSize = 13.sp,
                             color = TextSecondary
                         )
@@ -148,7 +150,7 @@ fun SubscriptionScreen(
             // 💳 Plans Section Header
             item {
                 Text(
-                    "Planes disponibles",
+                    stringResource(R.string.planes_disponibles2),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
@@ -234,7 +236,7 @@ fun SubscriptionScreen(
                                 modifier = Modifier.size(22.dp)
                             )
                             Text(
-                                "Confirmar suscripción",
+                                stringResource(R.string.confirmar_suscripci_n),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -279,14 +281,16 @@ fun AvailabilityCard(spaces: Int) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    if (spaces > 0) "Espacios disponibles" else "Capacidad limitada",
+                    if (spaces > 0) stringResource(R.string.espacios_disponibles23) else stringResource(
+                        R.string.capacidad_limitada
+                    ),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
                 Text(
-                    if (spaces > 0) "$spaces espacios libres en este garaje"
-                    else "No hay espacios disponibles",
+                    if (spaces > 0) stringResource(R.string.espacios_libres_en_este_garaje, spaces)
+                    else stringResource(R.string.no_hay_espacios_disponibles),
                     fontSize = 13.sp,
                     color = TextSecondary
                 )
@@ -314,7 +318,7 @@ fun UserInfoSection(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            "Información del titular",
+            stringResource(R.string.informaci_n_del_titular),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
@@ -332,24 +336,24 @@ fun UserInfoSection(
             ) {
                 InfoRow(
                     icon = Icons.Outlined.Badge,
-                    label = "Cédula",
-                    value = cedula.ifEmpty { "No disponible" }
+                    label = stringResource(R.string.c_dula2),
+                    value = cedula.ifEmpty { stringResource(R.string.no_disponible23) }
                 )
 
                 Divider(color = BorderColor)
 
                 InfoRow(
                     icon = Icons.Outlined.Person,
-                    label = "Nombre completo",
-                    value = nombre.ifEmpty { "No disponible" }
+                    label = stringResource(R.string.nombre_completo23),
+                    value = nombre.ifEmpty { stringResource(R.string.no_disponible223) }
                 )
 
                 Divider(color = BorderColor)
 
                 InfoRow(
                     icon = Icons.Outlined.Phone,
-                    label = "Teléfono",
-                    value = telefono.ifEmpty { "No disponible" }
+                    label = stringResource(R.string.tel_fono2323),
+                    value = telefono.ifEmpty { stringResource(R.string.no_disponible323) }
                 )
             }
         }
@@ -432,7 +436,7 @@ fun PlanCard(
                         color = TextPrimary
                     )
                     Text(
-                        "Plan mensual",
+                        stringResource(R.string.plan_mensual23),
                         fontSize = 13.sp,
                         color = TextSecondary
                     )
@@ -472,11 +476,11 @@ fun PlanCard(
             ) {
                 FeatureChip(
                     icon = Icons.Outlined.DirectionsCar,
-                    text = "${plan.max_vehicles} vehículos"
+                    text = stringResource(R.string.veh_culos32, plan.max_vehicles)
                 )
                 FeatureChip(
                     icon = Icons.Outlined.CalendarMonth,
-                    text = "30 días"
+                    text = stringResource(R.string._30_d_as32)
                 )
             }
 
@@ -487,7 +491,7 @@ fun PlanCard(
             ) {
                 Column {
                     Text(
-                        "Precio mensual",
+                        stringResource(R.string.precio_mensual3),
                         fontSize = 12.sp,
                         color = TextSecondary
                     )
@@ -516,7 +520,7 @@ fun PlanCard(
                         color = PrimaryRed.copy(alpha = 0.15f)
                     ) {
                         Text(
-                            "Seleccionado",
+                            stringResource(R.string.seleccionado),
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -581,14 +585,14 @@ fun EmptyPlansState() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            "No hay planes disponibles",
+            stringResource(R.string.no_hay_planes_disponibles23),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
         )
 
         Text(
-            "Este garaje no tiene espacios suficientes",
+            stringResource(R.string.este_garaje_no_tiene_espacios_suficientes),
             fontSize = 14.sp,
             color = TextSecondary,
             modifier = Modifier.padding(top = 8.dp)
@@ -663,7 +667,7 @@ fun SuccessDialog(onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    "¡Solicitud enviada!",
+                    stringResource(R.string.solicitud_enviada),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -672,7 +676,7 @@ fun SuccessDialog(onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    "Tu solicitud de suscripción ha sido enviada exitosamente. Te notificaremos cuando sea aprobada.",
+                    stringResource(R.string.tu_solicitud_de_suscripci_n_ha_sido_enviada_exitosamente_te_notificaremos_cuando_sea_aprobada),
                     fontSize = 14.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,

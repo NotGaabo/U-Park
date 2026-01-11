@@ -12,10 +12,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.employee.EmpleadosScreen
 import com.kotlin.u_park.presentation.screens.employee.EmpleadosViewModel
@@ -54,7 +56,9 @@ fun GarageManagementScreen(
                             color = TextPrimary
                         )
                         Text(
-                            if (selectedTab == 0) "Empleados" else "Suscripciones",
+                            if (selectedTab == 0) stringResource(R.string.empleados3) else stringResource(
+                                R.string.suscripciones
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = TextSecondary
                         )
@@ -116,14 +120,14 @@ private fun ModernBottomBarManagement(
             BottomBarItemManagement(
                 icon = Icons.Outlined.Group,
                 selectedIcon = Icons.Default.Group,
-                label = "Empleados",
+                label = stringResource(R.string.empleados4),
                 isSelected = selectedIndex == 0,
                 onClick = { onItemSelected(0) }
             )
             BottomBarItemManagement(
                 icon = Icons.Outlined.CardMembership,
                 selectedIcon = Icons.Default.CardMembership,
-                label = "Suscripciones",
+                label = stringResource(R.string.suscripciones),
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
             )

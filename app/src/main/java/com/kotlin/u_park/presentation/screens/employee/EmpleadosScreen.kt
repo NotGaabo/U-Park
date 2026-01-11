@@ -18,9 +18,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.EmpleadoGarage
 
 // 🎨 Color System
@@ -93,14 +95,16 @@ private fun EmpleadosList(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Empleados",
+                    stringResource(R.string.empleados),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
                     letterSpacing = (-0.5).sp
                 )
                 Text(
-                    "${empleados.size} ${if (empleados.size == 1) "empleado registrado" else "empleados registrados"}",
+                    "${empleados.size} ${if (empleados.size == 1) stringResource(R.string.empleado_registrado) else stringResource(
+                        R.string.empleados_registrados
+                    )}",
                     fontSize = 14.sp,
                     color = TextSecondary,
                     fontWeight = FontWeight.Medium
@@ -127,7 +131,7 @@ private fun EmpleadosList(
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    "Tu Equipo",
+                    stringResource(R.string.tu_equipo),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -170,7 +174,7 @@ private fun StatsCard(total: Int) {
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    "Resumen del Equipo",
+                    stringResource(R.string.resumen_del_equipo),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -184,21 +188,21 @@ private fun StatsCard(total: Int) {
                 StatItem(
                     icon = Icons.Outlined.Group,
                     value = "$total",
-                    label = "Empleados",
+                    label = stringResource(R.string.empleados2),
                     color = PrimaryRed
                 )
 
                 StatItem(
                     icon = Icons.Outlined.CheckCircle,
                     value = "$total",
-                    label = "Activos",
+                    label = stringResource(R.string.activos),
                     color = SuccessGreen
                 )
 
                 StatItem(
                     icon = Icons.Outlined.Badge,
                     value = "$total",
-                    label = "Registrados",
+                    label = stringResource(R.string.registrados),
                     color = InfoBlue
                 )
             }
@@ -289,7 +293,7 @@ private fun ModernEmpleadoCard(
                 // Employee Info
                 Column(Modifier.weight(1f)) {
                     Text(
-                        user?.nombre ?: "Nombre no disponible",
+                        user?.nombre ?: stringResource(R.string.nombre_no_disponible),
                         color = TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
@@ -329,7 +333,7 @@ private fun ModernEmpleadoCard(
                                         .background(SuccessGreen, CircleShape)
                                 )
                                 Text(
-                                    "Activo",
+                                    stringResource(R.string.activo),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = SuccessGreen
@@ -380,7 +384,7 @@ private fun ModernEmpleadoCard(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text("Eliminar empleado", fontSize = 13.sp)
+                        Text(stringResource(R.string.eliminar_empleado), fontSize = 13.sp)
                     }
                 }
             }
@@ -450,22 +454,26 @@ private fun DeleteDialog(
             )
         },
         title = {
-            Text("Confirmar Eliminación")
+            Text(stringResource(R.string.confirmar_eliminaci_n))
         },
         text = {
-            Text("¿Estás seguro de que deseas eliminar a ${name ?: "este empleado"}? Esta acción no se puede deshacer.")
+            Text(
+                stringResource(
+                    R.string.est_s_seguro_de_que_deseas_eliminar_a_esta_acci_n_no_se_puede_deshacer,
+                    name ?: stringResource(R.string.este_empleado)
+                ))
         },
         confirmButton = {
             Button(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
             ) {
-                Text("Eliminar")
+                Text(stringResource(R.string.eliminar))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.cancelar2))
             }
         }
     )
@@ -498,7 +506,7 @@ private fun EmptyState(onAgregarEmpleado: () -> Unit) {
         Spacer(Modifier.height(24.dp))
 
         Text(
-            "No hay empleados registrados",
+            stringResource(R.string.no_hay_empleados_registrados),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
@@ -507,7 +515,7 @@ private fun EmptyState(onAgregarEmpleado: () -> Unit) {
         Spacer(Modifier.height(8.dp))
 
         Text(
-            "Agrega tu primer empleado para\ncomenzar a gestionar tu equipo",
+            stringResource(R.string.agrega_tu_primer_empleado_para_comenzar_a_gestionar_tu_equipo),
             color = TextSecondary,
             fontSize = 14.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -532,7 +540,7 @@ private fun EmptyState(onAgregarEmpleado: () -> Unit) {
                 modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.width(8.dp))
-            Text("Agregar Empleado", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.agregar_empleado3), fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -551,7 +559,7 @@ fun LoadingState() {
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            "Cargando empleados...",
+            stringResource(R.string.cargando_empleados),
             color = TextSecondary,
             fontSize = 14.sp
         )

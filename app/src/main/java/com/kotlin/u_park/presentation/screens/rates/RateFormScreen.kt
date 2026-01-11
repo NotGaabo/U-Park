@@ -16,10 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 
 // 🎨 Modern Color System
 private val PrimaryRed = Color(0xFFE60023)
@@ -88,7 +90,12 @@ fun RateFormScreen(
     var selectedVehicleType by remember(editing) { mutableStateOf<Int?>(editing?.vehicleTypeId) }
     var selectedGarageId by remember(editing) { mutableStateOf(editing?.garageId ?: garageId) }
 
-    val dias = listOf("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+    val dias = listOf(stringResource(R.string.lunes),
+        stringResource(R.string.martes),
+        stringResource(R.string.mi_rcoles),
+        stringResource(R.string.jueves), stringResource(R.string.viernes),
+        stringResource(R.string.s_bado), stringResource(R.string.domingo)
+    )
     var selectedDays by remember(editing) { mutableStateOf(editing?.diasAplicables ?: dias) }
 
     var showError by remember { mutableStateOf(false) }
@@ -127,13 +134,15 @@ fun RateFormScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            if (rateId == "new") "Nueva Tarifa" else "Editar Tarifa",
+                            if (rateId == "new") stringResource(R.string.nueva_tarifa) else stringResource(
+                                R.string.editar_tarifa
+                            ),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
-                            "Configuración de precios",
+                            stringResource(R.string.configuraci_n_de_precios),
                             fontSize = 13.sp,
                             color = TextSecondary,
                             fontWeight = FontWeight.Medium
@@ -163,7 +172,7 @@ fun RateFormScreen(
             item {
                 SectionHeaderModern(
                     icon = Icons.Outlined.Warehouse,
-                    title = "Información del Garage"
+                    title = stringResource(R.string.informaci_n_del_garage)
                 )
             }
 
@@ -175,13 +184,13 @@ fun RateFormScreen(
                     ) {
                         OutlinedTextField(
                             value = garages.firstOrNull { it.first == selectedGarageId }?.second
-                                ?: "Seleccionar Garage",
+                                ?: stringResource(R.string.seleccionar_garage),
                             onValueChange = {},
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth(),
                             readOnly = true,
-                            label = { Text("Garage") },
+                            label = { Text(stringResource(R.string.garage2)) },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.Warehouse,
@@ -231,7 +240,7 @@ fun RateFormScreen(
             item {
                 SectionHeaderModern(
                     icon = Icons.Outlined.PriceChange,
-                    title = "Configuración de Tarifa"
+                    title = stringResource(R.string.configuraci_n_de_tarifa)
                 )
             }
 
@@ -242,7 +251,7 @@ fun RateFormScreen(
                         OutlinedTextField(
                             value = baseRateText,
                             onValueChange = { baseRateText = it },
-                            label = { Text("Precio Base (RD$)") },
+                            label = { Text(stringResource(R.string.precio_base_rd)) },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.AttachMoney,
@@ -273,7 +282,7 @@ fun RateFormScreen(
                                     .menuAnchor()
                                     .fillMaxWidth(),
                                 readOnly = true,
-                                label = { Text("Unidad de tiempo") },
+                                label = { Text(stringResource(R.string.unidad_de_tiempo)) },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Outlined.Schedule,
@@ -322,13 +331,13 @@ fun RateFormScreen(
                         ) {
                             OutlinedTextField(
                                 value = vehicleTypes.firstOrNull { it.first == selectedVehicleType }?.second
-                                    ?: "Cualquiera",
+                                    ?: stringResource(R.string.cualquiera),
                                 onValueChange = {},
                                 modifier = Modifier
                                     .menuAnchor()
                                     .fillMaxWidth(),
                                 readOnly = true,
-                                label = { Text("Tipo de vehículo") },
+                                label = { Text(stringResource(R.string.tipo_de_veh_culo)) },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Outlined.DirectionsCar,
@@ -352,7 +361,7 @@ fun RateFormScreen(
                                 onDismissRequest = { expandedVehicleType = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Cualquiera") },
+                                    text = { Text(stringResource(R.string.cualquiera2)) },
                                     onClick = {
                                         selectedVehicleType = null
                                         expandedVehicleType = false
@@ -392,7 +401,7 @@ fun RateFormScreen(
             item {
                 SectionHeaderModern(
                     icon = Icons.Outlined.CalendarMonth,
-                    title = "Días Aplicables"
+                    title = stringResource(R.string.d_as_aplicables)
                 )
             }
 
@@ -470,7 +479,7 @@ fun RateFormScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Limpiar",
+                            stringResource(R.string.limpiar),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -524,7 +533,7 @@ fun RateFormScreen(
                         }
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            if (saving) "Guardando..." else "Guardar",
+                            if (saving) stringResource(R.string.guardando2) else stringResource(R.string.guardar),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -601,7 +610,7 @@ fun ErrorBanner() {
                 modifier = Modifier.size(24.dp)
             )
             Text(
-                "Por favor completa todos los campos requeridos",
+                stringResource(R.string.por_favor_completa_todos_los_campos_requeridos),
                 fontSize = 14.sp,
                 color = ErrorRed,
                 fontWeight = FontWeight.Medium

@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -26,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
 import kotlinx.coroutines.delay
@@ -80,13 +82,16 @@ fun VehiculosDentroScreen(
                 title = {
                     Column {
                         Text(
-                            "Vehículos Dentro",
+                            stringResource(R.string.veh_culos_dentro),
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             color = TextPrimary
                         )
                         Text(
-                            "${vehiculosDentro.size} ${if (vehiculosDentro.size == 1) "vehículo" else "vehículos"} estacionado${if (vehiculosDentro.size != 1) "s" else ""}",
+                            "${vehiculosDentro.size} ${if (vehiculosDentro.size == 1) stringResource(
+                                R.string.veh_culo2
+                            ) else stringResource(R.string.veh_culos4)
+                            } estacionado${if (vehiculosDentro.size != 1) "s" else ""}",
                             fontSize = 14.sp,
                             color = TextSecondary
                         )
@@ -210,7 +215,7 @@ fun SearchBar(
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text(
-                    "Buscar por placa...",
+                    stringResource(R.string.buscar_por_placa),
                     color = TextSecondary
                 )
             },
@@ -248,7 +253,7 @@ fun SearchBar(
             exit = fadeOut()
         ) {
             Text(
-                "$resultsCount de $totalCount vehículos",
+                stringResource(R.string.de_veh_culos, resultsCount, totalCount),
                 fontSize = 13.sp,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 8.dp, start = 4.dp)
@@ -294,14 +299,18 @@ fun StatsHeader(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    if (isFiltered) "Resultados de búsqueda" else "Vehículos Estacionados",
+                    if (isFiltered) stringResource(R.string.resultados_de_b_squeda) else stringResource(
+                        R.string.veh_culos_estacionados
+                    ),
                     fontSize = 14.sp,
                     color = TextSecondary,
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "$totalVehicles ${if (totalVehicles == 1) "vehículo" else "vehículos"}",
+                    "$totalVehicles ${if (totalVehicles == 1) stringResource(R.string.veh_culo3) else stringResource(
+                        R.string.veh_culos
+                    )}",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -324,7 +333,7 @@ fun StatsHeader(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            "Activo",
+                            stringResource(R.string.activo9),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = SuccessGreen
@@ -384,7 +393,7 @@ fun ModernVehicleCard(
             // Información de la placa
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "PLACA",
+                    stringResource(R.string.placa),
                     fontSize = 11.sp,
                     color = TextSecondary,
                     fontWeight = FontWeight.SemiBold,
@@ -421,7 +430,7 @@ fun ModernVehicleCard(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    "Estacionado",
+                                    stringResource(R.string.estacionado),
                                     fontSize = 12.sp,
                                     color = SuccessGreen,
                                     fontWeight = FontWeight.SemiBold
@@ -445,7 +454,7 @@ fun ModernVehicleCard(
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
-                                    "Sin registro",
+                                    stringResource(R.string.sin_registro),
                                     fontSize = 12.sp,
                                     color = WarningOrange,
                                     fontWeight = FontWeight.SemiBold
@@ -480,7 +489,7 @@ fun ModernVehicleCard(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Salida",
+                    stringResource(R.string.salida2),
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 )
@@ -529,7 +538,7 @@ fun EmptyVehiclesState() {
                 Spacer(Modifier.height(24.dp))
 
                 Text(
-                    "No hay vehículos dentro",
+                    stringResource(R.string.no_hay_veh_culos_dentro),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
@@ -539,7 +548,7 @@ fun EmptyVehiclesState() {
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    "En este momento no hay vehículos estacionados en el garage",
+                    stringResource(R.string.en_este_momento_no_hay_veh_culos_estacionados_en_el_garage),
                     fontSize = 14.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center
@@ -564,7 +573,7 @@ fun EmptyVehiclesState() {
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "Los vehículos aparecerán aquí cuando ingresen al parking",
+                            stringResource(R.string.los_veh_culos_aparecer_n_aqu_cuando_ingresen_al_parking),
                             fontSize = 13.sp,
                             color = TextSecondary,
                             lineHeight = 18.sp
@@ -616,7 +625,7 @@ fun NoResultsState(searchQuery: String) {
                 Spacer(Modifier.height(24.dp))
 
                 Text(
-                    "Sin resultados",
+                    stringResource(R.string.sin_resultados),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
@@ -626,7 +635,7 @@ fun NoResultsState(searchQuery: String) {
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    "No se encontraron vehículos con la placa \"$searchQuery\"",
+                    stringResource(R.string.no_se_encontraron_veh_culos_con_la_placa, searchQuery),
                     fontSize = 14.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center

@@ -24,12 +24,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.kotlin.u_park.R
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.data.repository.VehiclesRepositoryImpl
 import com.kotlin.u_park.domain.model.Vehicle
@@ -170,13 +172,13 @@ fun RegistrarReservaScreen(
 
                     Column {
                         Text(
-                            "Nueva Reserva",
+                            stringResource(R.string.nueva_reserva),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
-                            "Completa los detalles",
+                            stringResource(R.string.completa_los_detalles),
                             fontSize = 13.sp,
                             color = TextSecondary
                         )
@@ -195,12 +197,14 @@ fun RegistrarReservaScreen(
 
             // 🚗 Vehicle Selection Card
             SectionCard(
-                title = "Vehículo",
+                title = stringResource(R.string.veh_culo7),
                 icon = Icons.Outlined.DirectionsCar,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
                 SelectionButton(
-                    value = selectedVehicle?.let { "${it.plate} - ${it.model ?: ""}" } ?: "Seleccionar vehículo",
+                    value = selectedVehicle?.let { "${it.plate} - ${it.model ?: ""}" } ?: stringResource(
+                        R.string.seleccionar_veh_culo
+                    ),
                     icon = Icons.Outlined.DirectionsCar,
                     placeholder = selectedVehicle == null,
                     onClick = { showVehicleSheet = true }
@@ -209,7 +213,7 @@ fun RegistrarReservaScreen(
 
             // 📅 Date Selection Card
             SectionCard(
-                title = "Fecha",
+                title = stringResource(R.string.fecha),
                 icon = Icons.Outlined.CalendarToday,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
@@ -219,7 +223,7 @@ fun RegistrarReservaScreen(
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate()
                         date.format(DateTimeFormatter.ofPattern("dd 'de' MMMM, yyyy"))
-                    } ?: "Seleccionar fecha",
+                    } ?: stringResource(R.string.seleccionar_fecha),
                     icon = Icons.Outlined.CalendarToday,
                     placeholder = datePickerState.selectedDateMillis == null,
                     onClick = { showDatePicker = true }
@@ -228,13 +232,13 @@ fun RegistrarReservaScreen(
 
             // ⏰ Time Selection Card
             SectionCard(
-                title = "Hora de llegada",
+                title = stringResource(R.string.hora_de_llegada),
                 icon = Icons.Outlined.AccessTime,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
                 SelectionButton(
                     value = selectedTime?.format(DateTimeFormatter.ofPattern("hh:mm a"))
-                        ?: "Seleccionar hora",
+                        ?: stringResource(R.string.seleccionar_hora),
                     icon = Icons.Outlined.AccessTime,
                     placeholder = selectedTime == null,
                     onClick = { showTimePicker = true }
@@ -354,7 +358,7 @@ fun RegistrarReservaScreen(
                                 modifier = Modifier.size(22.dp)
                             )
                             Text(
-                                "Confirmar Reserva",
+                                stringResource(R.string.confirmar_reserva),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -389,12 +393,12 @@ fun RegistrarReservaScreen(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Confirmar", color = PrimaryRed, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.confirmar), color = PrimaryRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar", color = TextSecondary)
+                    Text(stringResource(R.string.cancelar9), color = TextSecondary)
                 }
             }
         ) {
@@ -418,17 +422,17 @@ fun RegistrarReservaScreen(
                     selectedTime = LocalTime.of(timeState.hour, timeState.minute)
                     showTimePicker = false
                 }) {
-                    Text("Confirmar", color = PrimaryRed, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.confirmar), color = PrimaryRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) {
-                    Text("Cancelar", color = TextSecondary)
+                    Text(stringResource(R.string.cancelar), color = TextSecondary)
                 }
             },
             title = {
                 Text(
-                    "Seleccionar hora",
+                    stringResource(R.string.seleccionar_hora2),
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
@@ -571,7 +575,7 @@ fun ReservationSummary(
                     )
                 }
                 Text(
-                    "Resumen de reserva",
+                    stringResource(R.string.resumen_de_reserva),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -581,12 +585,12 @@ fun ReservationSummary(
             Divider(color = PrimaryRed.copy(alpha = 0.2f))
 
             SummaryRow(
-                label = "Vehículo",
+                label = stringResource(R.string.veh_culo4),
                 value = "${vehicle?.plate} - ${vehicle?.model ?: ""}"
             )
 
             SummaryRow(
-                label = "Fecha",
+                label = stringResource(R.string.fecha4),
                 value = date?.let {
                     Instant.ofEpochMilli(it)
                         .atZone(ZoneId.systemDefault())
@@ -596,7 +600,7 @@ fun ReservationSummary(
             )
 
             SummaryRow(
-                label = "Hora",
+                label = stringResource(R.string.hora),
                 value = time?.format(DateTimeFormatter.ofPattern("hh:mm a")) ?: ""
             )
         }
@@ -636,7 +640,7 @@ fun VehicleSelectionSheet(
             .padding(bottom = 20.dp)
     ) {
         Text(
-            "Seleccionar vehículo",
+            stringResource(R.string.seleccionar_veh_culo2),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
@@ -658,7 +662,7 @@ fun VehicleSelectionSheet(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    "No tienes vehículos registrados",
+                    stringResource(R.string.no_tienes_veh_culos_registrados),
                     fontSize = 15.sp,
                     color = TextSecondary
                 )
@@ -721,7 +725,7 @@ fun VehicleItem(
                     color = TextPrimary
                 )
                 Text(
-                    vehicle.model ?: "Sin modelo",
+                    vehicle.model ?: stringResource(R.string.sin_modelo),
                     fontSize = 13.sp,
                     color = TextSecondary
                 )
@@ -778,7 +782,7 @@ fun SuccessReservationDialog(onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    "¡Reserva confirmada!",
+                    stringResource(R.string.reserva_confirmada),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -787,7 +791,7 @@ fun SuccessReservationDialog(onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    "Tu espacio ha sido reservado exitosamente. Te esperamos en el garaje.",
+                    stringResource(R.string.tu_espacio_ha_sido_reservado_exitosamente_te_esperamos_en_el_garaje),
                     fontSize = 14.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,
