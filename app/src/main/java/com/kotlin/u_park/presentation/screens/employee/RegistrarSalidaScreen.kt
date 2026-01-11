@@ -11,10 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalContext
 import com.kotlin.u_park.presentation.utils.PdfGenerator
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,23 +28,23 @@ import com.kotlin.u_park.presentation.screens.rates.RatesViewModel
 import kotlinx.coroutines.launch
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
 import java.io.File
-import java.io.ByteArrayOutputStream
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import com.kotlin.u_park.R
 import com.kotlin.u_park.ui.theme.*
+import androidx.compose.foundation.shape.CircleShape
 
 private val GreenSoft = Color(0xFF4CAF50)
 
@@ -71,49 +68,57 @@ fun RegistrarSalidaScreen(
     val vehiculoNombre by ratesViewModel.vehiculoNombre.collectAsState()
     val garageNombre by ratesViewModel.garageNombre.collectAsState()
 
-    // 🔥 Escuchar mensaje y loading del ViewModel
     val vmMessage by parkingViewModel.message.collectAsState()
     val vmLoading by parkingViewModel.isLoading.collectAsState()
 
     // Estados para método de pago
     var showPaymentDialog by remember { mutableStateOf(false) }
     var selectedPaymentMethod by remember { mutableStateOf<String?>(null) }
+
+    // 🔥 CAMBIO: Múltiples fotos del vehículo en salida
+    var fotosSalidaVehiculo by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
+
+    // Una foto del comprobante de transferencia
     var transferBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
     var showPermissionDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
+    // 🔥 NUEVO: Estado para controlar qué tipo de foto se va a tomar
+    var tipoFotoATomar by remember { mutableStateOf<TipoFoto>(TipoFoto.VEHICULO) }
+
     // Archivo temporal para la foto
-    val transferImageFile = remember { mutableStateOf<File?>(null) }
+    val imageFile = remember { mutableStateOf<File?>(null) }
 
     // Launcher para permisos de cámara
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            transferImageFile.value?.let { file ->
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.provider",
-                    file
-                )
-                showPermissionDialog = false
-            }
+            showPermissionDialog = false
         } else {
             showPermissionDialog = true
         }
     }
 
-    // Launcher de cámara
+    // 🔥 ACTUALIZADO: Launcher de cámara que maneja ambos tipos de foto
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            transferImageFile.value?.let { file ->
+            imageFile.value?.let { file ->
                 try {
                     if (file.exists()) {
                         val bitmap = BitmapFactory.decodeFile(file.absolutePath)
                         if (bitmap != null) {
-                            transferBitmap = bitmap
+                            when (tipoFotoATomar) {
+                                TipoFoto.VEHICULO -> {
+                                    fotosSalidaVehiculo = fotosSalidaVehiculo + bitmap
+                                }
+                                TipoFoto.COMPROBANTE -> {
+                                    transferBitmap = bitmap
+                                }
+                            }
                         }
                     }
                 } catch (e: Exception) {
@@ -123,13 +128,14 @@ fun RegistrarSalidaScreen(
         }
     }
 
-    // Función para iniciar cámara con permisos
-    fun launchCamera() {
+    // 🔥 ACTUALIZADO: Función para iniciar cámara con tipo de foto
+    fun launchCamera(tipo: TipoFoto) {
+        tipoFotoATomar = tipo
         val permission = Manifest.permission.CAMERA
         when {
             ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED -> {
-                val file = createImageFile(context)
-                transferImageFile.value = file
+                val file = createImageFile(context, tipo)
+                imageFile.value = file
                 val uri = FileProvider.getUriForFile(
                     context,
                     "${context.packageName}.provider",
@@ -143,7 +149,6 @@ fun RegistrarSalidaScreen(
         }
     }
 
-    // Validar ID
     LaunchedEffect(Unit) {
         if (parkingId.isBlank()) {
             navController.popBackStack()
@@ -151,14 +156,12 @@ fun RegistrarSalidaScreen(
         }
     }
 
-    // Cargar ticket
     LaunchedEffect(parkingId) {
         if (parkingId.isNotBlank()) {
             ratesViewModel.cargarDatosTicket(parkingId)
         }
     }
 
-    // 🔥 Observar mensaje del ViewModel
     LaunchedEffect(vmMessage) {
         if (vmMessage != null) {
             println("📬 Mensaje recibido: $vmMessage")
@@ -237,10 +240,7 @@ fun RegistrarSalidaScreen(
                             modifier = Modifier.padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                "⚠️",
-                                fontSize = 48.sp
-                            )
+                            Text("⚠️", fontSize = 48.sp)
                             Spacer(Modifier.height(16.dp))
                             Text(
                                 stringResource(R.string.error),
@@ -279,7 +279,6 @@ fun RegistrarSalidaScreen(
                             garageNombre = garageNombre ?: stringResource(R.string.garage)
                         )
 
-                        // 🔥 Botón con loading
                         Button(
                             onClick = { showPaymentDialog = true },
                             enabled = !vmLoading,
@@ -339,9 +338,7 @@ fun RegistrarSalidaScreen(
                                             val pdfFile = PdfGenerator.generateFacturaSalida(
                                                 context = context,
                                                 ticket = salida,
-                                                vehiculoNombre = vehiculoNombre ?: context.getString(
-                                                    R.string.ve
-                                                ),
+                                                vehiculoNombre = vehiculoNombre ?: context.getString(R.string.ve),
                                                 garageNombre = garageNombre ?: context.getString(R.string.garag),
                                                 saveToDownloads = false
                                             )
@@ -359,9 +356,7 @@ fun RegistrarSalidaScreen(
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = RedSoft
                                 ),
-                                border = ButtonDefaults.outlinedButtonBorder.copy(
-                                    width = 2.dp
-                                )
+                                border = ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp)
                             ) {
                                 Icon(
                                     Icons.Default.Share,
@@ -413,39 +408,60 @@ fun RegistrarSalidaScreen(
                     }
                 }
 
+                // 🔥 ACTUALIZADO: Diálogo de pago con múltiples fotos
                 if (showPaymentDialog) {
                     PaymentMethodDialog(
                         onDismiss = {
                             transferBitmap = null
+                            fotosSalidaVehiculo = emptyList()
                             selectedPaymentMethod = null
                             showPaymentDialog = false
                         },
                         selectedMethod = selectedPaymentMethod,
+                        fotosSalidaVehiculo = fotosSalidaVehiculo,
                         transferBitmap = transferBitmap,
                         onMethodSelected = { method ->
                             selectedPaymentMethod = method
-                            if (method == context.getString(R.string.transfer)) {
-                                launchCamera()
-                            }
+                        },
+                        onTakeFotoVehiculo = {
+                            launchCamera(TipoFoto.VEHICULO)
+                        },
+                        onTakeFotoComprobante = {
+                            launchCamera(TipoFoto.COMPROBANTE)
+                        },
+                        onRemoveFotoVehiculo = { index ->
+                            fotosSalidaVehiculo = fotosSalidaVehiculo.filterIndexed { i, _ -> i != index }
                         },
                         onConfirm = {
                             scope.launch {
+                                if (fotosSalidaVehiculo.isEmpty()) {
+                                    // Mostrar mensaje de error
+                                    return@launch
+                                }
+
+                                val fotosSalidaBytes = fotosSalidaVehiculo.map { it.toByteArray() }
+
                                 when (selectedPaymentMethod) {
                                     context.getString(R.string.cash) -> {
                                         parkingViewModel.registrarSalidaConPago(
                                             parkingId = parkingId,
                                             metodoPago = context.getString(R.string.efectivo),
+                                            fotosSalidaBytes = fotosSalidaBytes,
                                             comprobanteBytes = null
                                         )
                                     }
                                     context.getString(R.string.transfer2) -> {
-                                        val bytes = transferBitmap?.toByteArray()
-                                            ?: return@launch
+                                        val comprobante = transferBitmap?.toByteArray()
+                                        if (comprobante == null) {
+                                            // Mostrar mensaje de error
+                                            return@launch
+                                        }
 
                                         parkingViewModel.registrarSalidaConPago(
                                             parkingId = parkingId,
                                             metodoPago = context.getString(R.string.transferencia),
-                                            comprobanteBytes = bytes
+                                            fotosSalidaBytes = fotosSalidaBytes,
+                                            comprobanteBytes = comprobante
                                         )
                                     }
                                 }
@@ -468,7 +484,6 @@ fun RegistrarSalidaScreen(
                     )
                 }
 
-                // 🔥 Diálogo de éxito
                 if (showSuccessDialog) {
                     AlertDialog(
                         onDismissRequest = {
@@ -514,25 +529,65 @@ fun RegistrarSalidaScreen(
     }
 }
 
+// 🔥 NUEVO: Enum para tipo de foto
+enum class TipoFoto {
+    VEHICULO,
+    COMPROBANTE
+}
+
+// 🔥 ACTUALIZADO: Diálogo de pago con múltiples fotos
 @Composable
 fun PaymentMethodDialog(
     onDismiss: () -> Unit,
     selectedMethod: String?,
+    fotosSalidaVehiculo: List<Bitmap>,
     transferBitmap: Bitmap?,
     onMethodSelected: (String) -> Unit,
+    onTakeFotoVehiculo: () -> Unit,
+    onTakeFotoComprobante: () -> Unit,
+    onRemoveFotoVehiculo: (Int) -> Unit,
     onConfirm: () -> Unit
 ) {
+    val context = LocalContext.current
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.seleccionar_m_todo_de_pago), fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+
+                // Sección: Fotos del vehículo (OBLIGATORIAS)
+                Text(
+                    "1. Fotografías del vehículo *",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A1A1A)
+                )
+
+                MultipleFotosSalidaSection(
+                    fotos = fotosSalidaVehiculo,
+                    onTakePhoto = onTakeFotoVehiculo,
+                    onRemovePhoto = onRemoveFotoVehiculo
+                )
+
+                HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+
+                // Sección: Método de pago
+                Text(
+                    "2. Método de pago *",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A1A1A)
+                )
 
                 PaymentMethodCard(
                     title = stringResource(R.string.efectivo2),
                     icon = Icons.Default.AccountBalanceWallet,
                     color = GreenSoft,
-                    isSelected = selectedMethod == stringResource(R.string.cash2),
+                    isSelected = selectedMethod == context.getString(R.string.cash2),
                     onClick = { onMethodSelected("cash") }
                 )
 
@@ -540,36 +595,176 @@ fun PaymentMethodDialog(
                     title = stringResource(R.string.transferencia2),
                     icon = Icons.Default.CreditCard,
                     color = Color(0xFF2196F3),
-                    isSelected = selectedMethod == stringResource(R.string.transfer3),
+                    isSelected = selectedMethod == context.getString(R.string.transfer3),
                     onClick = { onMethodSelected("transfer") }
                 )
 
-                if (selectedMethod == stringResource(R.string.transfer4) && transferBitmap != null) {
-                    Image(
-                        bitmap = transferBitmap.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                // Si seleccionó transferencia, mostrar sección de comprobante
+                if (selectedMethod == context.getString(R.string.transfer4)) {
+                    HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+
+                    Text(
+                        "3. Comprobante de transferencia *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1A1A1A)
                     )
+
+                    if (transferBitmap != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Box {
+                                Image(
+                                    bitmap = transferBitmap.asImageBitmap(),
+                                    contentDescription = "Comprobante",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                )
+
+                                // Botón para retomar foto
+                                IconButton(
+                                    onClick = onTakeFotoComprobante,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(8.dp)
+                                        .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Refresh,
+                                        contentDescription = "Retomar",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Card(
+                            onClick = onTakeFotoComprobante,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.CameraAlt,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2196F3),
+                                    modifier = Modifier.size(32.dp)
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Tomar foto del comprobante",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
                 }
             }
         },
         confirmButton = {
+            val canConfirm = fotosSalidaVehiculo.isNotEmpty() && (
+                    selectedMethod == context.getString(R.string.cash5) ||
+                            (selectedMethod == context.getString(R.string.transfer6) && transferBitmap != null)
+                    )
+
             Button(
                 onClick = onConfirm,
-                enabled = selectedMethod == stringResource(R.string.cash5) ||
-                        (selectedMethod == stringResource(R.string.transfer6) && transferBitmap != null)
+                enabled = canConfirm
             ) {
                 Text(stringResource(R.string.confirmar_pago))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancelar3)) }
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancelar3))
+            }
         },
         shape = RoundedCornerShape(20.dp)
     )
+}
+
+// 🔥 NUEVO: Sección para múltiples fotos de salida del vehículo
+@Composable
+fun MultipleFotosSalidaSection(
+    fotos: List<Bitmap>,
+    onTakePhoto: () -> Unit,
+    onRemovePhoto: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Botón para tomar foto
+        Card(
+            onClick = onTakePhoto,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    Icons.Default.CameraAlt,
+                    contentDescription = null,
+                    tint = Color(0xFFE60023),
+                    modifier = Modifier.size(28.dp)
+                )
+
+                Spacer(Modifier.width(12.dp))
+
+                Column {
+                    Text(
+                        if (fotos.isEmpty()) "Tomar fotos del vehículo"
+                        else "Agregar otra foto",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    if (fotos.isNotEmpty()) {
+                        Text(
+                            "${fotos.size} foto${if (fotos.size != 1) "s" else ""} capturada${if (fotos.size != 1) "s" else ""}",
+                            fontSize = 12.sp,
+                            color = GreenSoft
+                        )
+                    }
+                }
+            }
+        }
+
+        // Lista de fotos capturadas
+        if (fotos.isNotEmpty()) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(fotos.size) { index ->
+                    FotoThumbnail(
+                        bitmap = fotos[index],
+                        index = index,
+                        onRemove = { onRemovePhoto(index) }
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -603,7 +798,7 @@ fun PaymentMethodCard(
         ) {
             Surface(
                 modifier = Modifier.size(48.dp),
-                shape = androidx.compose.foundation.shape.CircleShape,
+                shape = CircleShape,
                 color = color.copy(alpha = 0.2f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -767,12 +962,30 @@ fun InfoRowImproved(label: String, value: String) {
     }
 }
 
-fun createImageFile(context: Context): File {
-    return File(
-        context.cacheDir,
-        "transfer_${System.currentTimeMillis()}.jpg"
+fun createImageFile(context: Context, tipo: TipoFoto): File {
+    val baseDir = File(context.cacheDir, "camera")
+
+    if (!baseDir.exists()) {
+        baseDir.mkdirs()
+    }
+
+    val prefix = when (tipo) {
+        TipoFoto.VEHICULO -> "vehiculo"
+        TipoFoto.COMPROBANTE -> "comprobante"
+    }
+
+    val file = File(
+        baseDir,
+        "${prefix}_${System.currentTimeMillis()}.jpg"
     )
+
+    // ⚠️ ESTO ES CLAVE: crea físicamente el archivo
+    file.createNewFile()
+
+    return file
 }
+
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatDateTime(raw: String): String {

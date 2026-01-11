@@ -9,16 +9,19 @@ data class Parking(
     val vehicle_id: String? = null,
     val garage_id: String? = null,
     val rate_id: String? = null,
-    val hora_entrada: String,
+    val hora_entrada: String = "",
     val hora_salida: String? = null,
     val total: Double? = null,
-    val pagado: Boolean = false,
+    val pagado: Boolean? = false,
     val created_at: String? = null,
-    val fotos: List<String> = emptyList(),
     val tipo: String = "entrada",
     val estado: String = "pendiente",
-    val created_by_user_id: String? = null
+    val created_by_user_id: String? = null,
+    val fotos_entrada: List<String> = emptyList(),  // 🔥 Múltiples fotos entrada
+    val fotos_salida: List<String> = emptyList(),   // 🔥 Múltiples fotos salida
+    val fotos: List<String> = emptyList()           // Mantener compatibilidad
 )
+
 @Serializable
 data class ParkingActividad(
     val id: String? = null,

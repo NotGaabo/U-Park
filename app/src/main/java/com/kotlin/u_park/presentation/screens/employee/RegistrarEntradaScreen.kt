@@ -9,12 +9,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,8 +27,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -68,7 +67,8 @@ fun RegistrarEntradaScreen(
     val rates by viewModel.rates.collectAsState()
     val selectedRate by viewModel.selectedRate.collectAsState()
 
-    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    // 🔥 CAMBIO: Lista de bitmaps en lugar de un solo bitmap
+    var fotosEntrada by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
     var placa by remember { mutableStateOf("") }
     var modoEntrada by remember { mutableStateOf("Normal") }
     var expandedTipo by remember { mutableStateOf(false) }
@@ -81,7 +81,6 @@ fun RegistrarEntradaScreen(
     val ticket by viewModel.ticket.collectAsState()
     val message by viewModel.message.collectAsState()
 
-    // Cargar reservas cuando se selecciona modo Reserva
     LaunchedEffect(modoEntrada, reservaSeleccionada) {
         if (modoEntrada == "Reserva") {
             viewModel.loadReservasConUsuario(garageId)
@@ -93,28 +92,28 @@ fun RegistrarEntradaScreen(
         viewModel.loadRatesByGarage(garageId)
     }
 
-
     LaunchedEffect(ticket) {
         ticket?.let {
-            // 👉 Regresar al Home del empleado
             navController.navigate(Routes.EmployeeHome.route) {
                 popUpTo(Routes.EmployeeHome.route) { inclusive = true }
                 launchSingleTop = true
             }
-
-            // 👉 Limpiar para no volver a navegar accidentalmente
             viewModel.resetTicket()
         }
     }
-
 
     LaunchedEffect(message) {
         message?.let { Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show() }
     }
 
+    // 🔥 CAMBIO: Captura múltiples fotos
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicturePreview()
-    ) { result -> bitmap = result }
+    ) { result ->
+        result?.let {
+            fotosEntrada = fotosEntrada + it
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -169,7 +168,6 @@ fun RegistrarEntradaScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Paso 1: Tipo de Entrada
                 StepCard(
                     stepNumber = "1",
                     title = stringResource(R.string.tipo_de_entrada),
@@ -190,7 +188,6 @@ fun RegistrarEntradaScreen(
                     )
                 }
 
-                // Paso 2: Selección de Reserva (si aplica)
                 AnimatedVisibility(
                     visible = modoEntrada == stringResource(R.string.reserva),
                     enter = expandVertically() + fadeIn(),
@@ -215,7 +212,6 @@ fun RegistrarEntradaScreen(
                     }
                 }
 
-                // Paso 3: Placa del Vehículo
                 StepCard(
                     stepNumber = if (modoEntrada == "Reserva") "3" else "2",
                     title = stringResource(R.string.placa_del_veh_culo),
@@ -228,7 +224,6 @@ fun RegistrarEntradaScreen(
                     )
                 }
 
-                // Paso X: Seleccionar Tarifa
                 StepCard(
                     stepNumber = if (modoEntrada == "Reserva") "4" else "3",
                     title = stringResource(R.string.seleccionar_tarifa),
@@ -241,15 +236,14 @@ fun RegistrarEntradaScreen(
                     )
                 }
 
-
-                // Paso 4: Fotografía
+                // 🔥 CAMBIO: Nueva sección de fotos múltiples
                 StepCard(
-                    stepNumber = if (modoEntrada == "Reserva") "4" else "3",
+                    stepNumber = if (modoEntrada == "Reserva") "5" else "4",
                     title = stringResource(R.string.fotograf_a_del_veh_culo),
-                    isCompleted = bitmap != null
+                    isCompleted = fotosEntrada.isNotEmpty()
                 ) {
-                    FotoSection(
-                        bitmap = bitmap,
+                    MultipleFotosSection(
+                        fotos = fotosEntrada,
                         onTakePhoto = {
                             val granted = ContextCompat.checkSelfPermission(
                                 ctx, Manifest.permission.CAMERA
@@ -257,19 +251,20 @@ fun RegistrarEntradaScreen(
 
                             if (!granted) permissionLauncher.launch(Manifest.permission.CAMERA)
                             else cameraLauncher.launch(null)
+                        },
+                        onRemovePhoto = { index ->
+                            fotosEntrada = fotosEntrada.filterIndexed { i, _ -> i != index }
                         }
                     )
                 }
 
                 Spacer(Modifier.height(8.dp))
 
-                // Botón de Confirmación
                 ConfirmButton(
                     isLoading = isLoading,
-                    enabled = placa.isNotBlank() && bitmap != null &&
+                    enabled = placa.isNotBlank() && fotosEntrada.isNotEmpty() &&
                             (modoEntrada == "Normal" || reservaSeleccionada != null),
                     onClick = {
-
                         if (selectedRate == null) {
                             Toast.makeText(ctx, "Selecciona una tarifa", Toast.LENGTH_SHORT).show()
                             return@ConfirmButton
@@ -280,12 +275,13 @@ fun RegistrarEntradaScreen(
                             return@ConfirmButton
                         }
 
-                        if (bitmap == null) {
-                            Toast.makeText(ctx, "Debe tomar una foto", Toast.LENGTH_SHORT).show()
+                        if (fotosEntrada.isEmpty()) {
+                            Toast.makeText(ctx, "Debe tomar al menos una foto", Toast.LENGTH_SHORT).show()
                             return@ConfirmButton
                         }
 
-                        val fotos = listOf(bitmap!!.toByteArray())
+                        // 🔥 CAMBIO: Convertir todas las fotos a bytes
+                        val fotosBytes = fotosEntrada.map { it.toByteArray() }
 
                         if (modoEntrada == "Normal") {
                             viewModel.registrarEntrada(
@@ -293,7 +289,7 @@ fun RegistrarEntradaScreen(
                                 vehiclePlate = placa.trim(),
                                 empleadoId = empleadoId,
                                 rateId = selectedRate!!.id!!,
-                                fotosBytes = fotos
+                                fotosBytes = fotosBytes
                             )
                         } else {
                             if (reservaSeleccionada == null) {
@@ -303,7 +299,7 @@ fun RegistrarEntradaScreen(
 
                             viewModel.registrarEntradaDesdeReserva(
                                 reserva = reservaSeleccionada!!,
-                                fotosBytes = fotos,
+                                fotosBytes = fotosBytes,
                                 empleadoId = empleadoId
                             )
                         }
@@ -312,6 +308,244 @@ fun RegistrarEntradaScreen(
 
                 Spacer(Modifier.height(24.dp))
             }
+        }
+    }
+}
+
+// 🔥 NUEVO: Componente para múltiples fotos
+@Composable
+fun MultipleFotosSection(
+    fotos: List<Bitmap>,
+    onTakePhoto: () -> Unit,
+    onRemovePhoto: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Botón para agregar foto
+        Card(
+            onClick = onTakePhoto,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Surface(
+                    modifier = Modifier.size(56.dp),
+                    shape = CircleShape,
+                    color = PrimaryRed.copy(alpha = 0.15f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.CameraAlt,
+                            contentDescription = null,
+                            tint = PrimaryRed,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    if (fotos.isEmpty()) stringResource(R.string.toca_para_tomar_foto)
+                    else "Agregar otra foto",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+
+                if (fotos.isNotEmpty()) {
+                    Text(
+                        "${fotos.size} foto${if (fotos.size != 1) "s" else ""} capturada${if (fotos.size != 1) "s" else ""}",
+                        fontSize = 12.sp,
+                        color = SuccessGreen
+                    )
+                }
+            }
+        }
+
+        // Lista horizontal de fotos capturadas
+        if (fotos.isNotEmpty()) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(fotos.size) { index ->
+                    FotoThumbnail(
+                        bitmap = fotos[index],
+                        index = index,
+                        onRemove = { onRemovePhoto(index) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FotoThumbnail(
+    bitmap: Bitmap,
+    index: Int,
+    onRemove: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(140.dp)
+            .height(140.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "Foto ${index + 1}",
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // Badge con número
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(8.dp)
+                    .size(28.dp),
+                shape = CircleShape,
+                color = PrimaryRed
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        "${index + 1}",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+
+            // Botón eliminar
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .size(32.dp)
+                    .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Eliminar",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+// Mantener los componentes existentes sin cambios...
+@Composable
+fun StepCard(
+    stepNumber: String,
+    title: String,
+    isCompleted: Boolean,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = CardWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = if (isCompleted) SuccessGreen else PrimaryRed.copy(alpha = 0.15f),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isCompleted) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Text(
+                            stepNumber,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = PrimaryRed
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                Text(
+                    title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+            }
+
+            content()
+        }
+    }
+}
+
+@Composable
+fun ConfirmButton(
+    isLoading: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled && !isLoading,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = PrimaryRed,
+            disabledContainerColor = Color(0xFFDEE2E6)
+        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 4.dp,
+            pressedElevation = 8.dp
+        )
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = Color.White,
+                strokeWidth = 2.dp
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(stringResource(R.string.procesando), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        } else {
+            Icon(Icons.Default.Check, contentDescription = null)
+            Spacer(Modifier.width(12.dp))
+            Text(stringResource(R.string.confirmar_entrada), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -398,70 +632,6 @@ fun RateSelector(
             color = TextSecondary,
             modifier = Modifier.padding(top = 8.dp, start = 4.dp)
         )
-    }
-}
-
-
-@Composable
-fun StepCard(
-    stepNumber: String,
-    title: String,
-    isCompleted: Boolean,
-    content: @Composable () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = CardWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            color = if (isCompleted) SuccessGreen else PrimaryRed.copy(alpha = 0.15f),
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isCompleted) {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Text(
-                            stepNumber,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = PrimaryRed
-                        )
-                    }
-                }
-
-                Spacer(Modifier.width(12.dp))
-
-                Text(
-                    title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-            }
-
-            content()
-        }
     }
 }
 
@@ -822,44 +992,6 @@ fun FotoSection(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun ConfirmButton(
-    isLoading: Boolean,
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled && !isLoading,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = PrimaryRed,
-            disabledContainerColor = Color(0xFFDEE2E6)
-        ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 4.dp,
-            pressedElevation = 8.dp
-        )
-    ) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                color = Color.White,
-                strokeWidth = 2.dp
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(stringResource(R.string.procesando), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        } else {
-            Icon(Icons.Default.Check, contentDescription = null)
-            Spacer(Modifier.width(12.dp))
-            Text(stringResource(R.string.confirmar_entrada), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
