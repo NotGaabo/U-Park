@@ -469,4 +469,5 @@
     <string name="veh_culos23" translatable="false">Vehículos</string>
     <string name="historial3232" translatable="false">Historial</string>
     <string name="perfil12" translatable="false">Perfil</string>
+    <string name="dashboard23">dashboard</string>
 </resources>

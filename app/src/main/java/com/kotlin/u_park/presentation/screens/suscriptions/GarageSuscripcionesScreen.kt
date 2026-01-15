@@ -23,6 +23,7 @@ import com.kotlin.u_park.ui.theme.*
 @Composable
 fun GarageSuscripcionesScreen(
     garageId: String,
+    garageName: String, // ahora lo usamos
     viewModel: SubscriptionViewModel
 ) {
     val solicitudes by viewModel.solicitudes.collectAsState()
@@ -38,14 +39,24 @@ fun GarageSuscripcionesScreen(
             .background(Color(0xFFF5F7FA))
             .padding(20.dp)
     ) {
+        // 🏷 Nombre del garage
         Text(
-            stringResource(R.string.solicitudes_de_suscripci_n),
+            garageName,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF2D3436)
         )
 
         Spacer(Modifier.height(8.dp))
+
+        Text(
+            stringResource(R.string.solicitudes_de_suscripci_n),
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF2D3436)
+        )
+
+        Spacer(Modifier.height(4.dp))
 
         Text(
             stringResource(R.string.gestiona_las_solicitudes_de_tus_clientes),
@@ -55,6 +66,7 @@ fun GarageSuscripcionesScreen(
 
         Spacer(Modifier.height(20.dp))
 
+        // 🔄 Estado de carga o listado de solicitudes
         if (loading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -71,18 +83,15 @@ fun GarageSuscripcionesScreen(
                 items(solicitudes) { solicitud ->
                     SolicitudCard(
                         solicitud = solicitud,
-                        onAprobar = {
-                            viewModel.aprobarSolicitud(solicitud.id, garageId)
-                        },
-                        onRechazar = {
-                            viewModel.rechazarSolicitud(solicitud.id, garageId)
-                        }
+                        onAprobar = { viewModel.aprobarSolicitud(solicitud.id, garageId) },
+                        onRechazar = { viewModel.rechazarSolicitud(solicitud.id, garageId) }
                     )
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun SolicitudCard(

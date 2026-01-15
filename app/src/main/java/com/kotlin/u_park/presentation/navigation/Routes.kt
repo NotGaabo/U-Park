@@ -12,13 +12,17 @@ sealed class Routes(val route: String) {
     object RegistrarEntrada : Routes("registrarEntrada/{garageId}") {
         fun createRoute(garageId: String) = "registrarEntrada/$garageId"
     }
+    object ParkingRecords : Routes("parking_records/{garageId}") {
+        fun createRoute(garageId: String) = "parking_records/$garageId"
+    }
+
     object VehiculosDentro : Routes("vehiculos_dentro/{garageId}") {
         fun createRoute(garageId: String) = "vehiculos_dentro/$garageId"
     }
     object RegistrarSalida : Routes("registrarSalida/{parkingId}") {
         fun createRoute(parkingId: String) = "registrarSalida/$parkingId"
     }
-    object EmployeeSettings : Routes("settings_employee") {
+    object EmployeeSettings : Routes("employee_settings/{garageId}") {
         fun createRoute(garageId: String) = "employee_settings/$garageId"
     }
     object EmployeeHome : Routes("employee_home")
@@ -50,7 +54,11 @@ sealed class Routes(val route: String) {
         fun createRoute(garageId: String) = "subscription/$garageId"
     }
 
-    object GarageDashboard : Routes( "garage_dashboard/{garageId}/{garageName}")
+    object GarageDashboard : Routes("garage_dashboard/{garageId}/{garageName}") {
+        fun createRoute(garageId: String, garageName: String): String {
+            return "garage_dashboard/$garageId/$garageName"
+        }
+    }
 
 
     // En Routes.kt, agrega:
@@ -60,8 +68,10 @@ sealed class Routes(val route: String) {
         }
     }
 
-    object GarageSuscripciones : Routes("garage_suscripciones/{garageId}") {
-        fun createRoute(garageId: String) = "garage_suscripciones/$garageId"
+    object GarageSuscripciones : Routes("garage_suscripciones/{garageId}/{garageName}") {
+        fun createRoute(garageId: String, garageName: String): String {
+            return "garage_suscripciones/$garageId/$garageName"
+        }
     }
     object HistorialParking : Routes("historial_parking/{userId}") {
         fun createRoute(userId: String) = "historial_parking/$userId"

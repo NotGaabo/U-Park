@@ -109,7 +109,10 @@ fun EmployeeHomeScreen(
                 onItemSelected = { index ->
                     when (index) {
                         1 -> navController.navigate(Routes.VehiculosDentro.createRoute(garageId))
-                        2 -> navController.navigate(Routes.EmployeeSettings.route)
+                        2 -> garageId?.let {
+                            navController.navigate(Routes.EmployeeSettings.createRoute(it))
+                        }
+                        3 -> navController.navigate(Routes.ParkingRecords.createRoute(garageId))
                     }
                 }
             )
@@ -365,41 +368,7 @@ fun HeroStatsCard(
                         )
                     }
                 }
-
                 Spacer(Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    QuickStat(
-                        value = autosActivos.toString(),
-                        label = "Activos",
-                        color = SuccessGreen
-                    )
-                    VerticalDivider(
-                        modifier = Modifier
-                            .height(50.dp)
-                            .width(1.dp),
-                        color = BorderColor
-                    )
-                    QuickStat(
-                        value = espaciosLibres.toString(),
-                        label = "Disponibles",
-                        color = InfoBlue
-                    )
-                    VerticalDivider(
-                        modifier = Modifier
-                            .height(50.dp)
-                            .width(1.dp),
-                        color = BorderColor
-                    )
-                    QuickStat(
-                        value = (entradasHoy + salidasHoy).toString(),
-                        label = "Movimientos",
-                        color = WarningOrange
-                    )
-                }
             }
         }
     }
@@ -638,6 +607,13 @@ fun ModernBottomBarEmployee(
                 label = "Vehículos",
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
+            )
+            BottomBarItemModern(
+                icon = Icons.Outlined.CarCrash,
+                selectedIcon = Icons.Default.CarCrash,
+                label = "Incidencias",
+                isSelected = selectedIndex == 3,
+                onClick = { onItemSelected(3) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.Person,

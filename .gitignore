@@ -1,6 +1,8 @@
 # ==========================
 # ANDROID & KOTLIN
 # ==========================
+/.kotlin/errors/*
+
 
 # Gradle
 .gradle/
@@ -65,8 +67,11 @@ key.properties
 *.war
 *.zip
 
+app/google-services.json
+
 # ==========================
 # ANDROID GENERATED RESOURCES
 # ==========================
+app/*.json
 app/res/generated/
 */generated/

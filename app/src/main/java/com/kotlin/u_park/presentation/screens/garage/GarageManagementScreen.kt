@@ -83,15 +83,23 @@ fun GarageManagementScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
-                0 -> EmpleadosScreen(
+                0 -> GarageDashboardScreen(
+                    garageId = garageId,
+                    garageName = garageName,
+                    onNavigateBack = { navController.navigateUp()},
+                    onNavigateToEmployees = { selectedTab = 0 },
+                    onNavigateToSubscriptions = { selectedTab = 1 }
+                )
+                1 -> EmpleadosScreen(
                     garageId = garageId,
                     viewModel = empleadosViewModel,
                     onAgregarEmpleado = {
                         navController.navigate(Routes.AgregarEmpleado.createRoute(garageId))
                     }
                 )
-                1 -> GarageSuscripcionesScreen(
+                2 -> GarageSuscripcionesScreen(
                     garageId = garageId,
+                    garageName = garageName,
                     viewModel = subscriptionViewModel
                 )
             }
@@ -100,7 +108,7 @@ fun GarageManagementScreen(
 }
 
 @Composable
-private fun ModernBottomBarManagement(
+fun ModernBottomBarManagement(
     selectedIndex: Int,
     onItemSelected: (Int) -> Unit
 ) {
@@ -116,7 +124,13 @@ private fun ModernBottomBarManagement(
                 .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
-        ) {
+        ) {BottomBarItemManagement(
+            icon = Icons.Outlined.Dashboard,
+            selectedIcon = Icons.Default.Dashboard,
+            label = stringResource(R.string.dashboard),
+            isSelected = selectedIndex == 0,
+            onClick = { onItemSelected(0) }
+        )
             BottomBarItemManagement(
                 icon = Icons.Outlined.Group,
                 selectedIcon = Icons.Default.Group,

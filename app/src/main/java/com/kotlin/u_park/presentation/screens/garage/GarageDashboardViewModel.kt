@@ -30,6 +30,39 @@ class GarageDashboardViewModel(
         _reportState.value = ReportState.Idle
     }
 
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun loadDashboardData(garageId: String) {
+        viewModelScope.launch {
+            // ----------------- Ocupación -----------------
+            repository.getGarageOccupancyReport(
+                garageId,
+                LocalDateTime.now().minusDays(7), // Por ejemplo últimos 7 días
+                LocalDateTime.now()
+            ).onSuccess { report ->
+                _occupancyReport.value = report
+            }.onFailure {
+                _reportState.value = ReportState.Error(it.message ?: "Error cargando ocupación")
+            }
+
+            // ----------------- Ingresos -----------------
+            repository.getParkingIdsByGarage(garageId).onSuccess { parkingIds ->
+                repository.getGarageIncomeReport(
+                    garageId,
+                    parkingIds,
+                    LocalDateTime.now().minusDays(7), // últimos 7 días
+                    LocalDateTime.now()
+                ).onSuccess { report ->
+                    _incomeReport.value = report
+                }.onFailure {
+                    _reportState.value = ReportState.Error(it.message ?: "Error cargando ingresos")
+                }
+            }.onFailure {
+                _reportState.value = ReportState.Error(it.message ?: "Error cargando parkings")
+            }
+        }
+    }
+
     // -------------------------
     // OCCUPANCY
     // -------------------------

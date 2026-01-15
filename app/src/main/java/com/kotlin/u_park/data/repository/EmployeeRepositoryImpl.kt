@@ -44,6 +44,7 @@ class EmpleadoGarageRepositoryImpl(
         }
     }
 
+    // Método que YA tienes - busca garage por empleado
     override suspend fun getGarageByEmpleadoId(cedula: Long): String? {
         return try {
             val response = supabase.postgrest[
@@ -51,7 +52,6 @@ class EmpleadoGarageRepositoryImpl(
             ].select()
 
             val lista = response.decodeList<Map<String, String>>()
-
             lista.firstOrNull()?.get("garage_id")
         } catch (e: Exception) {
             android.util.Log.e("SUPA_GARAGE", "ERROR → ${e.message}")
@@ -60,19 +60,24 @@ class EmpleadoGarageRepositoryImpl(
     }
 
     override suspend fun getEmpleadosByGarage(garageId: String): List<EmpleadoGarage> {
-        if (garageId.isBlank()) return emptyList()
-
         return try {
-            val select =
-                "id,garage_id,empleado_id,fecha_registro," +
-                        "users:empleado_id(id,nombre,usuario,cedula,telefono,correo,direccion)"
+            android.util.Log.d("SUPA_EMPLEADOS", "🔍 Buscando empleados para garage: $garageId")
 
-            supabase.postgrest["empleados_garage?garage_id=eq.$garageId&select=$select"]
-                .select()
-                .decodeList<EmpleadoGarage>()
+            val response = supabase.postgrest[
+                "empleados_garage?garage_id=eq.$garageId&select=*,users:empleado_id(*)"
+            ].select()
+
+            val empleados = response.decodeList<EmpleadoGarage>()
+
+            android.util.Log.d("SUPA_EMPLEADOS", "✅ Empleados encontrados: ${empleados.size}")
+            empleados.forEach {
+                android.util.Log.d("SUPA_EMPLEADOS", "  → ${it.empleado_id} - ${it.users?.nombre}")
+            }
+
+            empleados
 
         } catch (e: Exception) {
-            android.util.Log.e("SUPA_GET", "ERROR → ${e.message}")
+            android.util.Log.e("SUPA_EMPLEADOS", "❌ Error: ${e.message}", e)
             emptyList()
         }
     }

@@ -522,6 +522,8 @@ fun NavGraph(
             )
         }
 
+
+
         // -------------------- SUSCRIBIRSE A GARAGE --------------------
         // ✅ CORRECTO - Con argumentos bien definidos
         composable(
@@ -582,10 +584,36 @@ fun NavGraph(
             }
         }
 
+        composable(
+            route = Routes.ParkingRecords.route,
+            arguments = listOf(
+                navArgument("garageId") {
+                    type = NavType.StringType
+                    nullable = false
+                }
+            )
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments?.getString("garageId")
+                ?: error("garageId no fue enviado a ParkingRecords")
+
+            ParkingRecordsScreen(
+                navController = navController,
+                garageId = garageId,
+                viewModel = parkingViewModel
+            )
+        }
+
+
         // -------------------- SETTINGS EMPLEADOS --------------------
-        composable(Routes.EmployeeSettings.route) {
-                backStackEntry ->
-            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+        composable(
+            route = Routes.EmployeeSettings.route,
+            arguments = listOf(
+                navArgument("garageId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments!!.getString("garageId")!!
 
             SettingsEmployeeScreen(
                 garageId = garageId,

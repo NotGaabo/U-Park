@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kotlin.u_park.R
@@ -48,14 +49,20 @@ fun AgregarEmpleadoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.agregar_empleado), fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        stringResource(R.string.agregar_empleado),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
                         Icon(Icons.Default.Close, contentDescription = "Cerrar")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF6200EA),
+                    containerColor = Color(0xFFE60023),
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White
                 )
@@ -65,65 +72,74 @@ fun AgregarEmpleadoScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFFF5F5F5),
-                            Color.White
-                        )
-                    )
-                )
+                .background(Color(0xFFF5F7FA))
                 .padding(padding)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(24.dp)
+                    .padding(20.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
+                Spacer(Modifier.height(16.dp))
+
+                // Ícono principal
                 Surface(
-                    modifier = Modifier.size(80.dp),
-                    shape = RoundedCornerShape(40.dp),
-                    color = Color(0xFF6200EA).copy(alpha = 0.1f)
+                    modifier = Modifier.size(100.dp),
+                    shape = RoundedCornerShape(50.dp),
+                    color = Color(0xFFE60023).copy(alpha = 0.15f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Default.PersonAdd,
                             contentDescription = null,
-                            tint = Color(0xFF6200EA),
-                            modifier = Modifier.size(40.dp)
+                            tint = Color(0xFFE60023),
+                            modifier = Modifier.size(50.dp)
                         )
                     }
                 }
 
                 Spacer(Modifier.height(24.dp))
 
+                // Título
                 Text(
                     stringResource(R.string.nuevo_empleado),
-                    fontSize = 24.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1A1A)
+                    color = Color(0xFF2D3436)
                 )
 
                 Spacer(Modifier.height(8.dp))
 
+                // Subtítulo
                 Text(
                     stringResource(R.string.ingresa_la_c_dula_del_empleado_para_agregarlo_al_garage),
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 14.sp,
                     color = Color.Gray,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 24.dp)
                 )
 
                 Spacer(Modifier.height(32.dp))
 
+                // Card principal
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(2.dp),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Column(Modifier.padding(20.dp)) {
+                    Column(Modifier.padding(24.dp)) {
+
+                        Text(
+                            "Cédula del empleado",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF2D3436)
+                        )
+
+                        Spacer(Modifier.height(12.dp))
 
                         OutlinedTextField(
                             value = cedulaText,
@@ -133,24 +149,32 @@ fun AgregarEmpleadoScreen(
                             isError = cedulaError != null,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF6200EA),
-                                focusedLabelColor = Color(0xFF6200EA)
+                                focusedBorderColor = Color(0xFFE60023),
+                                focusedLabelColor = Color(0xFFE60023),
+                                unfocusedBorderColor = Color(0xFFDFE6E9)
                             )
                         )
 
                         if (cedulaError != null) {
-                            Text(
-                                text = cedulaError!!,
-                                color = Color.Red,
-                                fontSize = 13.sp,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
+                            Spacer(Modifier.height(8.dp))
+                            Surface(
+                                color = Color.Red.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = cedulaError!!,
+                                    color = Color.Red,
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                            }
                         }
 
-                        Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(28.dp))
 
+                        // Botón principal
                         Button(
                             onClick = {
                                 val cedulaLong = cedulaText.toLong()
@@ -160,12 +184,12 @@ fun AgregarEmpleadoScreen(
                             enabled = cedulaError == null && !isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(52.dp),
+                                .height(54.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF6200EA),
-                                disabledContainerColor = Color(0xFF6200EA).copy(alpha = 0.5f)
+                                containerColor = Color(0xFF00B894),
+                                disabledContainerColor = Color(0xFF00B894).copy(alpha = 0.5f)
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(8.dp)
                         ) {
                             if (isLoading) {
                                 CircularProgressIndicator(
@@ -174,6 +198,12 @@ fun AgregarEmpleadoScreen(
                                     color = Color.White
                                 )
                             } else {
+                                Icon(
+                                    Icons.Default.PersonAdd,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
                                 Text(
                                     stringResource(R.string.agregar_empleado2),
                                     fontSize = 16.sp,
@@ -181,13 +211,56 @@ fun AgregarEmpleadoScreen(
                                 )
                             }
                         }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // Botón secundario
+                        OutlinedButton(
+                            onClick = onClose,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(54.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color.Gray
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                stringResource(R.string.cancelar),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(20.dp))
 
-                TextButton(onClick = onClose) {
-                    Text(stringResource(R.string.cancelar), color = Color.Gray, fontSize = 15.sp)
+                // Texto informativo
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(6.dp),
+                        shape = RoundedCornerShape(3.dp),
+                        color = Color(0xFFE60023)
+                    ) {}
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "El empleado recibirá una notificación al ser agregado",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        lineHeight = 16.sp
+                    )
                 }
             }
         }
