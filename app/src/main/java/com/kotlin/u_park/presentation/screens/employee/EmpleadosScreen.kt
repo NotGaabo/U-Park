@@ -44,6 +44,11 @@ fun EmpleadosScreen(
     val empleados by viewModel.empleados.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    // 🔥 CRITICAL: Cargar empleados al iniciar la pantalla
+    LaunchedEffect(garageId) {
+        viewModel.loadEmpleados(garageId)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -291,15 +296,19 @@ private fun ModernEmpleadoCard(
                 Spacer(Modifier.width(12.dp))
 
                 // Employee Info
-                Column(Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
-                        user?.nombre ?: stringResource(R.string.nombre_no_disponible),
+                        text = user?.nombre ?: stringResource(R.string.nombre_no_disponible),
                         color = TextPrimary,
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1
                     )
 
-                    Row(
+
+                Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {

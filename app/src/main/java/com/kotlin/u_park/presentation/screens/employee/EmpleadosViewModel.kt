@@ -69,11 +69,18 @@ class EmpleadosViewModel(
     --------------------------------------------------------- */
 
     fun loadEmpleados(garageId: String) {
+        android.util.Log.d("EmpleadosVM", "🔍 Iniciando carga para garageId: $garageId")
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                _empleados.value = empleadoRepo.getEmpleadosByGarage(garageId)
+                val result = empleadoRepo.getEmpleadosByGarage(garageId)
+                android.util.Log.d("EmpleadosVM", "✅ Empleados cargados: ${result.size}")
+                result.forEach {
+                    android.util.Log.d("EmpleadosVM", "  → ${it.empleado_id} - ${it.users?.nombre}")
+                }
+                _empleados.value = result
             } catch (e: Exception) {
+                android.util.Log.e("EmpleadosVM", "❌ Error cargando empleados: ${e.message}", e)
                 _empleados.value = emptyList()
             } finally {
                 _isLoading.value = false

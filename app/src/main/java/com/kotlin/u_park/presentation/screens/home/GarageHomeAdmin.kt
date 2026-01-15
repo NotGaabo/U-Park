@@ -242,7 +242,10 @@ fun DuenoGarageScreen(
                         garage = garage,
                         onClick = {
                             navController.navigate(
-                                Routes.GarageDashboard.route
+                                Routes.GarageDashboard.createRoute(
+                                    garageId = garage.idGarage,
+                                    garageName = garage.nombre
+                                )
                             )
                         }
                     )

@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,6 +56,11 @@ fun GarageDashboardScreen(
 
     var showBottomSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadDashboardData(garageId)
+    }
+
 
     LaunchedEffect(reportState) {
         when (val state = reportState) {
@@ -100,17 +106,6 @@ fun GarageDashboardScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            ModernBottomBarDashboard(
-                selectedIndex = 0,
-                onItemSelected = { index ->
-                    when (index) {
-                        1 -> onNavigateToEmployees()
-                        2 -> onNavigateToSubscriptions()
-                    }
-                }
-            )
-        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 text = { Text("Generar reporte", fontWeight = FontWeight.Bold) },

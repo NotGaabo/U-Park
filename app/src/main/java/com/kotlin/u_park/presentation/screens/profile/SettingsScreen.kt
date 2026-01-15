@@ -124,6 +124,9 @@ internal fun SettingsScreenContent(
                                 1 -> garageId?.let {
                                     navController.navigate(Routes.VehiculosDentro.createRoute(it))
                                 }
+                                3 -> garageId?.let {
+                                    navController.navigate(Routes.ParkingRecords.createRoute(it))
+                                }
                             }
                         }
                     )
@@ -502,12 +505,20 @@ fun ModernBottomBarEmployee(
                 onClick = { onItemSelected(1) }
             )
             BottomBarItemModern(
+                icon = Icons.Outlined.CarCrash,
+                selectedIcon = Icons.Default.CarCrash,
+                label = "Incidencias",
+                isSelected = selectedIndex == 3,
+                onClick = { onItemSelected(3) }
+            )
+            BottomBarItemModern(
                 icon = Icons.Outlined.Person,
                 selectedIcon = Icons.Default.Person,
                 label = stringResource(R.string.perfil6),
                 isSelected = selectedIndex == 2,
                 onClick = { onItemSelected(2) }
             )
+
         }
     }
 }

@@ -2,6 +2,7 @@ package com.kotlin.u_park.presentation.screens.splash
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -44,11 +45,14 @@ fun SplashScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted -> locationGranted = granted }
 
-    // Solicitud de permisos
+    // 📍 Solicitud de permisos
     LaunchedEffect(Unit) {
         val permission = Manifest.permission.ACCESS_FINE_LOCATION
-        val granted = ContextCompat.checkSelfPermission(context, permission) ==
-                PackageManager.PERMISSION_GRANTED
+        val granted = ContextCompat.checkSelfPermission(
+            context,
+            permission
+        ) == PackageManager.PERMISSION_GRANTED
+
         if (!granted && !askedPermission) {
             askedPermission = true
             permissionLauncher.launch(permission)
@@ -57,7 +61,7 @@ fun SplashScreen(
         }
     }
 
-    // Actualización de ubicación
+    // 📍 Actualizar ubicación
     LaunchedEffect(locationGranted) {
         if (locationGranted) {
             val loc = LocationHelper.getCurrentLocation(context)
@@ -67,12 +71,15 @@ fun SplashScreen(
         }
     }
 
-    // UI Splash
+    // 🎨 UI Splash
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color.White
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Image(
                     painter = painterResource(id = R.drawable.up),
@@ -89,32 +96,46 @@ fun SplashScreen(
         }
     }
 
-    // Navegación después del splash
-    LaunchedEffect(locationGranted) {
+    // 🚀 Lógica de sesión y navegación
+    LaunchedEffect(Unit) {
         delay(2000)
 
-        // ✅ Refresca sesión y obtiene usuario completo desde DataStore
         val hasSession = withContext(Dispatchers.IO) {
             sessionManager.refreshSessionFromDataStore()
         }
 
+        if (!hasSession) {
+            navController.navigate(Routes.Login.route) {
+                popUpTo(Routes.Splash.route) { inclusive = true }
+            }
+            return@LaunchedEffect
+        }
+
         val user = withContext(Dispatchers.IO) {
-            if (hasSession) sessionManager.getUser() else null
+            sessionManager.getUser()
         }
 
+        // 🔑 Rol: primero DataStore, luego fallback al usuario
         val activeRole = withContext(Dispatchers.IO) {
-            if (user != null) sessionManager.getActiveRole() else null
+            sessionManager.getActiveRole()
+                ?: user?.roles?.firstOrNull()
         }
 
-        // Si no hay sesión, redirige a login
+        // Si viene del usuario, lo guardamos
+        activeRole?.let {
+            sessionManager.saveActiveRole(it)
+        }
+
+        Log.e("SPLASH_DEBUG", "UserId=${user?.id}")
+        Log.e("SPLASH_DEBUG", "ActiveRole='$activeRole'")
+
         val destination = when (activeRole?.lowercase()) {
-            "duenogarage" -> Routes.DuenoGarage.route
+            "dueno-garage" -> Routes.DuenoGarage.route
             "employee" -> Routes.EmployeeHome.route
             "user" -> Routes.Home.route
             else -> Routes.Login.route
         }
 
-        // Navegación final
         navController.navigate(destination) {
             popUpTo(Routes.Splash.route) { inclusive = true }
         }

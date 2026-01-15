@@ -522,6 +522,8 @@ fun NavGraph(
             )
         }
 
+
+
         // -------------------- SUSCRIBIRSE A GARAGE --------------------
         // ✅ CORRECTO - Con argumentos bien definidos
         composable(
@@ -604,9 +606,14 @@ fun NavGraph(
 
 
         // -------------------- SETTINGS EMPLEADOS --------------------
-        composable(Routes.EmployeeSettings.route) {
-                backStackEntry ->
-            val garageId = backStackEntry.arguments?.getString("garageId") ?: ""
+        composable(
+            route = Routes.EmployeeSettings.route,
+            arguments = listOf(
+                navArgument("garageId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments!!.getString("garageId")!!
 
             SettingsEmployeeScreen(
                 garageId = garageId,
