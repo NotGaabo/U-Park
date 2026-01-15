@@ -582,6 +582,27 @@ fun NavGraph(
             }
         }
 
+        composable(
+            route = Routes.ParkingRecords.route,
+            arguments = listOf(
+                navArgument("garageId") {
+                    type = NavType.StringType
+                    nullable = false
+                }
+            )
+        ) { backStackEntry ->
+
+            val garageId = backStackEntry.arguments?.getString("garageId")
+                ?: error("garageId no fue enviado a ParkingRecords")
+
+            ParkingRecordsScreen(
+                navController = navController,
+                garageId = garageId,
+                viewModel = parkingViewModel
+            )
+        }
+
+
         // -------------------- SETTINGS EMPLEADOS --------------------
         composable(Routes.EmployeeSettings.route) {
                 backStackEntry ->

@@ -1,6 +1,5 @@
 package com.kotlin.u_park.data.repository
 
-import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.kotlin.u_park.domain.model.Parking
@@ -16,12 +15,20 @@ import io.github.jan.supabase.postgrest.rpc
 import kotlinx.serialization.Serializable
 import com.kotlin.u_park.domain.model.HistorialParking
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.storage.upload
-import java.io.File
 import java.time.OffsetDateTime
-import androidx.core.net.toUri
-import com.kotlin.u_park.data.remote.supabase
-import com.kotlin.u_park.domain.model.ParkingPago
+import com.kotlin.u_park.domain.model.ParkingRecordDTO
+import com.kotlin.u_park.domain.model.UserSimpleDto
+import com.kotlin.u_park.presentation.screens.employee.ParkingRecord
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.decodeFromJsonElement
+
+val json = Json { ignoreUnknownKeys = true }
+
+fun JsonElement?.toUserDTO(): UserSimpleDto? {
+    if (this == null || this is kotlinx.serialization.json.JsonNull) return null
+    return json.decodeFromJsonElement<UserSimpleDto>(this)
+}
 
 class ParkingRepositoryImpl(
     private val client: SupabaseClient
@@ -325,6 +332,134 @@ class ParkingRepositoryImpl(
         return updated.copy(fotos_salida = fotosSalidaUrls)
     }
 
+    // En getParkingRecords y getParkingRecordById, agrega es_incidencia al select:
+
+    override suspend fun getParkingRecords(garageId: String): Result<List<ParkingRecord>> {
+        return try {
+            val response = client.from("parkings")
+                .select(
+                    Columns.raw(
+                        """
+                    id,
+                    garage_id,
+                    vehicle_id,
+                    rate_id,
+                    hora_entrada,
+                    hora_salida,
+                    total,
+                    pagado,
+                    created_at,
+                    tipo,
+                    estado,
+                    created_by_user_id,
+                    fotos_entrada,
+                    fotos_salida,
+                    es_incidencia,
+
+                    vehicles:vehicle_id (
+                        plate
+                    ),
+
+                    users:created_by_user_id (
+                        nombre
+                    )
+                    """.trimIndent()
+                    )
+                ) {
+                    filter { eq("garage_id", garageId) }
+                    order("hora_entrada", Order.DESCENDING)
+                }
+                .decodeList<ParkingRecordDTO>()
+
+            val records = response.map { dto ->
+                ParkingRecord(
+                    id = dto.id,
+                    vehicleId = dto.vehicleId,
+                    garageId = dto.garageId,
+                    rateId = dto.rateId,
+                    horaEntrada = dto.horaEntrada,
+                    horaSalida = dto.horaSalida,
+                    total = dto.total,
+                    pagado = dto.pagado,
+                    createdAt = dto.createdAt,
+                    tipo = dto.tipo,
+                    estado = dto.estado,
+                    createdByUserId = dto.createdByUserId,
+                    fotosEntrada = dto.fotosEntrada,
+                    fotosSalida = dto.fotosSalida,
+                    vehiclePlate = dto.vehicles?.plate,
+                    employeeName = dto.users?.nombre,
+                    esIncidencia = dto.esIncidencia  // 🔥 NUEVO
+                )
+            }
+
+            Result.success(records)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getParkingRecordById(recordId: String): Result<ParkingRecord> {
+        return try {
+            val response = client.from("parkings")
+                .select(
+                    Columns.raw(
+                        """
+                    id,
+                    garage_id,
+                    vehicle_id,
+                    rate_id,
+                    hora_entrada,
+                    hora_salida,
+                    total,
+                    pagado,
+                    created_at,
+                    tipo,
+                    estado,
+                    created_by_user_id,
+                    fotos_entrada,
+                    fotos_salida,
+
+                    vehicles:vehicle_id (
+                        plate
+                    ),
+
+                    users:created_by_user_id (
+                        nombre
+                    )
+                    """.trimIndent()
+                    )
+                ) {
+                    filter { eq("id", recordId) }
+                    limit(1)
+                }
+                .decodeSingle<ParkingRecordDTO>()
+
+            val record = ParkingRecord(
+                id = response.id,
+                vehicleId = response.vehicleId,
+                garageId = response.garageId,
+                rateId = response.rateId,
+                horaEntrada = response.horaEntrada,
+                horaSalida = response.horaSalida,
+                total = response.total,
+                pagado = response.pagado,
+                createdAt = response.createdAt,
+                tipo = response.tipo,
+                estado = response.estado,
+                createdByUserId = response.createdByUserId,
+                fotosEntrada = response.fotosEntrada,
+                fotosSalida = response.fotosSalida,
+                vehiclePlate = response.vehicles?.plate,
+                employeeName = response.users?.nombre
+            )
+
+            Result.success(record)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 
     // ------------------------------------------------------------
     // REGISTRAR SALIDA SIN PAGO (para compatibilidad)
@@ -362,6 +497,19 @@ class ParkingRepositoryImpl(
         return updated
     }
 
+    override suspend fun MarkasIncident(parkingId: String, esIncidencia: Boolean): Boolean {
+        return try {
+            client.from("parkings").update(
+                mapOf("es_incidencia" to esIncidencia)
+            ) {
+                filter { eq("id", parkingId) }
+            }
+            true
+        } catch (e: Exception) {
+            println("❌ Error marcando incidencia: ${e.message}")
+            false
+        }
+    }
 
     // ------------------------------------------------------------
     // 🔥 ENTRADA DESDE RESERVA CON MÚLTIPLES FOTOS

@@ -67,6 +67,8 @@ key.properties
 *.war
 *.zip
 
+app/google-services.json
+
 # ==========================
 # ANDROID GENERATED RESOURCES
 # ==========================

@@ -534,8 +534,7 @@ enum class TipoFoto {
     VEHICULO,
     COMPROBANTE
 }
-
-// 🔥 ACTUALIZADO: Diálogo de pago con múltiples fotos
+// 🔥 ACTUALIZADO: Diálogo de pago con colores corregidos
 @Composable
 fun PaymentMethodDialog(
     onDismiss: () -> Unit,
@@ -552,7 +551,14 @@ fun PaymentMethodDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.seleccionar_m_todo_de_pago), fontWeight = FontWeight.Bold) },
+        containerColor = Color.White, // ✅ CORREGIDO: Fondo blanco
+        title = {
+            Text(
+                stringResource(R.string.seleccionar_m_todo_de_pago),
+                fontWeight = FontWeight.Bold,
+                color = Color.Black // ✅ CORREGIDO: Texto negro
+            )
+        },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -587,7 +593,7 @@ fun PaymentMethodDialog(
                     title = stringResource(R.string.efectivo2),
                     icon = Icons.Default.AccountBalanceWallet,
                     color = GreenSoft,
-                    isSelected = selectedMethod == context.getString(R.string.cash2),
+                    isSelected = selectedMethod == "cash",
                     onClick = { onMethodSelected("cash") }
                 )
 
@@ -595,12 +601,12 @@ fun PaymentMethodDialog(
                     title = stringResource(R.string.transferencia2),
                     icon = Icons.Default.CreditCard,
                     color = Color(0xFF2196F3),
-                    isSelected = selectedMethod == context.getString(R.string.transfer3),
+                    isSelected = selectedMethod == "transfer",
                     onClick = { onMethodSelected("transfer") }
                 )
 
                 // Si seleccionó transferencia, mostrar sección de comprobante
-                if (selectedMethod == context.getString(R.string.transfer4)) {
+                if (selectedMethod == "transfer") {
                     HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
                     Text(
@@ -614,7 +620,8 @@ fun PaymentMethodDialog(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             Box {
                                 Image(
@@ -665,7 +672,8 @@ fun PaymentMethodDialog(
                                 Text(
                                     "Tomar foto del comprobante",
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Black
                                 )
                             }
                         }
@@ -675,19 +683,32 @@ fun PaymentMethodDialog(
         },
         confirmButton = {
             val canConfirm = fotosSalidaVehiculo.isNotEmpty() && (
-                    selectedMethod == context.getString(R.string.cash5) ||
-                            (selectedMethod == context.getString(R.string.transfer6) && transferBitmap != null)
+                    selectedMethod == "cash" ||
+                            (selectedMethod == "transfer" && transferBitmap != null)
                     )
 
             Button(
                 onClick = onConfirm,
-                enabled = canConfirm
+                enabled = canConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GreenSoft,
+                    disabledContainerColor = Color.Gray
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(stringResource(R.string.confirmar_pago))
+                Text(
+                    stringResource(R.string.confirmar_pago),
+                    color = Color.White
+                )
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Color.Gray
+                )
+            ) {
                 Text(stringResource(R.string.cancelar3))
             }
         },

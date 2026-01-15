@@ -3,6 +3,7 @@ package com.kotlin.u_park.presentation.screens.employee
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -37,12 +38,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.kotlin.u_park.R
 import com.kotlin.u_park.domain.model.Rate
 import com.kotlin.u_park.domain.model.ReservaConUsuario
 import com.kotlin.u_park.presentation.navigation.Routes
 import com.kotlin.u_park.presentation.screens.parking.ParkingViewModel
+import java.io.File
+import android.content.Context
+import androidx.compose.runtime.saveable.rememberSaveable
 
 private val PrimaryRed = Color(0xFFE60023)
 private val BackgroundGray = Color(0xFFF8F9FA)
@@ -51,6 +56,20 @@ private val TextPrimary = Color(0xFF1A1A1A)
 private val TextSecondary = Color(0xFF6C757D)
 private val SuccessGreen = Color(0xFF4CAF50)
 private val WarningOrange = Color(0xFFFF9800)
+
+fun createImageFile2(context: Context, tipo: TipoFoto): File {
+    val baseDir = File(context.cacheDir, "camera")
+    if (!baseDir.exists()) baseDir.mkdirs()
+
+    val prefix = when (tipo) {
+        TipoFoto.VEHICULO -> "vehiculo"
+        TipoFoto.COMPROBANTE -> "comprobante"
+    }
+
+    val file = File(baseDir, "${prefix}_${System.currentTimeMillis()}.jpg")
+    file.createNewFile()
+    return file
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,10 +86,20 @@ fun RegistrarEntradaScreen(
     val rates by viewModel.rates.collectAsState()
     val selectedRate by viewModel.selectedRate.collectAsState()
 
-    // 🔥 CAMBIO: Lista de bitmaps en lugar de un solo bitmap
-    var fotosEntrada by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
-    var placa by remember { mutableStateOf("") }
-    var modoEntrada by remember { mutableStateOf("Normal") }
+    var fotosEntradaPaths by rememberSaveable { mutableStateOf<List<String>>(emptyList()) }
+
+    val fotosEntrada = remember(fotosEntradaPaths) {
+        fotosEntradaPaths.mapNotNull { path ->
+            try {
+                BitmapFactory.decodeFile(path)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    var placa by rememberSaveable { mutableStateOf("") }
+    var modoEntrada by rememberSaveable { mutableStateOf("Normal") }
     var expandedTipo by remember { mutableStateOf(false) }
     var expandedReservas by remember { mutableStateOf(false) }
 
@@ -98,6 +127,7 @@ fun RegistrarEntradaScreen(
                 popUpTo(Routes.EmployeeHome.route) { inclusive = true }
                 launchSingleTop = true
             }
+
             viewModel.resetTicket()
         }
     }
@@ -106,20 +136,34 @@ fun RegistrarEntradaScreen(
         message?.let { Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show() }
     }
 
-    // 🔥 CAMBIO: Captura múltiples fotos
+    val imageFile = remember { mutableStateOf<File?>(null) }
+
     val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicturePreview()
-    ) { result ->
-        result?.let {
-            fotosEntrada = fotosEntrada + it
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            imageFile.value?.let { file ->
+                try {
+                    if (file.exists() && file.length() > 0) {
+                        // Guardar el path en lugar del bitmap
+                        fotosEntradaPaths = fotosEntradaPaths + file.absolutePath
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) cameraLauncher.launch(null)
-        else Toast.makeText(ctx, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
+        if (granted) {
+            val file = createImageFile2(ctx, TipoFoto.VEHICULO)
+            imageFile.value = file
+            val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.provider", file)
+            cameraLauncher.launch(uri)
+        }
     }
 
     Scaffold(
@@ -236,7 +280,6 @@ fun RegistrarEntradaScreen(
                     )
                 }
 
-                // 🔥 CAMBIO: Nueva sección de fotos múltiples
                 StepCard(
                     stepNumber = if (modoEntrada == "Reserva") "5" else "4",
                     title = stringResource(R.string.fotograf_a_del_veh_culo),
@@ -245,15 +288,26 @@ fun RegistrarEntradaScreen(
                     MultipleFotosSection(
                         fotos = fotosEntrada,
                         onTakePhoto = {
-                            val granted = ContextCompat.checkSelfPermission(
-                                ctx, Manifest.permission.CAMERA
-                            ) == PackageManager.PERMISSION_GRANTED
+                            val permission = Manifest.permission.CAMERA
 
-                            if (!granted) permissionLauncher.launch(Manifest.permission.CAMERA)
-                            else cameraLauncher.launch(null)
+                            if (ContextCompat.checkSelfPermission(ctx, permission) == PackageManager.PERMISSION_GRANTED) {
+                                val file = createImageFile2(ctx, TipoFoto.VEHICULO)
+                                imageFile.value = file
+
+                                val uri = FileProvider.getUriForFile(
+                                    ctx,
+                                    "${ctx.packageName}.provider",
+                                    file
+                                )
+
+                                cameraLauncher.launch(uri)
+                            } else {
+                                permissionLauncher.launch(permission)
+                            }
                         },
                         onRemovePhoto = { index ->
-                            fotosEntrada = fotosEntrada.filterIndexed { i, _ -> i != index }
+                            val pathsToKeep = fotosEntradaPaths.filterIndexed { i, _ -> i != index }
+                            fotosEntradaPaths = pathsToKeep
                         }
                     )
                 }
@@ -280,7 +334,7 @@ fun RegistrarEntradaScreen(
                             return@ConfirmButton
                         }
 
-                        // 🔥 CAMBIO: Convertir todas las fotos a bytes
+                        // Convertir todas las fotos a bytes
                         val fotosBytes = fotosEntrada.map { it.toByteArray() }
 
                         if (modoEntrada == "Normal") {
@@ -549,7 +603,6 @@ fun ConfirmButton(
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RateSelector(
@@ -559,81 +612,101 @@ fun RateSelector(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
-    ) {
-        OutlinedTextField(
-            value = selectedRate?.let {
-                "${it.baseRate} / ${it.timeUnit}"
-            } ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(stringResource(R.string.tarifa)) },
-            placeholder = { Text(stringResource(R.string.selecciona_una_tarifa)) },
-            trailingIcon = {
-                Icon(
-                    if (expanded)
-                        Icons.Default.KeyboardArrowUp
-                    else
-                        Icons.Default.KeyboardArrowDown,
-                    contentDescription = null
-                )
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryRed,
-                unfocusedBorderColor = Color(0xFFDEE2E6),
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White
-            ),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor()
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
-        ExposedDropdownMenu(
+        ExposedDropdownMenuBox(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onExpandedChange = { expanded = !expanded }
         ) {
-            rates.forEach { rate ->
-                DropdownMenuItem(
-                    text = {
-                        Column {
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(2.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.AttachMoney,
+                        contentDescription = null,
+                        tint = PrimaryRed
+                    )
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = selectedRate?.let { "${it.baseRate} / ${it.timeUnit}" }
+                                ?: stringResource(R.string.selecciona_una_tarifa),
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (selectedRate == null) TextSecondary else TextPrimary
+                        )
+
+                        if (selectedRate != null) {
                             Text(
-                                text = "${rate.baseRate} / ${rate.timeUnit}",
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = buildString {
-                                    append(stringResource(R.string.horario2))
-                                    append(rate.horaInicio ?: "00:00")
-                                    append(" - ")
-                                    append(rate.horaFin ?: "24:00")
-                                },
+                                text = "${stringResource(R.string.horario2)} ${selectedRate.horaInicio ?: "00:00"} - ${selectedRate.horaFin ?: "24:00"}",
                                 fontSize = 12.sp,
                                 color = TextSecondary
                             )
                         }
-                    },
-                    onClick = {
-                        onRateSelected(rate)
-                        expanded = false
                     }
-                )
+
+                    Icon(
+                        if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = PrimaryRed
+                    )
+                }
+            }
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                rates.forEach { rate ->
+                    DropdownMenuItem(
+                        onClick = {
+                            onRateSelected(rate)
+                            expanded = false
+                        },
+                        text = {
+                            Column {
+                                Text(
+                                    "${rate.baseRate} / ${rate.timeUnit}",
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    "${stringResource(R.string.horario2)} ${rate.horaInicio ?: "00:00"} - ${rate.horaFin ?: "24:00"}",
+                                    fontSize = 12.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.MonetizationOn, null, tint = PrimaryRed)
+                        }
+                    )
+                }
             }
         }
-    }
 
-    if (rates.isEmpty()) {
-        Text(
-            text = stringResource(R.string.no_hay_tarifas_activas_para_este_garaje),
-            fontSize = 12.sp,
-            color = TextSecondary,
-            modifier = Modifier.padding(top = 8.dp, start = 4.dp)
-        )
+        if (rates.isEmpty()) {
+            Text(
+                stringResource(R.string.no_hay_tarifas_activas_para_este_garaje),
+                fontSize = 12.sp,
+                color = TextSecondary
+            )
+        }
     }
 }
+
 
 @Composable
 fun TipoEntradaSelector(
@@ -890,9 +963,16 @@ fun PlacaInput(
             focusedBorderColor = PrimaryRed,
             unfocusedBorderColor = Color(0xFFDEE2E6),
             disabledBorderColor = Color(0xFFDEE2E6),
+
             focusedContainerColor = Color.White,
             unfocusedContainerColor = Color.White,
-            disabledContainerColor = Color(0xFFF8F9FA)
+            disabledContainerColor = Color(0xFFF8F9FA),
+
+            // 🔥 FIX DEL TEXTO INVISIBLE
+            focusedTextColor = TextPrimary,
+            unfocusedTextColor = TextPrimary,
+            disabledTextColor = TextSecondary,
+            cursorColor = PrimaryRed
         ),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth()

@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import com.kotlin.u_park.data.remote.SessionManager
 import com.kotlin.u_park.data.remote.supabase
 import com.kotlin.u_park.domain.model.Rate
+import com.kotlin.u_park.presentation.screens.employee.ParkingRecord
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import java.io.File
@@ -39,6 +40,81 @@ class ParkingViewModel(
 
     private val _selectedRate = MutableStateFlow<Rate?>(null)
     val selectedRate = _selectedRate.asStateFlow()
+    private val _records = MutableStateFlow<List<ParkingRecord>>(emptyList())
+    val records: StateFlow<List<ParkingRecord>> = _records.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _selectedRecord = MutableStateFlow<ParkingRecord?>(null)
+    val selectedRecord: StateFlow<ParkingRecord?> = _selectedRecord.asStateFlow()
+
+    fun loadRecords(garageId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            repository.getParkingRecords(garageId)
+                .onSuccess { recordsList ->
+                    _records.value = recordsList
+                }
+                .onFailure { exception ->
+                    _error.value = exception.message ?: "Error desconocido al cargar registros"
+                }
+
+            _isLoading.value = false
+        }
+    }
+
+    fun marcarComoIncidencia(parkingId: String, esIncidencia: Boolean) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+
+                repository.MarkasIncident(parkingId, esIncidencia)
+
+                // Recargar los registros
+                _records.value.find { it.id == parkingId }?.let { currentGarageId ->
+                    loadRecords(currentGarageId.garageId ?: "")
+                }
+
+                _message.value = if (esIncidencia) {
+                    "Marcado como incidencia"
+                } else {
+                    "Incidencia removida"
+                }
+
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al marcar incidencia"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    fun loadRecordById(recordId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            repository.getParkingRecordById(recordId)
+                .onSuccess { record ->
+                    _selectedRecord.value = record
+                }
+                .onFailure { exception ->
+                    _error.value = exception.message ?: "Error al cargar el registro"
+                }
+
+            _isLoading.value = false
+        }
+    }
+
+    fun clearError() {
+        _error.value = null
+    }
+
+    fun clearSelectedRecord() {
+        _selectedRecord.value = null
+    }
 
     fun loadRatesByGarage(garageId: String) {
         viewModelScope.launch {

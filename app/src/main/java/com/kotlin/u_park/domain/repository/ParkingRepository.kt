@@ -1,9 +1,13 @@
 package com.kotlin.u_park.domain.repository
 
 import com.kotlin.u_park.domain.model.*
+import com.kotlin.u_park.presentation.screens.employee.ParkingRecord
 
 interface ParkingRepository {
 
+    suspend fun MarkasIncident(parkingId: String, esIncidencia: Boolean): Boolean
+    suspend fun getParkingRecords(garageId: String): Result<List<ParkingRecord>>
+    suspend fun getParkingRecordById(recordId: String): Result<ParkingRecord>
     suspend fun registrarEntrada(
         parking: Parking,
         fotosBytes: List<ByteArray>

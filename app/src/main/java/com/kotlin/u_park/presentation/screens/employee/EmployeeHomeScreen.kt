@@ -110,6 +110,7 @@ fun EmployeeHomeScreen(
                     when (index) {
                         1 -> navController.navigate(Routes.VehiculosDentro.createRoute(garageId))
                         2 -> navController.navigate(Routes.EmployeeSettings.route)
+                        3 -> navController.navigate(Routes.ParkingRecords.createRoute(garageId))
                     }
                 }
             )
@@ -638,6 +639,13 @@ fun ModernBottomBarEmployee(
                 label = "Vehículos",
                 isSelected = selectedIndex == 1,
                 onClick = { onItemSelected(1) }
+            )
+            BottomBarItemModern(
+                icon = Icons.Outlined.CarCrash,
+                selectedIcon = Icons.Default.CarCrash,
+                label = "Incidencias",
+                isSelected = selectedIndex == 3,
+                onClick = { onItemSelected(3) }
             )
             BottomBarItemModern(
                 icon = Icons.Outlined.Person,
