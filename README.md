@@ -91,7 +91,7 @@ Una app que conecta a **administradores**, **empleados** y **clientes** en un si
 3. Configura las claves necesarias:
    
    ```bash
-   g# En \app\src\main\java\com\kotlin\u_park\data\remote\SupabaseClient
+   # En \app\src\main\java\com\kotlin\u_park\data\remote\SupabaseClient
     SUPABASE_URL="https://tu-proyecto.supabase.co"
     SUPABASE_ANON_KEY="eyJhbGciOi..."
 
